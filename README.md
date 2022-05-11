@@ -1,15 +1,11 @@
-# Project Title
-
-Choose and leave only one of the following badge
+# Expert System
 
 ![REPO-TYPE](https://img.shields.io/badge/repo--type-backend-critical?style=for-the-badge&logo=github)
-![REPO-TYPE](https://img.shields.io/badge/repo--type-frontend-green?style=for-the-badge&logo=github)
-![REPO-TYPE](https://img.shields.io/badge/repo--type-automation-9cf?style=for-the-badge&logo=github)
 
+The Expert System is a set of tools that allow the end-user to execute dynamically created processes and potentially unlimited workflows.
 
-One Paragraph of project description goes here.
-
-More detailed infos here.
+The Expert System is executed on a closed dockerized environment (i.e., uses the Docker container platform) and uses the Python programming language and the FastAPI web framework.
+The Expert system contains various tools and libraries based on python packages and, that can manage workflows, workflow designer tools to create BPMN dynamic diagrams, and other components implemented via JSON standards.
 
 ## Getting Started
 
@@ -17,29 +13,27 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+The requirements to run, test, and develop the Expert System are:
 
-```
-Give examples
-```
+-   [Docker](https://docs.docker.com/engine/)
+-   [Docker Compose](https://docs.docker.com/compose/)
+-   Linux environment is recommended
+-   [Python 3.9](https://www.python.org/)
+-   [FastAPI](https://fastapi.tiangolo.com/) Web Framework
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running
+You first clone the repo.
 
-Say what the step will be
-
-```
-Give the example
+```bash
+git clone git@github.com:mescobrad-project/ExpertSystem.git
 ```
 
-And repeat
-
-```
-until finished
+```bash
+cd ExpertSystem
 ```
 
-End with an example of getting some data out of the system or using it for a little demo
+...
 
 ## Running the tests
 
@@ -65,22 +59,17 @@ Give an example
 
 Add additional notes about how to deploy this on a live system
 
-## Built With
-
-* [SpringBoot](http://springboot.io) - The Java framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](tags). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](tags).
 
 ## Authors
 
-* **Name Surname** - *Role* - [githubnickname](github_profile_url)
+-   **Vassilis Stamoulos** - [doskelfsy](https://github.com/doskelfsy)
 
 See also the list of [contributors](contributors) who participated in this project.
 
@@ -90,6 +79,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+-   ...
