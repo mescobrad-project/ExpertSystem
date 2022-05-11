@@ -1,0 +1,713 @@
+openapi: 3.0.1
+info:
+  title: Swagger API for ES
+  description: This is an API structure for the ES interoperability.
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: johnmtsi@gmial.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+  - url: https://es.mes-cobrad.eu
+tags:
+  - name: Expert system APIs structure and more
+    description: Everything about your lovely Expert System
+    externalDocs:
+      description: Find out more
+      url: https://es.mes-cobrad.eu
+paths:
+  /workflow:
+    get:
+      tags:
+        - Workflow
+      summary: Get all workflows
+      operationId: getWorkflow
+      responses:
+        200:
+          description: OK
+          content:
+            "*/*":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+        400:
+          description: Invalid workflow value
+          content: {}
+    post:
+      tags:
+        - Workflow
+      summary: Post a new workflow
+      operationId: addWorkflow
+      requestBody:
+        description: Workflow object that needs to be added to the store
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Workflow"
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/Workflow"
+        required: true
+      responses:
+        default:
+          description: successfully created
+          content: {}
+      x-codegen-request-body-name: body
+  /workflow/{workflowid}:
+    get:
+      tags:
+        - Workflow
+      summary: Get a workflow with a specific Id
+      operationId: getWorkflowId
+      parameters:
+        - name: workflowid
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: workflow not found
+          content: {}
+    put:
+      tags:
+        - Workflow
+      summary: Put a workflow with a specific Id
+      operationId: putWorkflowId
+      parameters:
+        - name: workflowid
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Update workflows
+        content:
+          "*/*":
+            schema:
+              $ref: "#/components/schemas/Workflow"
+        required: true
+      responses:
+        200:
+          description: OK
+          content: {}
+      x-codegen-request-body-name: body
+    delete:
+      tags:
+        - Workflow
+      summary: Delete workflow
+      description: This can only be done by the logged in user.
+      operationId: deleteWorkflow
+      parameters:
+        - name: workflowid
+          in: path
+          description: The Id that needs to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        400:
+          description: Invalid Id supplied
+          content: {}
+        404:
+          description: Id not found
+          content: {}
+  /workflow/{workflowid}/run:
+    get:
+      tags:
+        - Workflow
+      summary: Runs a workflow with Id
+      operationId: runWorkflow
+      parameters:
+        - name: workflowid
+          in: path
+          description: Id of workflow to run
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        404:
+          description: Id not found
+          content: {}
+  /workflow/{workflowid}/run/{runid}/step/{stepid}:
+    get:
+      tags:
+        - Workflow
+      summary: Run a specific step id for a specific workflow
+      operationId: runWorkflowStep
+      parameters:
+        - name: workflowid
+          in: path
+          description: Id of the workflow
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: runid
+          in: path
+          description: Id of the run
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: stepid
+          in: path
+          description: Id of the specific step
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/Step"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Step"
+        404:
+          description: Id not found
+          content: {}
+  /workflow/{workflowid}/run/{runid}/cancel:
+    delete:
+      tags:
+        - Workflow
+      summary: Delete specific run of a specific workflow
+      description: This can only be done for specific workflow runs.
+      operationId: deleteWorkflowRun
+      parameters:
+        - name: workflowid
+          in: path
+          description: The Id of the workflow
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: runid
+          in: path
+          description: The Id of the run you want to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        400:
+          description: Invalid Id supplied
+          content: {}
+        404:
+          description: Id not found
+          content: {}
+  /workflow/{workflowid}/run/{runid}/variable/{variableid}:
+    put:
+      tags:
+        - Workflow
+      summary: Update a run with a specific variable Id
+      operationId: putWorkflowRunVariable
+      parameters:
+        - name: workflowid
+          in: path
+          description: workflow Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: runid
+          in: path
+          description: run Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: variableid
+          in: path
+          description: variable Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: OK
+          content: {}
+    delete:
+      tags:
+        - Workflow
+      summary: Delete specific variable of a specific workflow
+      description: This can only be done for specific variables and workflow runs.
+      operationId: deleteWorkflowRunVariable
+      parameters:
+        - name: workflowid
+          in: path
+          description: The Id of the workflow
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: runid
+          in: path
+          description: The Id of the run
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: variableid
+          in: path
+          description: The Id of the variable you want to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        400:
+          description: Invalid Id supplied
+          content: {}
+        404:
+          description: Id not found
+          content: {}
+  /workflow/{workflowid}/run/{runid}/variable:
+    get:
+      tags:
+        - Workflow
+      summary: Get variables of a specific workflow with run id
+      operationId: getWorkflowRunVariables
+      parameters:
+        - name: workflowid
+          in: path
+          description: Workflow Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: runid
+          in: path
+          description: Run Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/Variable"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Variable"
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: workflow not found
+          content: {}
+  /workflow/{workflowid}/run/{runid}/metadata:
+    get:
+      tags:
+        - Workflow
+      summary: Get all the metadata from a specific workflow with run Id
+      operationId: getWorkflowRunMetadata
+      parameters:
+        - name: workflowid
+          in: path
+          description: Workflow Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: runid
+          in: path
+          description: Run Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/Metadata"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Metadata"
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: workflow not found
+          content: {}
+    put:
+      tags:
+        - Workflow
+      summary: Update metadata for a specific workflow Id and run Id
+      operationId: putWorkflowRunMetadata
+      parameters:
+        - name: workflowid
+          in: path
+          description: workflow Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: runid
+          in: path
+          description: run Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: OK
+          content: {}
+  /workflow/{workflowid}/run/{runid}/report:
+    get:
+      tags:
+        - Workflow
+      summary: Get all the metadata from a specific workflow with run Id
+      operationId: getWorkflowRunReport
+      parameters:
+        - name: workflowid
+          in: path
+          description: Workflow Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: runid
+          in: path
+          description: Run Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Metadata"
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: workflow not found
+          content: {}
+  /category:
+    get:
+      tags:
+        - Category
+      summary: Get all the categories with a specific Id
+      operationId: getCategories
+      responses:
+        200:
+          description: OK
+          content: {}
+    post:
+      tags:
+        - Category
+      summary: Post a new category
+      operationId: addCategory
+      responses:
+        200:
+          description: OK
+          content: {}
+  /category/{categoryid}:
+    get:
+      tags:
+        - Category
+      summary: Get all the metadata from a specific workflow with run Id
+      operationId: getCategoriesId
+      parameters:
+        - name: categoryid
+          in: path
+          description: Category Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+    put:
+      tags:
+        - Category
+      summary: Put a new Category with a specific Id
+      operationId: putCategory
+      parameters:
+        - name: categoryid
+          in: path
+          description: Category ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Update Category
+        content:
+          "*/*":
+            schema:
+              $ref: "#/components/schemas/Category"
+        required: true
+      responses:
+        200:
+          description: OK
+          content: {}
+      x-codegen-request-body-name: body
+    delete:
+      tags:
+        - Category
+      summary: Delete Category
+      description: This can only be done by the logged in user.
+      operationId: deleteCategory
+      parameters:
+        - name: categoryid
+          in: path
+          description: The category Id that needs to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        400:
+          description: Invalid Id supplied
+          content: {}
+        404:
+          description: Id not found
+          content: {}
+  /knowledge/{knowledgetype}:
+    get:
+      tags:
+        - Knowledge
+      summary: Get all available knowledge from a specific type
+      operationId: getKnowledgeByType
+      parameters:
+        - name: knowledgetype
+          in: path
+          description: Knowledge Id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/Knowledge"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Knowledge"
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: workflow not found
+          content: {}
+    post:
+      tags:
+        - Knowledge
+      summary: Post new knowledge data for a specific type
+      operationId: PostKnowledgeType
+      parameters:
+        - name: knowledgetype
+          in: path
+          description: Knowledge Id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/Knowledge"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Knowledge"
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: workflow not found
+          content: {}
+  /type:
+    post:
+      tags:
+        - Type
+      summary: Post a new knowledge type
+      operationId: addType
+      responses:
+        200:
+          description: OK
+          content: {}
+  /type/{typeid}:
+    get:
+      tags:
+        - Type
+      summary: Get a knowledge type
+      operationId: getKnowledgeType
+      parameters:
+        - name: typeid
+          in: path
+          description: knowledge type Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: OK
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/Knowledge"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Knowledge"
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: workflow not found
+          content: {}
+    delete:
+      tags:
+        - Type
+      summary: Delete specific knowledge type
+      description: This can only be done for a specific type.
+      operationId: deleteKnowledgeType
+      parameters:
+        - name: typeid
+          in: path
+          description: delete specific type of knowledge
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        204:
+          description: OK
+          content: {}
+        400:
+          description: Invalid Id supplied
+          content: {}
+        404:
+          description: Id not found
+          content: {}
+components:
+  schemas:
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: workflow-therapeutic1
+        category:
+          $ref: "#/components/schemas/Category"
+        run:
+          $ref: "#/components/schemas/Run"
+        variable:
+          $ref: "#/components/schemas/Variable"
+        step:
+          $ref: "#/components/schemas/Step"
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        status:
+          type: string
+          description: workflow status in the general process
+          enum:
+            - completed
+            - uncomplete
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+    Step:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    Run:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: boolean
+    Variable:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    Metadata:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        data:
+          type: object
+      description: Metadata for further use
+    Knowledge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        data:
+          type: object
+      description: Knowledge Base
