@@ -282,3 +282,16 @@ dist
 # Ignore all local history of files
 .history
 .ionide
+
+# Compiled Python bytecode
+*.py[cod]
+
+# Python cache files
+**/__pycache__
+**/*.pyc
+
+# DB files
+**/*.db
+
+# SQL Non-sample files
+*.sql
