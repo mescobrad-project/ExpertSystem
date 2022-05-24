@@ -2,14 +2,21 @@
 
 ![REPO-TYPE](https://img.shields.io/badge/repo--type-backend-critical?style=for-the-badge&logo=github)
 
-The Expert System is a set of tools that allow the end-user to execute dynamically created processes and potentially unlimited workflows.
+The Expert System is a set of tools that allow the end-user to execute
+dynamically created processes and potentially unlimited workflows.
 
-The Expert System is executed on a closed dockerized environment (i.e., uses the Docker container platform) and uses the Python programming language and the FastAPI web framework.
-The Expert system contains various tools and libraries based on python packages and, that can manage workflows, workflow designer tools to create BPMN dynamic diagrams, and other components implemented via JSON standards.
+The Expert System is executed on a closed dockerized environment (i.e., uses the
+Docker container platform) and uses the Python programming language and the
+FastAPI web framework. The Expert system contains various tools and libraries
+based on python packages and, that can manage workflows, workflow designer tools
+to create BPMN dynamic diagrams, and other components implemented via JSON
+standards.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+These instructions will get you a copy of the project up and running on your
+local machine for development and testing purposes. See deployment for notes on
+how to deploy the project on a live system.
 
 ### Prerequisites
 
@@ -19,25 +26,93 @@ The requirements to run, test, and develop the Expert System are:
 -   [Docker Compose](https://docs.docker.com/compose/)
 -   Linux environment is recommended
 -   [Python 3.9](https://www.python.org/)
+-   [Pipenv](https://pipenv.pypa.io/en/latest/) virtual environment
 -   [FastAPI](https://fastapi.tiangolo.com/) Web Framework
 
 ### Installing
 
-You first clone the repo.
+There are two different ways to install the application. If you want to develop
+some new features, or fix some bugs, it is highly recommended to use a python
+environment first and then build and test with a docker image.
+
+But wait! Before doing anything, create an environment file based on the example
+and edit the appropriate variables.
 
 ```bash
-git clone git@github.com:mescobrad-project/ExpertSystem.git
+cp .env.example .env
+nano .env
 ```
+
+#### Python-based
+
+First, be sure to install Python and activate version 3.9 and Pipenv:
 
 ```bash
-cd ExpertSystem
+sudo apt update
+sudo apt install python3.9 python3.9-venv python3.9-dev
+
+# If necessary, run the line bellow
+sudo apt build-dep python3.9 python3-tk
 ```
 
-...
+Then check the version to be at 3.9 or greater.
+
+```bash
+python --version
+```
+
+Now it's time to install Pipenv:
+
+```bash
+pip install pipenv
+```
+
+And check if everything works as expected, by executing the following command:
+
+```bash
+pipenv --version
+```
+
+To start developing, you first instantiate the environment, install the
+dependencies and start the server:
+
+```bash
+pipenv --python 3.9
+pipenv install
+pipenv run uvicorn src.main:main --host 0.0.0.0 --port 80 --reload
+```
+
+#### Docker-based
+
+According to the documentation of sail, first, add the following line in the
+_~/.bashrc_ file, close the terminal and open it again.
+
+```bash
+alias sail='[ -f sail ] && bash sail'
+```
+
+Run the following command to create and run the project's docker images. This
+assumes that both Docker and docker-compose are installed.
+
+```bash
+sail up -d
+```
 
 ## Running the tests
 
-Explain how to run the automated tests for this system
+There are two possible ways to execute the tests. The first one is directly
+through the virtual environment and the second via the sail command.
+
+```bash
+pipenv run pytest
+```
+
+or
+
+```bash
+sail up -d
+sail pytest
+```
 
 ### Break down into end to end tests
 
@@ -49,34 +124,70 @@ Give an example
 
 ### And coding style tests
 
-Explain what these tests test and why
+To validate the coding style and be consistent, we use Black. Run the following
+command to format your code:
 
 ```
-Give an example
+pipenv run black
+```
+
+## Built With
+
+To build the docker image of this repo, run the following command:
+
+```bash
+sail build
+```
+
+### Production build and versioning
+
+For a production build, create a starter .env from the example and run the
+previous command with cache disabled:
+
+```bash
+cp .env.example .env
+sail build --no-cache
+```
+
+After the build is complete, tag the docker image with the desired version and
+push it to the registry.
+
+```bash
+docker tag username/exampleimage username/exampleimage:v1.0.0
+docker push username/exampleimage:v1.0.0
 ```
 
 ## Deployment
 
-Add additional notes about how to deploy this on a live system
+To deploy the application in a staging or production environment, you pull the
+version you want from your docker registry and use it accordingly
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of
+conduct, and the process for submitting pull requests to us.
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](tags).
+We use [SemVer](http://semver.org/) for versioning. For the versions available,
+see the [tags on this repository](tags).
 
 ## Authors
 
 -   **Vassilis Stamoulos** - [doskelfsy](https://github.com/doskelfsy)
 
-See also the list of [contributors](contributors) who participated in this project.
+See also the list of [contributors](contributors) who participated in this
+project.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the
+[LICENSE.md](LICENSE.md) file for details
 
 ## Acknowledgments
 
--   ...
+-   A modded version of [Sail](https://github.com/laravel/sail)
+-   Special thanks to
+    [atom/atom](https://github.com/atom/atom/blob/master/CONTRIBUTING.md) and
+    [opengovernment/opengovernment](https://github.com/opengovernment/opengovernment/blob/master/CONTRIBUTING.md)
+    for the contributing ideas.
