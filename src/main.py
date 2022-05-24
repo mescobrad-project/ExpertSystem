@@ -10,7 +10,7 @@ main.add_middleware(
     allow_origins=CORS_ORIGINS,
     allow_credentials=CORS_CREDENTIALS,
     allow_methods=CORS_METHODS,
-    allow_headers=CORS_HEADERS
+    allow_headers=CORS_HEADERS,
 )
 
 main.include_router(workflow.router)
