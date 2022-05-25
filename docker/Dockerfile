@@ -1,4 +1,4 @@
-FROM python:3.9 AS builder
+FROM python:3.10 AS builder
 
 RUN pip install --user pipenv
 
@@ -21,7 +21,7 @@ RUN /root/.local/bin/pipenv sync
 
 RUN /code/.venv/bin/python -c "import requests; print(requests.__version__)"
 
-FROM python:3.9 AS runtime
+FROM python:3.10 AS runtime
 
 WORKDIR /code
 
