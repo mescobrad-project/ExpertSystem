@@ -18,4 +18,4 @@ services:
     environment:
       WWWUSER: "${WWWUSER}"
     volumes:
-      - "../src:/code/src"
+      - "../src:/code/src:rw"
