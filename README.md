@@ -25,7 +25,7 @@ The requirements to run, test, and develop the Expert System are:
 -   [Docker](https://docs.docker.com/engine/)
 -   [Docker Compose](https://docs.docker.com/compose/)
 -   Linux environment is recommended
--   [Python 3.9](https://www.python.org/)
+-   [Python 3.10](https://www.python.org/)
 -   [Pipenv](https://pipenv.pypa.io/en/latest/) virtual environment
 -   [FastAPI](https://fastapi.tiangolo.com/) Web Framework
 
@@ -45,17 +45,17 @@ nano .env
 
 #### Python-based
 
-First, be sure to install Python and activate version 3.9 and Pipenv:
+First, be sure to install Python and activate version 3.10 and Pipenv:
 
 ```bash
 sudo apt update
-sudo apt install python3.9 python3.9-venv python3.9-dev
+sudo apt install python3.10 python3.10-venv python3.10-dev
 
 # If necessary, run the line bellow
-sudo apt build-dep python3.9 python3-tk
+sudo apt build-dep python3.10 python3-tk
 ```
 
-Then check the version to be at 3.9 or greater.
+Then check the version to be at 3.10 or greater.
 
 ```bash
 python --version
@@ -77,7 +77,7 @@ To start developing, you first instantiate the environment, install the
 dependencies and start the server:
 
 ```bash
-pipenv --python 3.9
+pipenv --python 3.10
 pipenv install
 pipenv run uvicorn src.main:main --host 0.0.0.0 --port 80 --reload
 ```
