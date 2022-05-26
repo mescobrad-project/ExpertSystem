@@ -18,12 +18,21 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+
+from src.models._all import Base
+
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+from src.config import SQLALCHEMY_DATABASE_URL
+
+
+def get_url():
+    return SQLALCHEMY_DATABASE_URL
 
 
 def run_migrations_offline():
@@ -38,12 +47,13 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = get_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
     )
 
     with context.begin_transaction():
@@ -57,15 +67,18 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
+    conf = config.get_section(config.config_ini_section)
+    conf["sqlalchemy.url"] = get_url()
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
+        conf,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, target_metadata=target_metadata, compare_type=True
         )
 
         with context.begin_transaction():
