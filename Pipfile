@@ -10,6 +10,7 @@ jinja2 = "*"
 sqlalchemy = "*"
 pytest = "*"
 requests = "*"
+alembic = "*"
 
 [dev-packages]
 black = "*"
