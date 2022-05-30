@@ -11,6 +11,7 @@ sqlalchemy = "*"
 pytest = "*"
 requests = "*"
 alembic = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 black = "*"
