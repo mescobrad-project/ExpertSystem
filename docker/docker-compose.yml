@@ -19,6 +19,9 @@ services:
       WWWUSER: "${WWWUSER}"
     volumes:
       - "../src:/code/src"
+    networks:
+      - internal
+
   db:
     image: postgres:14-alpine
     restart: always
@@ -30,6 +33,11 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - internal
 
 volumes:
   db_data:
+
+networks:
+  internal:
