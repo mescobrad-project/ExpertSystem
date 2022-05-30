@@ -8,7 +8,7 @@ CORS_CREDENTIALS = getenv("CORS_CREDENTIALS", True)
 CORS_METHODS = (getenv("CORS_METHODS", "*")).split(",")
 CORS_HEADERS = (getenv("CORS_HEADERS", "*")).split(",")
 
-DB_CONNECTION = getenv("DB_CONNECTION", "postgres")
+DB_CONNECTION = getenv("DB_CONNECTION", "postgresql")
 DB_HOST = getenv("DB_HOST", "localhost")
 DB_PORT = getenv("DB_PORT", 5432)
 DB_DATABASE = getenv("DB_DATABASE", "test_db")
