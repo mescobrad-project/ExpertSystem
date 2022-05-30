@@ -97,3 +97,4 @@ Start reading our code and you'll get the hang of it. We optimize for readabilit
     -   :arrow_up: `:arrow_up:` when upgrading dependencies
     -   :arrow_down: `:arrow_down:` when downgrading dependencies
     -   :shirt: `:shirt:` when removing linter warnings
+    -   Follow the full guide [here](https://gitmoji.dev/)

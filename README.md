@@ -191,3 +191,5 @@ This project is licensed under the MIT License - see the
     [atom/atom](https://github.com/atom/atom/blob/master/CONTRIBUTING.md) and
     [opengovernment/opengovernment](https://github.com/opengovernment/opengovernment/blob/master/CONTRIBUTING.md)
     for the contributing ideas.
+-   Special thanks also to [gitmoji](https://github.com/carloscuesta/gitmoji)
+    for the use of emojis on GitHub commit messages.
