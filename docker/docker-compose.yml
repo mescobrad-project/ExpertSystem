@@ -19,6 +19,7 @@ services:
       WWWUSER: "${WWWUSER}"
     volumes:
       - "../src:/code/src"
+      - "../alembic.ini:/code/alembic.ini"
     networks:
       - internal
 
