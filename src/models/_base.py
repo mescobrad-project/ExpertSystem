@@ -2,7 +2,7 @@ from sqlalchemy import DateTime, Column
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
-from uuid import uuid4, UUID
+from uuid import uuid4
 from src.database import Base as ModelBase
 
 
@@ -46,9 +46,10 @@ class Base(ModelBase):
     __abstract__ = True
 
     id = Column(GUID(), primary_key=True, default=lambda: str(uuid4()))
-    created_at = Column(DateTime(timezone=True), default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
     )
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
