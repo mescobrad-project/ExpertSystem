@@ -276,6 +276,18 @@ elif [ "$1" == "python3" ]; then
         sail_is_not_running
     fi
 
+# Proxy Alembic migration commands to the "alembic" binary on the application container...
+elif [ "$1" == "alembic" ]; then
+    shift 1
+
+    if [ "$EXEC" == "yes" ]; then
+        ARGS+=(exec -u sail)
+        [ ! -t 0 ] && ARGS+=(-T)
+        ARGS+=("$APP_SERVICE" "./venv/bin/python" "-m" "alembic" "$@")
+    else
+        sail_is_not_running
+    fi
+
 # Proxy Artisan commands to the "artisan" binary on the application container...
 elif [ "$1" == "artisan" ] || [ "$1" == "art" ]; then
     shift 1
