@@ -7,8 +7,8 @@ from src.models._base import Base
 class Workflow(Base):
     __tablename__ = "workflows"
 
-    name = Column(String, unique=True, index=True)
-    description = Column(String)
-    tasks = Column(JSON)
+    name = Column(String, nullable=False, unique=True, index=True)
+    description = Column(String, nullable=True)
+    tasks = Column(JSON, nullable=True)
 
     runs = relationship("Run", back_populates="workflow")
