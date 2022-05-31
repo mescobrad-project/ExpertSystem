@@ -139,6 +139,22 @@ To build the docker image of this repo, run the following command:
 sail build
 ```
 
+### Run Database Migrations
+
+All database changes are monitored by a python module called "_Alembic_". All
+changes in the "_./src/models_" folder will result in a revision of the database
+model by typing the following:
+
+```bash
+sail alembic revision --autogenerate -m "Type message here."
+```
+
+Then sync the changes with the connected database with the command below:
+
+```bash
+sail alembic upgrade head
+```
+
 ### Production build and versioning
 
 For a production build, create a starter .env from the example and run the
@@ -160,7 +176,9 @@ docker push username/exampleimage:v1.0.0
 ## Deployment
 
 To deploy the application in a staging or production environment, you pull the
-version you want from your docker registry and use it accordingly
+version you want from your docker registry and use it accordingly. Keep a note
+that every time you make a version update, you have to run the migration script
+to update the database up to date.
 
 ## Contributing
 
