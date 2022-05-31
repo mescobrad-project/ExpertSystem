@@ -37,13 +37,8 @@ ENV TZ=UTC~
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN groupadd --force -g $WWWGROUP sail
-RUN useradd -ms /bin/bash --no-user-group -g $WWWGROUP -u 1337 sail
-
 COPY ./src /code/src
 
 COPY ./alembic.ini /code/alembic.ini
-
-USER sail
 
 CMD ["./venv/bin/python", "-m", "uvicorn", "src.main:main", "--host", "0.0.0.0", "--port", "80", "--reload"]
