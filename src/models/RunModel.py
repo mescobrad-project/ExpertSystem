@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from src.models._base import Base, GUID
 
 
-class Run(Base):
+class RunModel(Base):
     __tablename__ = "runs"
 
     workflow_id = Column(GUID(), ForeignKey("workflows.id"), index=True)
@@ -12,4 +12,4 @@ class Run(Base):
     steps = Column(JSON, nullable=True)
     queue = Column(JSON, nullable=True)
 
-    workflow = relationship("Workflow", back_populates="runs")
+    workflows = relationship("WorkflowModel", back_populates="runs")
