@@ -1,8 +1,7 @@
 from sqlalchemy import DateTime, Column
 from sqlalchemy.types import TypeDecorator, CHAR
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
-from uuid import uuid4
+from uuid import uuid4, UUID
 from src.database import Base as ModelBase
 
 
@@ -13,6 +12,7 @@ class GUID(TypeDecorator):
     """
 
     impl = CHAR
+    cache_ok = True
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
