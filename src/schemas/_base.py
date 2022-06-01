@@ -8,13 +8,13 @@ class Base(BaseModel):
     deleted_at: datetime = None
 
     @validator("created_at")
-    def createdatdatetime(val, _):
+    def createdatetime(cls):
         return datetime.now(tz=timezone.utc)
 
     @validator("updated_at")
-    def updatedatdatetime(val, _):
+    def updatedatetime(cls):
         return datetime.now(tz=timezone.utc)
 
     @validator("deleted_at")
-    def deletedatdatetime(val, _):
+    def deletedatetime(cls):
         return datetime.now(tz=timezone.utc)
