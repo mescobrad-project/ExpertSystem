@@ -1,7 +1,8 @@
 name: Jenkins Job Trigger
 on:
   pull_request:
-    branches: ["releases/**"]
+    branches:
+      - "release/*"
     types: [closed]
 
   workflow_dispatch:
