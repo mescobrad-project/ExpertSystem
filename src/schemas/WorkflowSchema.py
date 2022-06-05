@@ -1,18 +1,17 @@
 from pydantic import Field
 from uuid import UUID, uuid4
-from src.schemas._base import Base
+from src.schemas._base import Base, FormBase
 
 
 # Shared properties
-class WorkflowBase(Base):
-    name: str
+class WorkflowBase(FormBase):
     description: str | None = None
     tasks: dict | None = None
 
 
 # Properties to receive on obj creation
 class WorkflowCreate(WorkflowBase):
-    pass
+    name: str
 
 
 # Properties to receive on obj update
@@ -21,8 +20,8 @@ class WorkflowUpdate(WorkflowBase):
 
 
 # Properties shared by models stored in DB
-class WorkflowInDBBase(WorkflowBase):
-    id: UUID = Field(default_factory=uuid4)
+class WorkflowInDBBase(Base):
+    id: UUID = Field(default_factory=lambda: uuid4().hex)
     name: str
     description: str | None = None
     tasks: dict | None = None
