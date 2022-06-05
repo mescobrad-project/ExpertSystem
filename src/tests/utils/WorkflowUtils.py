@@ -29,11 +29,10 @@ def seed_workflow(db: Session) -> dict[str, dict, WorkflowModel]:
 def update_seed_workflow(
     db: Session, workflow: WorkflowModel
 ) -> dict[str, dict, WorkflowModel]:
-    name, description, tasks = create_random_workflow()
+    _, description, tasks = create_random_workflow()
 
-    workflow_update = WorkflowUpdate(name=name, description=description, tasks=tasks)
+    workflow_update = WorkflowUpdate(description=description, tasks=tasks)
     return {
-        "name": name,
         "description": description,
         "tasks": tasks,
         "obj": WorkflowController.update(
