@@ -31,7 +31,6 @@ def test_update_workflow(db: Session) -> None:
     workflow1 = seed_workflow(db)
     workflow2 = update_seed_workflow(db, workflow1["obj"])
 
-    assert workflow2["obj"].name == workflow2["name"]
     assert workflow2["obj"].description == workflow2["description"]
     assert check_if_dicts_match(workflow2["obj"].tasks, workflow2["tasks"])
 
