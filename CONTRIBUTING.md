@@ -36,19 +36,22 @@ In more detail:
 
 Whenever you need to contribute to this repo, keep in mind that the following pipeline is followed:
 
-| Step | Branch                                     | Example              | GOTO        |
-| ---- | ------------------------------------------ | -------------------- | ----------- |
-| 1    | - feature/\*<br>- hotfix/\*<br>- bugfix/\* | feature/test_feature | development |
-| 2    | development                                | development          | master      |
-| 3    | master                                     | master               | -           |
+| Step | Branch                                     | Example                        | GOTO         |
+| ---- | ------------------------------------------ | ------------------------------ | ------------ |
+| 1    | - feature/\*<br>- hotfix/\*<br>- bugfix/\* | feature/test_feature           | release/v[n] |
+| 2    | release/\*                                 | - release/v1<br>- release/v[n] | development  |
+| 3    | development                                | development                    | master       |
+| 4    | master                                     | master                         | -            |
 
 In more detail:
 
 **_Step 1_**: Do most of the work here. Feature branches add a minor version, and bug/hotfix branches add a patch version. After committing, create a pull request on the appropriate release branch. Make sure to pass all tests.
 
-**_Step 2_**: After the merge, pull changes and update the staging server to make a QA or other desired test. If every test is passed, then create a pull request to master.
+**_Step 2_**: After the merge, checkout to a specific release, pull changes, and test them. After that, update the version accordingly for git and docker tags. If the changes affect the latest version, create a pull request to the development branch.
 
-**_Step 3_**: After the merge, pull changes and update the version accordingly for git and docker tags.
+**_Step 3_**: After the merge, pull changes and update the staging server to make a QA or other desired test. If every test is passed, then create a pull request to master.
+
+**_Step 4_**: After the merge, pull changes and keep on dreaming.
 
 ## Suggesting Enhancements
 
