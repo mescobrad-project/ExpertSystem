@@ -7,14 +7,8 @@ class Base(BaseModel):
     updated_at: datetime = None
     deleted_at: datetime = None
 
-    @validator("created_at")
-    def createdatetime(cls):
-        return datetime.now(tz=timezone.utc)
 
+class FormBase(Base):
     @validator("updated_at")
-    def updatedatetime(cls):
-        return datetime.now(tz=timezone.utc)
-
-    @validator("deleted_at")
-    def deletedatetime(cls):
+    def updateddatetime(cls, _):
         return datetime.now(tz=timezone.utc)
