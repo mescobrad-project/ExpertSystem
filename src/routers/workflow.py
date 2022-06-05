@@ -1,59 +1,126 @@
 from typing import Any
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from datetime import datetime, timezone
 from src.database import get_db
 from src.controllers.WorkflowController import WorkflowController
-from src.models._all import WorkflowModel
-from src.schemas.WorkflowSchema import Workflow
+from src.schemas.WorkflowSchema import Workflow, WorkflowCreate, WorkflowUpdate
 
 router = APIRouter(
-    prefix="", tags=["workflow"], responses={404: {"message": "Not found"}}
+    prefix="/workflow", tags=["workflow"], responses={404: {"message": "Not found"}}
 )
 
 
-# @router.post("/", response_model=WorkflowBase.Workflow)
-# def create_workflow(workflow: WorkflowBase.Workflow, db: Session = Depends(get_db)):
-#     db_workflow = read_by_name(db, name=workflow.name)
-#     if db_workflow:
-#         raise HTTPException(status_code=400, detail="Workflow already registered")
-#     return create(db=db, workflow=workflow)
-
-
-@router.get("/", response_model=list[Workflow], operation_id="workflow_get_multi")
+@router.get("/", response_model=list[Workflow])
 def read_workflows(
     db: Session = Depends(get_db), skip: int = 0, limit: int = 100
 ) -> Any:
     """
     Retrieve worflows with their metadata.
     """
-    workflows = WorkflowController.get_multi(db, skip=skip, limit=limit)
+    try:
+        workflows = WorkflowController.get_multi(db, skip=skip, limit=limit)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
+
     return workflows
 
 
-# @router.get("/{workflow_id}", response_model=WorkflowBase.Workflow)
-# def read_workflow(workflow_id: str, db: Session = Depends(get_db)):
-#     db_workflow = read_one(db, workflow_id=workflow_id)
-#     if db_workflow is None:
-#         raise HTTPException(status_code=404, detail="Workflow not found")
-#     return db_workflow
+@router.post("/")
+def create_workflow(
+    *, db: Session = Depends(get_db), workflow_in: WorkflowCreate
+) -> Any:
+    """
+    Create new workflow.
+    """
+    try:
+        workflow = WorkflowController.create(db=db, obj_in=workflow_in)
+    except IntegrityError:
+        raise HTTPException(status_code=409, detail="Workflow already exists")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Provided input is wrong")
+
+    return workflow
 
 
-# @router.put("/{workflow_id}", response_model=WorkflowBase.Workflow)
-# def update_workflow(
-#     workflow_id: str, workflow: WorkflowBase.Workflow, db: Session = Depends(get_db)
-# ):
-#     db_workflow = read_one(db, workflow_id=workflow_id)
-#     if not db_workflow:
-#         raise HTTPException(status_code=400, detail="Workflow does not exist")
-#     return db_workflow
+@router.get("/{workflow_id}", response_model=Workflow)
+def read_workflow(
+    *,
+    db: Session = Depends(get_db),
+    workflow_id: UUID,
+) -> Any:
+    """
+    Get workflow by ID.
+    """
+    workflow = WorkflowController.get(db=db, id=workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    return workflow
 
 
-# @router.delete("/{workflow_id}")
-# def delete_workflow(workflow_id: str, db: Session = Depends(get_db)):
-#     db_workflow = read_one(db, workflow_id=workflow_id)
-#     if db_workflow is None:
-#         raise HTTPException(status_code=404, detail="Workflow not found")
-#     return destroy(db=db, workflow=db_workflow)
+@router.put("/{workflow_id}", response_model=Workflow)
+def update_workflow(
+    *,
+    db: Session = Depends(get_db),
+    workflow_id: UUID,
+    workflow_in: WorkflowUpdate,
+) -> Any:
+    """
+    Update a workflow.
+    """
+    workflow = WorkflowController.get(db=db, id=workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    workflow = WorkflowController.update(db=db, db_obj=workflow, obj_in=workflow_in)
+    return workflow
+
+
+@router.delete("/{workflow_id}", response_model=Workflow)
+def destroy_workflow(
+    *,
+    db: Session = Depends(get_db),
+    workflow_id: UUID,
+) -> Any:
+    """
+    Delete a workflow.
+    """
+    workflow = WorkflowController.get(db=db, id=workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    if workflow.deleted_at:
+        raise HTTPException(status_code=405, detail="Workflow already destroyed")
+
+    workflow_in = WorkflowUpdate()
+    workflow_in.deleted_at = datetime.now(tz=timezone.utc)
+    workflow = WorkflowController.update(db=db, db_obj=workflow, obj_in=workflow_in)
+    return workflow
+
+
+@router.delete("/{workflow_id}/revert", response_model=Workflow)
+def revert_workflow(
+    *,
+    db: Session = Depends(get_db),
+    workflow_id: UUID,
+) -> Any:
+    """
+    Revert the deletion of a workflow.
+    """
+    workflow = WorkflowController.get(db=db, id=workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    if not workflow.deleted_at:
+        raise HTTPException(status_code=405, detail="Workflow is active")
+
+    workflow_in = WorkflowUpdate()
+    workflow_in.deleted_at = None
+    workflow = WorkflowController.update(db=db, db_obj=workflow, obj_in=workflow_in)
+    return workflow
 
 
 # @router.get("/{workflow_id}/run", response_model=WorkflowBase.Run)
