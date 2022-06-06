@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from src.database import get_db
 from src.controllers.WorkflowController import WorkflowController
 from src.schemas.WorkflowSchema import Workflow, WorkflowCreate, WorkflowUpdate
+from src.controllers.RunController import RunController
+from src.schemas.RunSchema import Run, RunCreate
 
 router = APIRouter(
     prefix="/workflow", tags=["workflow"], responses={404: {"message": "Not found"}}
@@ -123,15 +125,25 @@ def revert_workflow(
     return workflow
 
 
-# @router.get("/{workflow_id}/run", response_model=WorkflowBase.Run)
-# def run_workflow(workflow_id: str, db: Session = Depends(get_db)):
-#     db_run = createRun(db, workflow_id=workflow_id)
+@router.get("/{workflow_id}/run", response_model=Run)
+def run_workflow(*, db: Session = Depends(get_db), workflow_id: UUID):
+    """
+    Initiate a workflow process
+    """
+    workflow = WorkflowController.get(db=db, id=workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
 
-#     # db_workflow = read_one(db, workflow_id=workflow_id)
-#     # db_run.next_steps = engine.Init(db_workflow.file, db_run.id)
-#     db_run.next_steps = engine.Init("simple.json", db_run.id)
-#     engine.CompleteStep(workflow_id, f"{db_run.id}.json")
-#     return db_run
+    try:
+        run = RunController.initialize(db=db, workflow_in=workflow)
+    except IntegrityError:
+        raise HTTPException(status_code=409, detail="Run already exists")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Something went wrong")
+
+    # TODO
+
+    return run
 
 
 # @router.get("/{workflow_id}/task/{task_name}")
