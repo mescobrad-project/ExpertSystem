@@ -14,7 +14,7 @@ class WorkflowRun(Graph):
                 for next_task in task["outputs"]:
                     self.addEdge(key, next_task)
 
-    def findTaskByType(self, task_type: str):
+    def find_task_by_type(self, task_type: str):
         obj = {"name": "", "value": {}}
 
         for key, value in self.tasks.items():
@@ -26,3 +26,9 @@ class WorkflowRun(Graph):
                 raise Exception("There are no starting points in workflow.")
 
         return obj
+
+    def find_task_by_name(self, task_name: str) -> dict:
+        if task_name in self.tasks.keys():
+            return self.tasks[task_name]
+
+        raise Exception("Task not found")
