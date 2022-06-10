@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
+from src.controllers.WorkflowEngineController import WorkflowEngineController
 from src.database import get_db
 from src.controllers.RunController import RunController
 from src.schemas.RunSchema import Run, RunCreate, RunUpdate
@@ -22,9 +23,16 @@ def show_next_task(*, db: Session = Depends(get_db), run_id: UUID) -> Any:
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
 
-    # TODO
+    try:
+        waiting = WorkflowEngineController.get_waiting_steps(
+            run.workflows.tasks, run.state, run.steps, run.queue
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
 
-    return run
+    return waiting
 
 
 @router.get("/{run_id}/step/{step_id}")
@@ -38,9 +46,16 @@ def run_specific_task(
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
 
-    # TODO
+    try:
+        pending_and_waiting = WorkflowEngineController.run_pending_step(
+            run.workflows.tasks, run.state, run.steps, run.queue, step_id
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
 
-    return run
+    return pending_and_waiting
 
 
 @router.put("/{run_id}/step/{step_id}")
@@ -54,9 +69,16 @@ def exec_specific_task_actions(
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
 
-    # TODO
+    try:
+        response = WorkflowEngineController.execute_step_actions(
+            run.workflows.tasks, run.state, run.steps, run.queue, actions, step_id
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
 
-    return run
+    return response
 
 
 @router.get("/{run_id}/step/{step_id}/ping")
@@ -70,6 +92,13 @@ def ping_task_status(
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
 
-    # TODO
+    try:
+        response = WorkflowEngineController.ping_step_status(
+            run.workflows.tasks, run.state, run.steps, run.queue, step_id
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
 
-    return run
+    return response

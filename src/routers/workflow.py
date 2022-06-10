@@ -8,7 +8,8 @@ from src.database import get_db
 from src.controllers.WorkflowController import WorkflowController
 from src.schemas.WorkflowSchema import Workflow, WorkflowCreate, WorkflowUpdate
 from src.controllers.RunController import RunController
-from src.schemas.RunSchema import Run, RunCreate
+from src.schemas.RunSchema import Run, RunUpdate
+from src.controllers.WorkflowEngineController import WorkflowEngineController
 
 router = APIRouter(
     prefix="/workflow", tags=["workflow"], responses={404: {"message": "Not found"}}
@@ -135,23 +136,37 @@ def run_workflow(*, db: Session = Depends(get_db), workflow_id: UUID):
         raise HTTPException(status_code=404, detail="Workflow not found")
 
     try:
-        run = RunController.initialize(db=db, workflow_in=workflow)
+        run = RunController.initialize(db=db, workflow_id=workflow.id)
     except IntegrityError:
         raise HTTPException(status_code=409, detail="Run already exists")
     except Exception:
         raise HTTPException(status_code=400, detail="Something went wrong")
 
-    # TODO
+    try:
+        state, steps, queue = WorkflowEngineController.initialize(workflow.tasks)
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
 
+    run_in = RunUpdate(state=state, steps=steps, queue=queue)
+    run = RunController.update(db=db, db_obj=run, obj_in=run_in)
     return run
 
 
-# @router.get("/{workflow_id}/task/{task_name}")
-# def run_workflow(workflow_id: str, task_name: str, db: Session = Depends(get_db)):
-#     # db_workflow = read_one(db, workflow_id=workflow_id)
-#     # task = engine.GetTaskDetails(db_workflow.file, task_name)
-#     try:
-#         task = engine.GetTaskDetails("simple.json", task_name)
-#     except Exception as e:
-#         raise HTTPException(status_code=404, detail=str(e))
-#     return task
+@router.get("/{workflow_id}/task/{task_name}")
+def read_task_details(
+    *, db: Session = Depends(get_db), workflow_id: UUID, task_name: str
+) -> Any:
+    """
+    Get task details given its name and workflow ID.
+    """
+    workflow = WorkflowController.get(db=db, id=workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    for key, task in workflow.tasks.items():
+        if key == task_name:
+            return task
+
+    raise HTTPException(status_code=404, detail="Task not found")
