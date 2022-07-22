@@ -61,7 +61,7 @@ class BaseEngineController:
             engine.queue[index]["and"],
             engine.get_step_position_index(engine.queue[index]["and"], next_step["id"]),
         )
-        steps_waiting = engine.get_waiting_steps(engine.queue[index]["and"])
+        steps_waiting = engine.count_waiting_steps_in_bucket(engine.queue[index]["and"])
 
         if steps_waiting == 0:
             engine.set_step_completed(active)
