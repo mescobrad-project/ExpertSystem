@@ -38,7 +38,7 @@ class BaseEngineController:
             return current_step_completed
         # else, check for next steps to display
 
-        index, active = engine.find_active_step(self.queue, step_id)
+        index, active = engine.find_active_step(queue, step_id)
 
         details = engine.graph.find_task_by_name(active["name"])
         element = get_class_from_task_name(details["type"])()
@@ -50,9 +50,9 @@ class BaseEngineController:
         if actions["next_steps"]:
             engine.add_to_queue(active["name"])
             engine.set_task_as_active_step(active)
-            engine.remove_from_bucket(self.queue, index)
+            engine.remove_from_bucket(queue, index)
 
-        return pending_and_waiting_template(active, self.queue)
+        return pending_and_waiting_template(active, queue)
 
     def _set_waiting_task_as_active(self, engine, active, step_id):
         index, next_step = engine.find_active_step(engine.queue, step_id)
