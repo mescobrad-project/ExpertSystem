@@ -79,10 +79,10 @@ class WorkflowEngine:
 
     def loop_through_bucket(
         self, bucket: list[dict], step_id: UUID | None, mode=None, func=None
-    ) -> int | dict | None:
+    ) -> int | dict | None | tuple:
         for index, step in enumerate(bucket):
             if mode == "map":
-                return func(step_id=step_id, index=index, step=step)
+                return index, func(step_id=step_id, step=step)
             else:
                 if step["id"] == step_id:
                     if mode == "index":
@@ -97,7 +97,7 @@ class WorkflowEngine:
     def find_active_step(self, bucket: list[dict], step_id: UUID = None) -> tuple:
         active = None
 
-        def func(step_id, step, index, *args, **kwargs):
+        def func(step_id, step, *args, **kwargs) -> dict | None:
             steps = []
 
             if "or" in step.keys():
@@ -108,13 +108,14 @@ class WorkflowEngine:
                 steps.append(step)
 
             if step_id:
-                for step in steps:
+                for _, step in enumerate(steps):
                     if str(step_id) == step["id"]:
-                        return index, step
+                        return step
+                    return None
 
             else:
-                for step in steps:
-                    return index, step
+                for _, step in enumerate(steps):
+                    return step
 
         index, active = self.loop_through_bucket(bucket, step_id, "map", func)
 
@@ -170,7 +171,7 @@ class WorkflowEngine:
     def remove_from_bucket(self, bucket: list[dict], index):
         del bucket[index]
 
-    def get_waiting_steps(self, bucket: list[dict]):
+    def count_waiting_steps_in_bucket(self, bucket: list[dict]):
         if isinstance(bucket, list):
             return len(bucket)
         return 0
