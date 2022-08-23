@@ -48,6 +48,18 @@ def create_workflow(
     return workflow
 
 
+@router.get("/entity_types")
+def read_entity_types() -> Any:
+    """
+    Get all available workflow entity types.
+    """
+    entity_types = WorkflowController.get_workflow_entity_types()
+    if not entity_types:
+        raise HTTPException(status_code=404, detail="Entities not found")
+
+    return entity_types
+
+
 @router.get("/{workflow_id}", response_model=Workflow)
 def read_workflow(
     *,
