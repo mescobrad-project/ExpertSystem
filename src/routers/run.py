@@ -2,8 +2,6 @@ from typing import Any
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from datetime import datetime, timezone
 from src.controllers.WorkflowEngineController import WorkflowEngineController
 from src.database import get_db
 from src.controllers.RunController import RunController
@@ -12,6 +10,35 @@ from src.schemas.RunSchema import Run, RunCreate, RunUpdate
 router = APIRouter(
     prefix="/run", tags=["run"], responses={404: {"message": "Not found"}}
 )
+
+
+@router.get("/", response_model=list[Run])
+def read_runs(db: Session = Depends(get_db), skip: int = 0, limit: int = 100) -> Any:
+    """
+    Retrieve worflows with their metadata.
+    """
+    try:
+        runs = RunController.get_multi(db, skip=skip, limit=limit)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
+
+    return runs
+
+
+@router.get("/{run_id}", response_model=Run)
+def read_run(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+) -> Any:
+    """
+    Get specific workflow run by ID.
+    """
+    run = RunController.get(db=db, id=run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    return run
 
 
 @router.get("/{run_id}/next")
