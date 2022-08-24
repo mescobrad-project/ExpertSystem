@@ -24,7 +24,7 @@ class StartEvent(Element):
 
 
 class EndEvent(Element):
-    def peri(self):
+    def post(self):
         return {
             "complete": True,
             "finish": True,
