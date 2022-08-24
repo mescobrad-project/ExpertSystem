@@ -82,7 +82,9 @@ class WorkflowEngine:
     ) -> int | dict | None | tuple:
         for index, step in enumerate(bucket):
             if mode == "map":
-                return index, func(step_id=step_id, step=step)
+                found = func(step_id=step_id, step=step)
+                if found:
+                    return index, found
             else:
                 if step["id"] == step_id:
                     if mode == "index":
@@ -108,14 +110,15 @@ class WorkflowEngine:
                 steps.append(step)
 
             if step_id:
-                for _, step in enumerate(steps):
-                    if str(step_id) == step["id"]:
-                        return step
-                    return None
+                for _, new_step in enumerate(steps):
+                    if str(step_id) == new_step["id"]:
+                        return new_step
 
             else:
                 for _, step in enumerate(steps):
                     return step
+
+            return None
 
         index, active = self.loop_through_bucket(bucket, step_id, "map", func)
 
