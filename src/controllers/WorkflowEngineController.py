@@ -78,16 +78,16 @@ class BaseEngineController:
 
         details = engine.graph.find_task_by_name(active["name"])
         element = get_class_from_task_name(details["type"])()
-        rules = element.post()
+        rules = (element.post())["rules"]
 
         # next_step = active
         if "choice" in rules.keys():
             if rules["choice"] == "one":
                 index, next_step = engine.find_active_step(
-                    engine.queue, actions["action"]
+                    engine.queue, actions["step_id"]
                 )
                 engine.set_step_completed(active)
-                engine.add_to_queue(engine.graph.find_task_by_name(next_step["name"]))
+                engine.add_to_queue(next_step["name"])
                 engine.set_task_as_active_step(next_step)
                 engine.remove_from_bucket(engine.queue, index)
                 active = next_step
@@ -106,7 +106,7 @@ class BaseEngineController:
                 self._set_waiting_task_as_active(engine, active, step_id)
 
         if "task" in rules.keys():
-            if actions["choice"] == "exec":
+            if actions["action"] == "exec":
                 spec = spec_from_file_location(
                     "main", f"{SCRIPT_DIR}/{details['class']}.py"
                 )
@@ -114,7 +114,7 @@ class BaseEngineController:
                 spec.loader.exec_module(script)
 
                 script.main()
-            elif actions["choice"] == "complete":
+            elif actions["action"] == "complete":
                 task = engine.find_task_in_bucket_by_id(engine.steps, step_id)
 
                 if details["type"] not in [MANUAL_TASK, SCRIPT_TASK]:
@@ -132,7 +132,8 @@ class BaseEngineController:
 
         if "event" in rules.keys():
             if rules["complete"]:
-                engine.set_step_completed(task)
+                engine.set_step_completed(active)
+                active = {}
 
             if rules["finish"]:
                 engine.set_workflow_as_finished()
