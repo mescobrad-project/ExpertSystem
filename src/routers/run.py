@@ -1,6 +1,7 @@
 from typing import Any
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 from src.controllers.WorkflowEngineController import WorkflowEngineController
 from src.database import get_db
@@ -74,13 +75,21 @@ def run_specific_task(
         raise HTTPException(status_code=404, detail="Run not found")
 
     try:
+        run_in = jsonable_encoder(run)
+        workflow = jsonable_encoder(run.workflows)
         pending_and_waiting = WorkflowEngineController.run_pending_step(
-            run.workflows.tasks, run.state, run.steps, run.queue, step_id
+            workflow["tasks"],
+            run_in["state"],
+            run_in["steps"],
+            run_in["queue"],
+            step_id,
         )
     except Exception:
         raise HTTPException(
             status_code=500, detail="Workflow engine faced an unexpected error"
         )
+
+    RunController.update(db=db, db_obj=run, obj_in=run_in)
 
     return pending_and_waiting
 
@@ -97,13 +106,22 @@ def exec_specific_task_actions(
         raise HTTPException(status_code=404, detail="Run not found")
 
     try:
+        run_in = jsonable_encoder(run)
+        workflow = jsonable_encoder(run.workflows)
         response = WorkflowEngineController.execute_step_actions(
-            run.workflows.tasks, run.state, run.steps, run.queue, actions, step_id
+            workflow["tasks"],
+            run_in["state"],
+            run_in["steps"],
+            run_in["queue"],
+            actions,
+            step_id,
         )
     except Exception:
         raise HTTPException(
             status_code=500, detail="Workflow engine faced an unexpected error"
         )
+
+    RunController.update(db=db, db_obj=run, obj_in=run_in)
 
     return response
 
