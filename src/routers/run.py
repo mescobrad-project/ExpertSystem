@@ -100,6 +100,10 @@ def exec_specific_task_actions(
 ) -> Any:
     """
     Perform actions for a given execution step.
+    The parameters needed in body depend on the step/task type.
+    If you want to execute a "Gateway", then {"step_id": <uuid>} is needed.
+    If you want to execute a "Task", then {"action": "exec"/"complete"} is needed.
+    If you want to execute anything else, pass an empty body.
     """
     run = RunController.get(db=db, id=run_id)
     if not run:
