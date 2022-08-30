@@ -10,5 +10,6 @@ class WorkflowModel(Base):
     name = Column(String, nullable=False, unique=True, index=True)
     description = Column(String, nullable=True)
     tasks = Column(JSON, nullable=True)
+    raw_diagram_data = Column(JSON, nullable=True)
 
     runs = relationship("RunModel", back_populates="workflows")
