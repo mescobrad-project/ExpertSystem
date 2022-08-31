@@ -42,7 +42,7 @@ jobs:
 
       - name: Lint with Black
         run: |
-          pipenv run black src --check
+          pipenv run black src --check --exclude src/alembic/versions/
 
       - name: Test with pytest
         run: |
