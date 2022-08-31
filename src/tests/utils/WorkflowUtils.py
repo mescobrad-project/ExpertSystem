@@ -10,18 +10,25 @@ def create_random_workflow() -> tuple[str, dict]:
     name = random_unique_string()
     description = random_lower_string()
     tasks = random_dict_obj()
+    raw_diagram_data = random_dict_obj()
 
-    return name, description, tasks
+    return name, description, tasks, raw_diagram_data
 
 
 def seed_workflow(db: Session) -> dict[str, dict, WorkflowModel]:
-    name, description, tasks = create_random_workflow()
+    name, description, tasks, raw_diagram_data = create_random_workflow()
 
-    workflow_in = WorkflowCreate(name=name, description=description, tasks=tasks)
+    workflow_in = WorkflowCreate(
+        name=name,
+        description=description,
+        tasks=tasks,
+        raw_diagram_data=raw_diagram_data,
+    )
     return {
         "name": name,
         "description": description,
         "tasks": tasks,
+        "raw_diagram_data": raw_diagram_data,
         "obj": WorkflowController.create(db=db, obj_in=workflow_in),
     }
 
@@ -29,12 +36,15 @@ def seed_workflow(db: Session) -> dict[str, dict, WorkflowModel]:
 def update_seed_workflow(
     db: Session, workflow: WorkflowModel
 ) -> dict[str, dict, WorkflowModel]:
-    _, description, tasks = create_random_workflow()
+    _, description, tasks, raw_diagram_data = create_random_workflow()
 
-    workflow_update = WorkflowUpdate(description=description, tasks=tasks)
+    workflow_update = WorkflowUpdate(
+        description=description, tasks=tasks, raw_diagram_data=raw_diagram_data
+    )
     return {
         "description": description,
         "tasks": tasks,
+        "raw_diagram_data": raw_diagram_data,
         "obj": WorkflowController.update(
             db=db, db_obj=workflow, obj_in=workflow_update
         ),
