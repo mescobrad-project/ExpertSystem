@@ -15,6 +15,9 @@ def test_create_workflow(db: Session) -> None:
     assert workflow["obj"].name == workflow["name"]
     assert workflow["obj"].description == workflow["description"]
     assert check_if_dicts_match(workflow["obj"].tasks, workflow["tasks"])
+    assert check_if_dicts_match(
+        workflow["obj"].raw_diagram_data, workflow["raw_diagram_data"]
+    )
 
 
 def test_get_workflow(db: Session) -> None:
@@ -25,6 +28,9 @@ def test_get_workflow(db: Session) -> None:
     assert workflow["obj"].name == stored.name
     assert workflow["obj"].description == stored.description
     assert check_if_dicts_match(workflow["obj"].tasks, stored.tasks)
+    assert check_if_dicts_match(
+        workflow["obj"].raw_diagram_data, stored.raw_diagram_data
+    )
 
 
 def test_update_workflow(db: Session) -> None:
@@ -33,6 +39,9 @@ def test_update_workflow(db: Session) -> None:
 
     assert workflow2["obj"].description == workflow2["description"]
     assert check_if_dicts_match(workflow2["obj"].tasks, workflow2["tasks"])
+    assert check_if_dicts_match(
+        workflow2["obj"].raw_diagram_data, workflow2["raw_diagram_data"]
+    )
 
 
 def test_delete_workflow(db: Session) -> None:
