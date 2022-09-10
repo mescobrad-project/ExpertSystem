@@ -23,8 +23,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def get(self, db: Session, id: Any) -> ModelType | None:
         return (
             db.query(self.model)
-            .filter(self.model.id == id)
-            .filter(self.model.deleted_at is None)
+            .filter(self.model.id == id, self.model.deleted_at == None)
             .first()
         )
 
@@ -35,7 +34,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.query(self.model)
             .offset(skip)
             .limit(limit)
-            .filter(self.model.deleted_at is None)
+            .filter(self.model.deleted_at == None)
             .all()
         )
 
