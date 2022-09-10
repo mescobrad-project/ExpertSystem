@@ -21,12 +21,23 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
 
     def get(self, db: Session, id: Any) -> ModelType | None:
-        return db.query(self.model).filter(self.model.id == id).first()
+        return (
+            db.query(self.model)
+            .filter(self.model.id == id)
+            .filter(self.model.deleted_at is None)
+            .first()
+        )
 
     def get_multi(
         self, db: Session, *, skip: int = 0, limit: int = 100
     ) -> list[ModelType]:
-        return db.query(self.model).offset(skip).limit(limit).all()
+        return (
+            db.query(self.model)
+            .offset(skip)
+            .limit(limit)
+            .filter(self.model.deleted_at is None)
+            .all()
+        )
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)
