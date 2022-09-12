@@ -32,9 +32,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     ) -> list[ModelType]:
         return (
             db.query(self.model)
+            .filter(self.model.deleted_at == None)
             .offset(skip)
             .limit(limit)
-            .filter(self.model.deleted_at == None)
             .all()
         )
 
