@@ -71,7 +71,7 @@ class BaseEngineController:
 
         return next_step
 
-    def execute_step_actions(self, tasks, state, steps, queue, actions, step_id: UUID):
+    def _prepare_step(self, tasks, state, steps, queue, step_id: UUID):
         engine = self._continue_from(tasks, state, steps, queue)
 
         (_, active) = engine.find_active_step(engine.steps, step_id)
@@ -80,18 +80,32 @@ class BaseEngineController:
         element = get_class_from_task_name(details["type"])()
         rules = (element.post())["rules"]
 
-        # next_step = active
+        return (engine, active, details, rules)
+
+    def gateway_exclusive_choice(
+        self, tasks, state, steps, queue, step_id: UUID, next_step_id: UUID
+    ):
+        (engine, active, _, rules) = self._prepare_step(
+            tasks, state, steps, queue, step_id
+        )
+
+        if "choice" in rules.keys() and rules["choice"] == "one":
+            index, next_step = engine.find_active_step(engine.queue, next_step_id)
+            engine.set_step_completed(active)
+            engine.add_to_queue(next_step["name"])
+            engine.set_task_as_active_step(next_step)
+            engine.remove_from_bucket(engine.queue, index)
+            active = next_step
+
+        return {"pending": active}
+
+    def gateway_parallel_choice(self, tasks, state, steps, queue, step_id: UUID):
+        (engine, active, _, rules) = self._prepare_step(
+            tasks, state, steps, queue, step_id
+        )
+
         if "choice" in rules.keys():
-            if rules["choice"] == "one":
-                index, next_step = engine.find_active_step(
-                    engine.queue, actions["step_id"]
-                )
-                engine.set_step_completed(active)
-                engine.add_to_queue(next_step["name"])
-                engine.set_task_as_active_step(next_step)
-                engine.remove_from_bucket(engine.queue, index)
-                active = next_step
-            elif rules["choice"] == "all":
+            if rules["choice"] == "all":
                 self._set_waiting_task_as_active(engine, active, step_id)
             elif rules["choice"] == "wait_all":
                 # check for previous steps completion
@@ -105,30 +119,51 @@ class BaseEngineController:
 
                 self._set_waiting_task_as_active(engine, active, step_id)
 
+        return {"pending": active}
+
+    def task_exec(self, tasks, state, steps, queue, step_id: UUID):
+        (_, active, details, rules) = self._prepare_step(
+            tasks, state, steps, queue, step_id
+        )
+
         if "task" in rules.keys():
-            if actions["action"] == "exec":
-                spec = spec_from_file_location(
-                    "main", f"{SCRIPT_DIR}/{details['class']}.py"
-                )
-                script = module_from_spec(spec)
-                spec.loader.exec_module(script)
+            spec = spec_from_file_location(
+                "main", f"{SCRIPT_DIR}/{details['class']}.py"
+            )
+            script = module_from_spec(spec)
+            spec.loader.exec_module(script)
 
-                script.main()
-            elif actions["action"] == "complete":
-                task = engine.find_task_in_bucket_by_id(engine.steps, step_id)
+            script.main()
 
-                if details["type"] not in [MANUAL_TASK, SCRIPT_TASK]:
-                    raise Exception("Action forbidden.")
+        return {"pending": active}
 
-                engine.set_step_completed(task)
-                (_, next_step) = engine.find_active_step(engine.queue)
-                engine.set_task_as_active_step(next_step)
-                engine.remove_from_bucket(
-                    engine.queue,
-                    engine.get_step_position_index(engine.queue, next_step["id"]),
-                )
+    def task_complete(self, tasks, state, steps, queue, step_id: UUID):
+        (engine, active, details, rules) = self._prepare_step(
+            tasks, state, steps, queue, step_id
+        )
 
-                active = next_step
+        if "task" in rules.keys():
+            task = engine.find_task_in_bucket_by_id(engine.steps, step_id)
+
+            if details["type"] not in [MANUAL_TASK, SCRIPT_TASK]:
+                raise Exception("Action forbidden.")
+
+            engine.set_step_completed(task)
+            (_, next_step) = engine.find_active_step(engine.queue)
+            engine.set_task_as_active_step(next_step)
+            engine.remove_from_bucket(
+                engine.queue,
+                engine.get_step_position_index(engine.queue, next_step["id"]),
+            )
+
+            active = next_step
+
+        return {"pending": active}
+
+    def event_actions(self, tasks, state, steps, queue, step_id: UUID):
+        (engine, active, _, rules) = self._prepare_step(
+            tasks, state, steps, queue, step_id
+        )
 
         if "event" in rules.keys():
             if rules["complete"]:
