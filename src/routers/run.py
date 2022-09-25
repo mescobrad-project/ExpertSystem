@@ -94,16 +94,12 @@ def run_specific_task(
     return pending_and_waiting
 
 
-@router.put("/{run_id}/step/{step_id}")
-def exec_specific_task_actions(
-    *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID, actions: dict
+@router.patch("/{run_id}/step/{step_id}/exclusive/{next_step_id}")
+def select_next_task(
+    *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID, next_step_id: UUID
 ) -> Any:
     """
-    Perform actions for a given execution step.
-    The parameters needed in body depend on the step/task type.
-    If you want to execute a "Gateway", then {"step_id": <uuid>} is needed.
-    If you want to execute a "Task", then {"action": "exec"/"complete"} is needed.
-    If you want to execute anything else, pass an empty body.
+    Select the next task while on Exclusive Gateway
     """
     run = RunController.get(db=db, id=run_id)
     if not run:
@@ -112,12 +108,134 @@ def exec_specific_task_actions(
     try:
         run_in = jsonable_encoder(run)
         workflow = jsonable_encoder(run.workflows)
-        response = WorkflowEngineController.execute_step_actions(
+        response = WorkflowEngineController.gateway_exclusive_choice(
             workflow["tasks"],
             run_in["state"],
             run_in["steps"],
             run_in["queue"],
-            actions,
+            step_id,
+            next_step_id,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
+
+    RunController.update(db=db, db_obj=run, obj_in=run_in)
+
+    return response
+
+
+@router.patch("/{run_id}/step/{step_id}/parallel/init")
+def init_parallel_gateway(
+    *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID
+) -> Any:
+    """
+    Initalize a Parallel Gateway by placing all of it's tasks in waiting queue.
+    """
+    run = RunController.get(db=db, id=run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    try:
+        run_in = jsonable_encoder(run)
+        workflow = jsonable_encoder(run.workflows)
+        response = WorkflowEngineController.gateway_parallel_choice(
+            workflow["tasks"],
+            run_in["state"],
+            run_in["steps"],
+            run_in["queue"],
+            step_id,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
+
+    RunController.update(db=db, db_obj=run, obj_in=run_in)
+
+    return response
+
+
+@router.patch("/{run_id}/step/{step_id}/task/exec")
+def exec_script_task(
+    *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID
+) -> Any:
+    """
+    Execute a script task.
+    """
+    run = RunController.get(db=db, id=run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    try:
+        run_in = jsonable_encoder(run)
+        workflow = jsonable_encoder(run.workflows)
+        response = WorkflowEngineController.task_exec(
+            workflow["tasks"],
+            run_in["state"],
+            run_in["steps"],
+            run_in["queue"],
+            step_id,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
+
+    RunController.update(db=db, db_obj=run, obj_in=run_in)
+
+    return response
+
+
+@router.patch("/{run_id}/step/{step_id}/task/complete")
+def complete_task(*, db: Session = Depends(get_db), run_id: UUID, step_id: UUID) -> Any:
+    """
+    Complete a task.
+    """
+    run = RunController.get(db=db, id=run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    try:
+        run_in = jsonable_encoder(run)
+        workflow = jsonable_encoder(run.workflows)
+        response = WorkflowEngineController.task_complete(
+            workflow["tasks"],
+            run_in["state"],
+            run_in["steps"],
+            run_in["queue"],
+            step_id,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
+
+    RunController.update(db=db, db_obj=run, obj_in=run_in)
+
+    return response
+
+
+@router.patch("/{run_id}/step/{step_id}/event")
+def exec_event_task_actions(
+    *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID
+) -> Any:
+    """
+    Execute the actions of an event task.
+    """
+    run = RunController.get(db=db, id=run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    try:
+        run_in = jsonable_encoder(run)
+        workflow = jsonable_encoder(run.workflows)
+        response = WorkflowEngineController.event_actions(
+            workflow["tasks"],
+            run_in["state"],
+            run_in["steps"],
+            run_in["queue"],
             step_id,
         )
     except Exception:
