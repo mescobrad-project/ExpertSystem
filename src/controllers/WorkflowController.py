@@ -1,4 +1,3 @@
-import json
 import xml.etree.ElementTree as ET
 from ._base import CRUDBase
 from src.models._all import WorkflowModel
@@ -22,6 +21,8 @@ from src.engine.config import (
     XML_NAMESPACES,
     XML_PARSER_INPUTS,
     XML_PARSER_OUTPUTS,
+    XML_ANNOTATION,
+    XML_ASSOCIATION,
 )
 
 
@@ -51,6 +52,40 @@ def get_flow_type(tag):
         return None
 
 
+def parse_flows(flows):
+    data = {}
+
+    for flow in flows:
+        # print(flow.text, flow.tag, flow.attrib)
+        data[flow.attrib["id"]] = {
+            XML_PARSER_INPUTS: flow.attrib["sourceRef"],
+            XML_PARSER_OUTPUTS: flow.attrib["targetRef"],
+        }
+
+    return data
+
+
+def parse_annotations(annotations):
+    data = {}
+
+    for annotation in annotations:
+        data[annotation.attrib["id"]] = []
+
+        for info in annotation:
+            data[annotation.attrib["id"]].append(info.text)
+
+    return data
+
+
+def parse_associations(associations):
+    data = {}
+
+    for association in associations:
+        data[association.attrib["sourceRef"]] = association.attrib["targetRef"]
+
+    return data
+
+
 class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
     def get_workflow_entity_types(self):
         return {
@@ -75,25 +110,36 @@ class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
         # print(xml_decoded.text, xml_decoded.tag, xml_decoded.attrib)
 
         sequence_flows = {}
+        text_annotations = {}
+        associations = {}
         tasks = {}
 
         for process in processes:
-            for flow in process.findall(f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_FLOW}'):
-                # print(flow.text, flow.tag, flow.attrib)
-                sequence_flows[flow.attrib["id"]] = {
-                    XML_PARSER_INPUTS: flow.attrib["sourceRef"],
-                    XML_PARSER_OUTPUTS: flow.attrib["targetRef"],
-                }
+            sequence_flows = parse_flows(
+                process.findall(f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_FLOW}')
+            )
+
+            text_annotations = parse_annotations(
+                process.findall(f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_ANNOTATION}')
+            )
+
+            associations = parse_associations(
+                process.findall(f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_ASSOCIATION}')
+            )
 
             for child in process:
-                if child.tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_FLOW}':
+                if child.tag in [
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_FLOW}',
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_ANNOTATION}',
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_ASSOCIATION}',
+                ]:
                     continue
 
                 # print(child.text, child.tag, child.attrib)
                 task_id = child.attrib["id"]
                 tasks[task_id] = {
                     "type": get_task_type(child.tag),
-                    "name": child.attrib["name"],
+                    "name": child.attrib.get("name") or "",
                 }
 
                 tasks[task_id]["manual"] = child.tag in [
@@ -112,7 +158,10 @@ class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
 
                     tasks[task_id][mode].append(sequence_flows[flow.text][mode])
 
-        print(json.dumps(tasks))
+                if child.tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SCRIPT_TASK}':
+                    tasks[task_id]["class"] = text_annotations[associations[task_id]]
+
+        return tasks
 
 
 WorkflowController = CRUDWorkflow(WorkflowModel)

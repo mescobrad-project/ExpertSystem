@@ -16,6 +16,8 @@ XML_SCRIPT_TASK = "scriptTask"
 XML_FLOW = "sequenceFlow"
 XML_INCOMING = "incoming"
 XML_OUTGOING = "outgoing"
+XML_ANNOTATION = "textAnnotation"
+XML_ASSOCIATION = "association"
 XML_NAMESPACES = {
     "xsi": "http://www.w3.org/2001/XMLSchema-instance",
     "bpmn2": "http://www.omg.org/spec/BPMN/20100524/MODEL",
