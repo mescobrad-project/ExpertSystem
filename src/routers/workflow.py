@@ -40,6 +40,14 @@ def create_workflow(
     """
     try:
         workflow = WorkflowController.create(db=db, obj_in=workflow_in)
+
+        workflow_upd = WorkflowUpdate()
+        workflow_upd.tasks = WorkflowController.parse_xml(
+            workflow.raw_diagram_data["xml_original"]
+        )
+        workflow = WorkflowController.update(
+            db=db, db_obj=workflow, obj_in=workflow_upd
+        )
     except IntegrityError:
         raise HTTPException(status_code=409, detail="Workflow already exists")
     except Exception:
