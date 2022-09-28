@@ -52,61 +52,48 @@ class ExclusiveGateway(Element):
         }
 
 
-def Exclusive(details):
-    manual = details["manual"] if details["manual"] else False
-    inputs = len(details["inputs"])
-    outputs = len(details["outputs"])
+class ParallelGateway(Element):
+    def pre(self):
+        return {
+            "complete": False,
+            "next_steps": True,
+            "rules": {"choice": "wait_all"},
+        }
 
-    response = {
-        "complete": False,
-        "next_steps": True,
-        "rules": {"choice": "one"},
-    }
+    def post(self, task):
+        inputs = len(task["inputs"])
+        outputs = len(task["outputs"])
 
-    # check if it is converging
-    # else it is diverging
-    if inputs > 1:
-        response["complete"] = True
-    elif outputs > 1 and manual:
-        pass
-    else:
-        raise Exception(f"Something went wrong with task: {details['name']}")
+        response = {
+            "complete": False,
+            "next_steps": True,
+            "rules": {"choice": "all"},
+        }
 
-    return response
+        # check if it is converging
+        # else it is diverging
+        if inputs > 1:
+            response["rules"]["choice"] = "wait_all"
+        elif outputs > 1:
+            pass
+        else:
+            raise Exception(f"Something went wrong with task: {task['name']}")
 
-
-def Parallel(details):
-    inputs = len(details["inputs"])
-    outputs = len(details["outputs"])
-
-    response = {
-        "complete": False,
-        "next_steps": True,
-        "rules": {"choice": "all"},
-    }
-
-    # check if it is converging
-    # else it is diverging
-    if inputs > 1:
-        response["rules"]["choice"] = "wait_all"
-    elif outputs > 1:
-        pass
-    else:
-        raise Exception(f"Something went wrong with task: {details['name']}")
-
-    return response
+        return response
 
 
-def Manual():
-    pass
+class ManualTask(Element):
+    def post(self):
+        return {
+            "rules": {"complete": True},
+        }
 
 
-def Script(_):
-    response = {
-        "rules": {"task": True},
-    }
-
-    return response
+class ScriptTask(Element):
+    def post(self):
+        return {
+            "rules": {"complete": True, "task": True},
+        }
 
 
 def get_class_from_task_name(elementName: str) -> Element:
@@ -114,9 +101,9 @@ def get_class_from_task_name(elementName: str) -> Element:
     elements[START_EVENT] = StartEvent
     elements[END_EVENT] = EndEvent
     elements[EXCLUSIVE_GATEWAY] = ExclusiveGateway
-    elements[PARALLEL_GATEWAY] = Parallel
-    elements[MANUAL_TASK] = Manual
-    elements[SCRIPT_TASK] = Script
+    elements[PARALLEL_GATEWAY] = ParallelGateway
+    elements[MANUAL_TASK] = ManualTask
+    elements[SCRIPT_TASK] = ScriptTask
 
     if elementName not in elements:
         raise Exception("Not available element.")
