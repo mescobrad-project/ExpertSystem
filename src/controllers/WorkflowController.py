@@ -139,7 +139,7 @@ class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
                 task_id = child.attrib["id"]
                 tasks[task_id] = {
                     "type": get_task_type(child.tag),
-                    "name": child.attrib.get("name") or "",
+                    "name": child.attrib.get("name") or task_id,
                 }
 
                 tasks[task_id]["manual"] = child.tag in [
