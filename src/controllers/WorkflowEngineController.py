@@ -7,7 +7,7 @@ from src.engine.config import (
 )
 from src.engine.main import WorkflowEngine
 from src.engine.classes.ElementClass import get_class_from_task_name
-from src.engine.utils.TemplateUtils import pending_and_waiting_template, stepTemplate
+from src.engine.utils.TemplateUtils import pending_and_waiting_template
 
 
 class BaseEngineController:
@@ -40,7 +40,7 @@ class BaseEngineController:
 
         index, active = engine.find_active_step(queue, step_id)
 
-        details = engine.graph.find_task_by_name(active["name"])
+        details = engine.graph.find_task_by_id(active["sid"])
         element = get_class_from_task_name(details["type"])()
         actions = element.pre()
 
@@ -48,7 +48,7 @@ class BaseEngineController:
             engine.set_step_completed(active)
 
         if actions["next_steps"]:
-            engine.add_to_queue(active["name"])
+            engine.add_to_queue(active["sid"])
             engine.set_task_as_active_step(active)
             engine.remove_from_bucket(queue, index)
 
@@ -67,7 +67,7 @@ class BaseEngineController:
             engine.set_step_completed(active)
             engine.update_step_number(active, True)
             engine.remove_from_bucket(engine.queue, index)
-            engine.add_to_queue(engine.graph.find_task_by_name(next_step["name"]))
+            engine.add_to_queue(next_step["sid"])
 
         return next_step
 
@@ -76,9 +76,12 @@ class BaseEngineController:
 
         (_, active) = engine.find_active_step(engine.steps, step_id)
 
-        details = engine.graph.find_task_by_name(active["name"])
+        details = engine.graph.find_task_by_id(active["sid"])
         element = get_class_from_task_name(details["type"])()
-        rules = (element.post())["rules"]
+        try:
+            rules = (element.post(details))["rules"]
+        except TypeError:
+            rules = (element.post())["rules"]
 
         return (engine, active, details, rules)
 
@@ -92,24 +95,26 @@ class BaseEngineController:
         if "choice" in rules.keys() and rules["choice"] == "one":
             index, next_step = engine.find_active_step(engine.queue, next_step_id)
             engine.set_step_completed(active)
-            engine.add_to_queue(next_step["name"])
+            engine.add_to_queue(next_step["sid"])
             engine.set_task_as_active_step(next_step)
             engine.remove_from_bucket(engine.queue, index)
             active = next_step
 
         return {"pending": active}
 
-    def gateway_parallel_choice(self, tasks, state, steps, queue, step_id: UUID):
+    def gateway_parallel_choice(
+        self, tasks, state, steps, queue, step_id: UUID, next_step_id: UUID
+    ):
         (engine, active, _, rules) = self._prepare_step(
             tasks, state, steps, queue, step_id
         )
 
         if "choice" in rules.keys():
             if rules["choice"] == "all":
-                self._set_waiting_task_as_active(engine, active, step_id)
+                self._set_waiting_task_as_active(engine, active, next_step_id)
             elif rules["choice"] == "wait_all":
                 # check for previous steps completion
-                waiting = self.get_not_completed_converging_tasks()
+                waiting = engine.get_not_completed_converging_tasks()
 
                 if len(waiting) > 0:
                     return {
@@ -117,7 +122,7 @@ class BaseEngineController:
                         "waiting": waiting,
                     }
 
-                self._set_waiting_task_as_active(engine, active, step_id)
+                self._set_waiting_task_as_active(engine, active, next_step_id)
 
         return {"pending": active}
 
@@ -127,13 +132,16 @@ class BaseEngineController:
         )
 
         if "task" in rules.keys():
-            spec = spec_from_file_location(
-                "main", f"{SCRIPT_DIR}/{details['class']}.py"
-            )
-            script = module_from_spec(spec)
-            spec.loader.exec_module(script)
+            active["data"] = []
 
-            script.main()
+            for script_file_name in details["class"]:
+                spec = spec_from_file_location(
+                    "main", f"{SCRIPT_DIR}/{script_file_name}.py"
+                )
+                script = module_from_spec(spec)
+                spec.loader.exec_module(script)
+
+                active["data"].append(script.main())
 
         return {"pending": active}
 
@@ -142,21 +150,21 @@ class BaseEngineController:
             tasks, state, steps, queue, step_id
         )
 
-        if "task" in rules.keys():
-            task = engine.find_task_in_bucket_by_id(engine.steps, step_id)
+        if "complete" in rules.keys():
+            # task = engine.find_task_in_bucket_by_id(engine.steps, step_id)
 
             if details["type"] not in [MANUAL_TASK, SCRIPT_TASK]:
                 raise Exception("Action forbidden.")
 
-            engine.set_step_completed(task)
-            (_, next_step) = engine.find_active_step(engine.queue)
-            engine.set_task_as_active_step(next_step)
-            engine.remove_from_bucket(
-                engine.queue,
-                engine.get_step_position_index(engine.queue, next_step["id"]),
-            )
+            engine.set_step_completed(active)
 
-            active = next_step
+            if "task" in rules.keys():
+                (_, next_step) = engine.find_active_step(engine.queue)
+                engine.set_task_as_active_step(next_step)
+                engine.remove_from_bucket(
+                    engine.queue,
+                    engine.get_step_position_index(engine.queue, next_step["id"]),
+                )
 
         return {"pending": active}
 

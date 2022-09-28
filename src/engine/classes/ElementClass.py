@@ -14,11 +14,11 @@ class Element:
 
 
 class StartEvent(Element):
-    def peri(self, name: str):
+    def peri(self, sid: str, name: str):
         _stepNumber = 0
 
         state = stateTemplate(_stepNumber)
-        steps = [stepTemplate(_stepNumber, name)]
+        steps = [stepTemplate(_stepNumber, sid, name)]
 
         return state, steps
 

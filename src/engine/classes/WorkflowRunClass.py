@@ -19,7 +19,8 @@ class WorkflowRun(Graph):
 
         for key, value in self.tasks.items():
             if value["type"] == task_type:
-                obj["name"] = key
+                obj["sid"] = key
+                obj["name"] = value.get("name")
                 obj["value"] = value
                 break
             else:
@@ -27,8 +28,8 @@ class WorkflowRun(Graph):
 
         return obj
 
-    def find_task_by_name(self, task_name: str) -> dict:
-        if task_name in self.tasks.keys():
-            return self.tasks[task_name]
+    def find_task_by_id(self, sid: str) -> dict:
+        if sid in self.tasks.keys():
+            return self.tasks[sid]
 
         raise Exception("Task not found")

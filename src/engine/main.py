@@ -24,7 +24,7 @@ class WorkflowEngine:
         startTask = self.graph.find_task_by_type(START_EVENT)
 
         StartEvent = get_class_from_task_name(START_EVENT)()
-        state, steps = StartEvent.peri(startTask["name"])
+        state, steps = StartEvent.peri(startTask["sid"], startTask["name"])
 
         self.state = state
         self.steps = steps
@@ -36,16 +36,21 @@ class WorkflowEngine:
         self.steps = steps
         self.queue = queue
 
-    def get_next_steps_of(self, task_name: str) -> list[dict]:
+    def get_next_steps_of(self, sid: str) -> list[dict]:
         listOfTasks = list(
-            map(lambda x: stepTemplate(None, x), self.graph.BFS(task_name))
+            map(
+                lambda x: stepTemplate(None, x, self.graph.tasks[x]["name"]),
+                self.graph.BFS(sid),
+            )
         )
-        current_task = self.graph.find_task_by_name(task_name)
+        current_task = self.graph.find_task_by_id(sid)
 
         if current_task["type"] == EXCLUSIVE_GATEWAY:
             for task in listOfTasks:
                 task["default"] = (
-                    True if current_task["default_task_spec"] == task["name"] else False
+                    True
+                    if current_task.get("default_task_spec") == task["sid"]
+                    else False
                 )
             return [{"or": listOfTasks}]
         elif current_task["type"] == PARALLEL_GATEWAY:
@@ -53,8 +58,8 @@ class WorkflowEngine:
         else:
             return listOfTasks
 
-    def add_to_queue(self, task_name: str):
-        self.queue.extend(self.get_next_steps_of(task_name))
+    def add_to_queue(self, sid: str):
+        self.queue.extend(self.get_next_steps_of(sid))
 
     def set_step_completed(self, step: dict):
         step["completed"] = True
@@ -113,7 +118,6 @@ class WorkflowEngine:
                 for _, new_step in enumerate(steps):
                     if str(step_id) == new_step["id"]:
                         return new_step
-
             else:
                 for _, step in enumerate(steps):
                     return step
@@ -139,7 +143,7 @@ class WorkflowEngine:
         if step_id:
             task = self.find_task_in_bucket_by_id(self.steps, step_id)
 
-            details = self.graph.find_task_by_name(task["name"])
+            details = self.graph.find_task_by_id(task["sid"])
             if details["type"] not in [MANUAL_TASK, SCRIPT_TASK]:
                 raise Exception("Action forbidden.")
 
@@ -148,7 +152,7 @@ class WorkflowEngine:
             _stepNumber = self.state["step"]
             self.set_step_completed(self.steps[_stepNumber])
 
-            self.add_to_queue(self.steps[_stepNumber]["name"])
+            self.add_to_queue(self.steps[_stepNumber]["sid"])
 
     def get_waiting_steps(self):
         if self.state["completed"]:
@@ -158,7 +162,13 @@ class WorkflowEngine:
                 "last_step": self.steps[self.state["step"]],
             }
 
-        current_task = self.steps[self.state["step"]]
+        for current_task in self.steps:
+            if "completed" not in current_task.keys() or not current_task.get(
+                "completed"
+            ):
+                return pending_and_waiting_template(current_task, self.queue)
+
+        # current_task = self.steps[self.state["step"]]
         if "completed" in current_task.keys() and current_task["completed"]:
             return {"waiting": self.queue}
 
@@ -181,8 +191,8 @@ class WorkflowEngine:
 
     def get_not_completed_converging_tasks(self):
         response = []
-        for step in reversed(self.queue[:-1]):
-            details = self.graph.find_task_by_name(step["name"])
+        for step in reversed(self.steps[:-1]):
+            details = self.graph.find_task_by_id(step["sid"])
             if details["type"] == PARALLEL_GATEWAY:
                 break
 
