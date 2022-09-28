@@ -98,6 +98,9 @@ def update_workflow(
     if not workflow:
         raise HTTPException(status_code=404, detail="Workflow not found")
 
+    workflow_in.tasks = WorkflowController.parse_xml(
+        workflow.raw_diagram_data["xml_original"]
+    )
     workflow = WorkflowController.update(db=db, db_obj=workflow, obj_in=workflow_in)
     return workflow
 
