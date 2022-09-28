@@ -126,12 +126,12 @@ def select_next_task(
     return response
 
 
-@router.patch("/{run_id}/step/{step_id}/parallel/init")
+@router.patch("/{run_id}/step/{step_id}/parallel/{next_step_id}")
 def init_parallel_gateway(
-    *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID
+    *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID, next_step_id: UUID
 ) -> Any:
     """
-    Initalize a Parallel Gateway by placing all of it's tasks in waiting queue.
+    Initalize a Parallel Gateway by selecting next task in waiting queue.
     """
     run = RunController.get(db=db, id=run_id)
     if not run:
@@ -146,6 +146,7 @@ def init_parallel_gateway(
             run_in["steps"],
             run_in["queue"],
             step_id,
+            next_step_id,
         )
     except Exception:
         raise HTTPException(
