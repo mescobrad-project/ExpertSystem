@@ -30,4 +30,4 @@ XML_PARSER_OUTPUTS = "outputs"
 
 KEY_OUTPUT = getenv("WFE_KEY_OUTPUT", "outputs")
 
-SCRIPT_DIR = getenv("WFE_SCRIPT_DIR", "scripts")
+SCRIPT_DIR = getenv("WFE_SCRIPT_DIR", "src/scripts")
