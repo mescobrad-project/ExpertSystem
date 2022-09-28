@@ -5,13 +5,14 @@ def stateTemplate(stepNumber: int) -> dict:
     return {"completed": False, "success": False, "step": stepNumber}
 
 
-def stepTemplate(number: int | None, task: str) -> list[dict]:
+def stepTemplate(number: int | None, sid: str, task_name: str) -> list[dict]:
     return {
         "id": getId(),
         "number": number,
         "start": getDateTimeNow(),
         "finish": "",
-        "name": task,
+        "sid": sid,
+        "name": task_name,
     }
 
 
