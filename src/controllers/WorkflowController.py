@@ -89,15 +89,15 @@ def parse_associations(associations):
 class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
     def get_workflow_entity_types(self):
         return {
-            "events": [
+            "event": [
                 START_EVENT,
                 END_EVENT,
             ],
-            "gateways": [
+            "gateway": [
                 EXCLUSIVE_GATEWAY,
                 PARALLEL_GATEWAY,
             ],
-            "tasks": [
+            "task": [
                 MANUAL_TASK,
                 SCRIPT_TASK,
             ],
