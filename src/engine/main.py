@@ -170,7 +170,7 @@ class WorkflowEngine:
 
         # current_task = self.steps[self.state["step"]]
         if "completed" in current_task.keys() and current_task["completed"]:
-            return {"waiting": self.queue}
+            return {"queue": self.queue}
 
         return pending_and_waiting_template(current_task, self.queue)
 
