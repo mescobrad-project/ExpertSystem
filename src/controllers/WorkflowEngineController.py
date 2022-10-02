@@ -52,11 +52,15 @@ class BaseEngineController:
             engine.set_task_as_active_step(active)
             engine.remove_from_bucket(queue, index)
 
+        if actions.get("end_event") is not None and actions.get("end_event"):
+            engine.set_task_as_active_step(active)
+            engine.remove_from_bucket(queue, index)
+
         return pending_and_waiting_template(active, queue)
 
-    def _set_waiting_task_as_active(self, engine, active, step_id):
+    def _set_parallelqueue_task_to_queue(self, engine, active, step_id):
         index, next_step = engine.find_active_step(engine.queue, step_id)
-        engine.set_task_as_active_step(next_step, False)
+        engine.add_current_to_queue(next_step["sid"])
         engine.remove_from_bucket(
             engine.queue[index]["and"],
             engine.get_step_position_index(engine.queue[index]["and"], next_step["id"]),
@@ -65,9 +69,7 @@ class BaseEngineController:
 
         if steps_waiting == 0:
             engine.set_step_completed(active)
-            engine.update_step_number(active, True)
             engine.remove_from_bucket(engine.queue, index)
-            engine.add_to_queue(next_step["sid"])
 
         return next_step
 
@@ -95,8 +97,7 @@ class BaseEngineController:
         if "choice" in rules.keys() and rules["choice"] == "one":
             index, next_step = engine.find_active_step(engine.queue, next_step_id)
             engine.set_step_completed(active)
-            engine.add_to_queue(next_step["sid"])
-            engine.set_task_as_active_step(next_step)
+            engine.add_current_to_queue(next_step["sid"])
             engine.remove_from_bucket(engine.queue, index)
             active = next_step
 
@@ -111,7 +112,7 @@ class BaseEngineController:
 
         if "choice" in rules.keys():
             if rules["choice"] == "all":
-                self._set_waiting_task_as_active(engine, active, next_step_id)
+                self._set_parallelqueue_task_to_queue(engine, active, next_step_id)
             elif rules["choice"] == "wait_all":
                 # check for previous steps completion
                 waiting = engine.get_not_completed_converging_tasks()
@@ -119,10 +120,10 @@ class BaseEngineController:
                 if len(waiting) > 0:
                     return {
                         "display": "Please complete the following tasks first",
-                        "waiting": waiting,
+                        "queue": waiting,
                     }
 
-                self._set_waiting_task_as_active(engine, active, next_step_id)
+                self._set_parallelqueue_task_to_queue(engine, active, next_step_id)
 
         return {"pending": active}
 
@@ -158,13 +159,13 @@ class BaseEngineController:
 
             engine.set_step_completed(active)
 
-            if "task" in rules.keys():
-                (_, next_step) = engine.find_active_step(engine.queue)
-                engine.set_task_as_active_step(next_step)
-                engine.remove_from_bucket(
-                    engine.queue,
-                    engine.get_step_position_index(engine.queue, next_step["id"]),
-                )
+            # if "task" in rules.keys():
+            #     (_, next_step) = engine.find_active_step(engine.queue)
+            #     engine.set_task_as_active_step(next_step)
+            #     engine.remove_from_bucket(
+            #         engine.queue,
+            #         engine.get_step_position_index(engine.queue, next_step["id"]),
+            #     )
 
         return {"pending": active}
 
