@@ -61,6 +61,10 @@ class WorkflowEngine:
     def add_to_queue(self, sid: str):
         self.queue.extend(self.get_next_steps_of(sid))
 
+    def add_current_to_queue(self, sid: str):
+        task = self.graph.find_task_by_id(sid)
+        self.queue.extend([stepTemplate(None, sid, task["name"])])
+
     def set_step_completed(self, step: dict):
         step["completed"] = True
         step["finish"] = getDateTimeNow()

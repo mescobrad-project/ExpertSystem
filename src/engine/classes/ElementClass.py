@@ -1,3 +1,4 @@
+from pickle import FALSE
 from src.engine.utils.TemplateUtils import stateTemplate, stepTemplate
 from src.engine.config import *
 
@@ -24,6 +25,13 @@ class StartEvent(Element):
 
 
 class EndEvent(Element):
+    def pre(self):
+        return {
+            "complete": False,
+            "next_steps": False,
+            "end_event": True,
+        }
+
     def post(self):
         return {
             "complete": True,
@@ -83,6 +91,12 @@ class ParallelGateway(Element):
 
 
 class ManualTask(Element):
+    def pre(self):
+        return {
+            "complete": False,
+            "next_steps": True,
+        }
+
     def post(self):
         return {
             "rules": {"complete": True},
@@ -90,6 +104,12 @@ class ManualTask(Element):
 
 
 class ScriptTask(Element):
+    def pre(self):
+        return {
+            "complete": False,
+            "next_steps": True,
+        }
+
     def post(self):
         return {
             "rules": {"complete": True, "task": True},
