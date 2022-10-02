@@ -1,4 +1,3 @@
-from pickle import FALSE
 from src.engine.utils.TemplateUtils import stateTemplate, stepTemplate
 from src.engine.config import *
 
