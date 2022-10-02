@@ -16,5 +16,5 @@ def stepTemplate(number: int | None, sid: str, task_name: str) -> list[dict]:
     }
 
 
-def pending_and_waiting_template(pending, waiting):
-    return {"pending": pending, "waiting": waiting}
+def pending_and_waiting_template(pending, queue):
+    return {"pending": pending, "queue": queue}
