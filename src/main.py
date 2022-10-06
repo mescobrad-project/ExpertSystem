@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.routers import workflow, run
+from src.routers import workflow, run, home
 from src.config import (
     CORS_ORIGINS,
     CORS_CREDENTIALS,
@@ -22,6 +22,7 @@ def include_middlewares(app):
 
 
 def include_router(app):
+    app.include_router(home.router)
     app.include_router(run.router)
     app.include_router(workflow.router)
 
