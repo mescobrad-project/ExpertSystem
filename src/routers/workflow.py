@@ -180,34 +180,6 @@ def revert_workflow(
     return workflow
 
 
-@router.get("/{workflow_id}/run", response_model=Run)
-def run_workflow(*, db: Session = Depends(get_db), workflow_id: UUID):
-    """
-    Initiate a workflow process
-    """
-    workflow = WorkflowController.get(db=db, id=workflow_id)
-    if not workflow:
-        raise HTTPException(status_code=404, detail="Workflow not found")
-
-    try:
-        run = RunController.initialize(db=db, workflow_id=workflow.id)
-    except IntegrityError:
-        raise HTTPException(status_code=409, detail="Run already exists")
-    except Exception:
-        raise HTTPException(status_code=400, detail="Something went wrong")
-
-    try:
-        state, steps, queue = WorkflowEngineController.initialize(workflow.tasks)
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    run_in = RunUpdate(state=state, steps=steps, queue=queue)
-    run = RunController.update(db=db, db_obj=run, obj_in=run_in)
-    return run
-
-
 @router.get("/{workflow_id}/task/{task_name}")
 def read_task_details(
     *, db: Session = Depends(get_db), workflow_id: UUID, task_name: str

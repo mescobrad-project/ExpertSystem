@@ -3,10 +3,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from src.controllers.WorkflowEngineController import WorkflowEngineController
 from src.database import get_db
+from src.controllers.WorkflowController import WorkflowController
 from src.controllers.RunController import RunController
-from src.schemas.RunSchema import Run
+from src.schemas.RunSchema import Run, RunUpdate
 
 router = APIRouter(
     prefix="/run", tags=["run"], responses={404: {"message": "Not found"}}
@@ -24,6 +26,34 @@ def read_runs(db: Session = Depends(get_db), skip: int = 0, limit: int = 100) ->
         raise HTTPException(status_code=500, detail="Something went wrong")
 
     return runs
+
+
+@router.patch("/workflow/{workflow_id}", response_model=Run)
+def run_workflow(*, db: Session = Depends(get_db), workflow_id: UUID):
+    """
+    Initiate a workflow process
+    """
+    workflow = WorkflowController.get(db=db, id=workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    try:
+        run = RunController.initialize(db=db, workflow_id=workflow.id)
+    except IntegrityError:
+        raise HTTPException(status_code=409, detail="Run already exists")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Something went wrong")
+
+    try:
+        state, steps, queue = WorkflowEngineController.initialize(workflow.tasks)
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
+
+    run_in = RunUpdate(state=state, steps=steps, queue=queue)
+    run = RunController.update(db=db, db_obj=run, obj_in=run_in)
+    return run
 
 
 @router.get("/{run_id}", response_model=Run)
