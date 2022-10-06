@@ -10,6 +10,38 @@ CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
+def _parse_operations(key, prop, value):
+    if key.endswith("__not"):
+        return prop != value
+    elif key.endswith("__gt"):
+        return prop > value
+    elif key.endswith("__gte"):
+        return prop >= value
+    elif key.endswith("__lt"):
+        return prop < value
+    elif key.endswith("__lte"):
+        return prop <= value
+    else:
+        return prop == value
+
+
+def _parse_criteria(model, criteria):
+    filters = []
+    for key, value in criteria.items():
+        if type(value) is dict:
+            model_ref = getattr(model, key)
+            model_ref_class = value["model"]
+
+            for m_key, m_value in value["criteria"].items():
+                prop = getattr(model_ref_class, m_key.split("__")[0])
+                filters.append(model_ref.has(_parse_operations(m_key, prop, m_value)))
+        else:
+            prop = getattr(model, key.split("__")[0])
+            filters.append(_parse_operations(key, prop, value))
+
+    return filters
+
+
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         """
@@ -23,34 +55,38 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def get(self, db: Session, id: Any) -> ModelType | None:
         return (
             db.query(self.model)
-            .filter(self.model.id == id, self.model.deleted_at == None)
+            .filter(*_parse_criteria(self.model, {"id": id, "deleted_at": None}))
             .first()
         )
 
     def get_deleted(self, db: Session, id: Any) -> ModelType | None:
         return (
             db.query(self.model)
-            .filter(self.model.id == id, self.model.deleted_at != None)
+            .filter(*_parse_criteria(self.model, {"id": id, "deleted_at__not": None}))
             .first()
         )
 
     def get_multi(
-        self, db: Session, *, skip: int = 0, limit: int = 100
+        self, db: Session, *, skip: int = 0, limit: int = 100, criteria={}
     ) -> list[ModelType]:
+        criteria["deleted_at"] = None
+
         return (
             db.query(self.model)
-            .filter(self.model.deleted_at == None)
+            .filter(*_parse_criteria(self.model, criteria))
             .offset(skip)
             .limit(limit)
             .all()
         )
 
     def get_multi_deleted(
-        self, db: Session, *, skip: int = 0, limit: int = 100
+        self, db: Session, *, skip: int = 0, limit: int = 100, criteria={}
     ) -> list[ModelType]:
+        criteria["deleted_at__not"] = None
+
         return (
             db.query(self.model)
-            .filter(self.model.deleted_at != None)
+            .filter(*_parse_criteria(self.model, criteria))
             .offset(skip)
             .limit(limit)
             .all()
