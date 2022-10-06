@@ -167,7 +167,7 @@ def revert_workflow(
     """
     Revert the deletion of a workflow.
     """
-    workflow = WorkflowController.get(db=db, id=workflow_id)
+    workflow = WorkflowController.get_deleted(db=db, id=workflow_id)
     if not workflow:
         raise HTTPException(status_code=404, detail="Workflow not found")
 
