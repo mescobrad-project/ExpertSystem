@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 
-@router.patch("/workflow/{workflow_id}", response_model=Run)
+@router.post("/workflow/{workflow_id}", response_model=Run)
 def run_workflow(*, db: Session = Depends(get_db), workflow_id: UUID):
     """
     Initiate a workflow process
