@@ -27,12 +27,30 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             .first()
         )
 
+    def get_deleted(self, db: Session, id: Any) -> ModelType | None:
+        return (
+            db.query(self.model)
+            .filter(self.model.id == id, self.model.deleted_at != None)
+            .first()
+        )
+
     def get_multi(
         self, db: Session, *, skip: int = 0, limit: int = 100
     ) -> list[ModelType]:
         return (
             db.query(self.model)
             .filter(self.model.deleted_at == None)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    def get_multi_deleted(
+        self, db: Session, *, skip: int = 0, limit: int = 100
+    ) -> list[ModelType]:
+        return (
+            db.query(self.model)
+            .filter(self.model.deleted_at != None)
             .offset(skip)
             .limit(limit)
             .all()
