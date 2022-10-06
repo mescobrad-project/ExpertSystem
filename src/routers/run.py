@@ -15,19 +15,6 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[Run])
-def read_runs(db: Session = Depends(get_db), skip: int = 0, limit: int = 100) -> Any:
-    """
-    Retrieve worflows with their metadata.
-    """
-    try:
-        runs = RunController.get_multi(db, skip=skip, limit=limit)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Something went wrong")
-
-    return runs
-
-
 @router.patch("/workflow/{workflow_id}", response_model=Run)
 def run_workflow(*, db: Session = Depends(get_db), workflow_id: UUID):
     """
