@@ -12,4 +12,4 @@ class RunModel(Base):
     steps = Column(JSON, nullable=True)
     queue = Column(JSON, nullable=True)
 
-    workflows = relationship("WorkflowModel", back_populates="runs")
+    workflow = relationship("WorkflowModel", back_populates="runs")
