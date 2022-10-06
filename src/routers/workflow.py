@@ -5,11 +5,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
 from src.database import get_db
+from src.models.WorkflowModel import WorkflowModel
 from src.controllers.WorkflowController import WorkflowController
 from src.schemas.WorkflowSchema import Workflow, WorkflowCreate, WorkflowUpdate
 from src.controllers.RunController import RunController
-from src.schemas.RunSchema import Run, RunUpdate
-from src.controllers.WorkflowEngineController import WorkflowEngineController
+from src.schemas.RunSchema import Run
 
 router = APIRouter(
     prefix="/workflow", tags=["workflow"], responses={404: {"message": "Not found"}}
@@ -196,3 +196,26 @@ def read_task_details(
             return task
 
     raise HTTPException(status_code=404, detail="Task not found")
+
+
+@router.get("/{workflow_id}/run", response_model=list[Run])
+def read_workflow_runs(
+    *, db: Session = Depends(get_db), workflow_id: UUID, skip: int = 0, limit: int = 100
+) -> Any:
+    """
+    Retrieve running instances of specific workflow.
+    """
+    try:
+        runs = RunController.get_multi(
+            db,
+            skip=skip,
+            limit=limit,
+            criteria={
+                "workflow_id": workflow_id,
+                "workflow": {"model": WorkflowModel, "criteria": {"deleted_at": None}},
+            },
+        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
+
+    return runs
