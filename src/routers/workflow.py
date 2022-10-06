@@ -21,7 +21,7 @@ def read_workflows(
     db: Session = Depends(get_db), skip: int = 0, limit: int = 100
 ) -> Any:
     """
-    Retrieve worflows with their metadata.
+    Retrieve workflows with their metadata.
     """
     try:
         workflows = WorkflowController.get_multi(db, skip=skip, limit=limit)
@@ -66,6 +66,37 @@ def read_entity_types() -> Any:
         raise HTTPException(status_code=404, detail="Entities not found")
 
     return entity_types
+
+
+@router.get("/deleted", response_model=list[Workflow])
+def read_deleted_workflows(
+    db: Session = Depends(get_db), skip: int = 0, limit: int = 100
+) -> Any:
+    """
+    Retrieve deleted workflows.
+    """
+    try:
+        workflows = WorkflowController.get_multi_deleted(db, skip=skip, limit=limit)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
+
+    return workflows
+
+
+@router.get("/deleted/{workflow_id}", response_model=Workflow)
+def read_deleted_workflow(
+    *,
+    db: Session = Depends(get_db),
+    workflow_id: UUID,
+) -> Any:
+    """
+    Get deleted workflow by ID.
+    """
+    workflow = WorkflowController.get_deleted(db=db, id=workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    return workflow
 
 
 @router.get("/{workflow_id}", response_model=Workflow)
