@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from src.controllers.WorkflowEngineController import WorkflowEngineController
 from src.database import get_db
 from src.controllers.RunController import RunController
-from src.schemas.RunSchema import Run, RunCreate, RunUpdate
+from src.schemas.RunSchema import Run
 
 router = APIRouter(
     prefix="/run", tags=["run"], responses={404: {"message": "Not found"}}
