@@ -12,4 +12,4 @@ class WorkflowModel(Base):
     tasks = Column(JSON, nullable=True)
     raw_diagram_data = Column(JSON, nullable=True)
 
-    runs = relationship("RunModel", back_populates="workflows")
+    runs = relationship("RunModel", back_populates="workflow")
