@@ -12,6 +12,8 @@ pytest = "*"
 requests = "*"
 alembic = "*"
 psycopg2-binary = "*"
+minio = "*"
+trino = "*"
 
 [dev-packages]
 black = "*"
