@@ -15,6 +15,10 @@ DB_DATABASE = getenv("DB_DATABASE", "test_db")
 DB_USERNAME = getenv("DB_USERNAME", "test_user")
 DB_PASSWORD = getenv("DB_PASSWORD", "")
 
+S3_ENDPOINT = getenv("S3_ENDPOINT", "localhost")
+S3_ACCESS_KEY_ID = getenv("S3_ACCESS_KEY_ID", "access_key")
+S3_SECRET_ACCESS_KEY = getenv("S3_SECRET_ACCESS_KEY", "secret_key")
+
 SQLALCHEMY_DATABASE_URL = (
     f"{DB_CONNECTION}://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}"
 )
