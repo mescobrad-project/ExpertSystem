@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.routers import workflow, run, home
+from src.routers.datalake import objectstorage
 from src.config import (
     CORS_ORIGINS,
     CORS_CREDENTIALS,
@@ -25,6 +26,7 @@ def include_router(app):
     app.include_router(home.router)
     app.include_router(run.router)
     app.include_router(workflow.router)
+    app.include_router(objectstorage.router)
 
 
 def start_app():
