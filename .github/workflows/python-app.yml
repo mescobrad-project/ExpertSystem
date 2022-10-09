@@ -38,7 +38,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
-          if [ -f Pipfile.lock ]; then pipenv install --deploy --dev; fi
+          if [ -f Pipfile.lock ]; then pipenv sync --dev; fi
 
       - name: Lint with Black
         run: |
