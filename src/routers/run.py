@@ -70,7 +70,7 @@ def show_next_task(*, db: Session = Depends(get_db), run_id: UUID) -> Any:
 
     try:
         waiting = WorkflowEngineController.get_waiting_steps(
-            run.workflows.tasks, run.state, run.steps, run.queue
+            run.workflow.tasks, run.state, run.steps, run.queue
         )
     except Exception:
         raise HTTPException(
@@ -93,7 +93,7 @@ def run_specific_task(
 
     try:
         run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflows)
+        workflow = jsonable_encoder(run.workflow)
         pending_and_waiting = WorkflowEngineController.run_pending_step(
             workflow["tasks"],
             run_in["state"],
@@ -124,7 +124,7 @@ def select_next_task(
 
     try:
         run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflows)
+        workflow = jsonable_encoder(run.workflow)
         response = WorkflowEngineController.gateway_exclusive_choice(
             workflow["tasks"],
             run_in["state"],
@@ -156,7 +156,7 @@ def init_parallel_gateway(
 
     try:
         run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflows)
+        workflow = jsonable_encoder(run.workflow)
         response = WorkflowEngineController.gateway_parallel_choice(
             workflow["tasks"],
             run_in["state"],
@@ -188,7 +188,7 @@ def exec_script_task(
 
     try:
         run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflows)
+        workflow = jsonable_encoder(run.workflow)
         response = WorkflowEngineController.task_exec(
             workflow["tasks"],
             run_in["state"],
@@ -217,7 +217,7 @@ def complete_task(*, db: Session = Depends(get_db), run_id: UUID, step_id: UUID)
 
     try:
         run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflows)
+        workflow = jsonable_encoder(run.workflow)
         response = WorkflowEngineController.task_complete(
             workflow["tasks"],
             run_in["state"],
@@ -248,7 +248,7 @@ def exec_event_task_actions(
 
     try:
         run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflows)
+        workflow = jsonable_encoder(run.workflow)
         response = WorkflowEngineController.event_actions(
             workflow["tasks"],
             run_in["state"],
@@ -279,7 +279,7 @@ def ping_task_status(
 
     try:
         response = WorkflowEngineController.ping_step_status(
-            run.workflows.tasks, run.state, run.steps, run.queue, step_id
+            run.workflow.tasks, run.state, run.steps, run.queue, step_id
         )
     except Exception:
         raise HTTPException(
