@@ -9,6 +9,9 @@ from src.engine.config import (
     PARALLEL_GATEWAY,
     MANUAL_TASK,
     SCRIPT_TASK,
+    USER_TASK,
+    DATA_STORE,
+    DATA_OBJECT,
     XML_START_EVENT,
     XML_END_EVENT,
     XML_EXCLUSIVE_GATEWAY,
@@ -23,6 +26,14 @@ from src.engine.config import (
     XML_PARSER_OUTPUTS,
     XML_ANNOTATION,
     XML_ASSOCIATION,
+    XML_USER_TASK,
+    XML_DATA_INPUT_ASSOCIATION,
+    XML_DATA_OUTPUT_ASSOCIATION,
+    XML_DATA_STORE_REFERENCE,
+    XML_DATA_OBJECT_REFERENCE,
+    XML_DATA_OBJECT,
+    XML_PARSER_DATA_INPUT_ASSOCIATIONS,
+    XML_PARSER_DATA_OUTPUT_ASSOCIATIONS,
 )
 
 
@@ -39,15 +50,30 @@ def get_task_type(tag):
         return MANUAL_TASK
     elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SCRIPT_TASK}':
         return SCRIPT_TASK
+    elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_USER_TASK}':
+        return USER_TASK
     else:
         return END_EVENT
 
 
-def get_flow_type(tag):
+def get_store_type(tag):
+    if tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_STORE_REFERENCE}':
+        return DATA_STORE
+    elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_OBJECT_REFERENCE}':
+        return DATA_OBJECT
+    else:
+        return DATA_STORE
+
+
+def get_property_type(tag):
     if tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_INCOMING}':
         return XML_PARSER_INPUTS
     elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_OUTGOING}':
         return XML_PARSER_OUTPUTS
+    elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_INPUT_ASSOCIATION}':
+        return XML_PARSER_DATA_INPUT_ASSOCIATIONS
+    elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_OUTPUT_ASSOCIATION}':
+        return XML_PARSER_DATA_OUTPUT_ASSOCIATIONS
     else:
         return None
 
@@ -77,6 +103,31 @@ def parse_annotations(annotations):
     return data
 
 
+def parse_data_object_refs(data_object_refs):
+    data = {}
+
+    for data_object_ref in data_object_refs:
+        data[data_object_ref.attrib["id"]] = {
+            "object": data_object_ref.attrib["dataObjectRef"],
+            "name": data_object_ref.attrib["name"],
+            "type": get_store_type(data_object_ref.tag),
+        }
+
+    return data
+
+
+def parse_data_store_refs(data_store_refs):
+    data = {}
+
+    for data_store_ref in data_store_refs:
+        data[data_store_ref.attrib["id"]] = {
+            "name": data_store_ref.attrib["name"],
+            "type": get_store_type(data_store_ref.tag),
+        }
+
+    return data
+
+
 def parse_associations(associations):
     data = {}
 
@@ -86,21 +137,27 @@ def parse_associations(associations):
     return data
 
 
+def parse_data_input_associations(stores, associations):
+    data = {}
+
+    for association in associations:
+        if association.tag == f'{{{XML_NAMESPACES["bpmn2"]}}}sourceRef':
+            if association.text in stores.keys():
+                data[association.text] = {"mode": "get"}
+        else:
+            if association.text in stores.keys():
+                data[association.text] = {"mode": "set"}
+
+    return data
+
+
 class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
     def get_workflow_entity_types(self):
         return {
-            "event": [
-                START_EVENT,
-                END_EVENT,
-            ],
-            "gateway": [
-                EXCLUSIVE_GATEWAY,
-                PARALLEL_GATEWAY,
-            ],
-            "task": [
-                MANUAL_TASK,
-                SCRIPT_TASK,
-            ],
+            "event": [START_EVENT, END_EVENT],
+            "gateway": [EXCLUSIVE_GATEWAY, PARALLEL_GATEWAY],
+            "task": [MANUAL_TASK, SCRIPT_TASK, USER_TASK],
+            "store": [DATA_STORE, DATA_OBJECT],
         }
 
     def parse_xml(self, xml_str):
@@ -113,6 +170,7 @@ class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
         text_annotations = {}
         associations = {}
         tasks = {}
+        stores = {}
 
         for process in processes:
             sequence_flows = parse_flows(
@@ -127,11 +185,30 @@ class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
                 process.findall(f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_ASSOCIATION}')
             )
 
+            stores.update(
+                parse_data_store_refs(
+                    process.findall(
+                        f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_STORE_REFERENCE}'
+                    )
+                )
+            )
+            stores.update(
+                parse_data_object_refs(
+                    process.findall(
+                        f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_OBJECT_REFERENCE}'
+                    )
+                )
+            )
+
             for child in process:
                 if child.tag in [
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_FLOW}',
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_ANNOTATION}',
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_ASSOCIATION}',
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_INPUT_ASSOCIATION}',
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_STORE_REFERENCE}',
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_OBJECT_REFERENCE}',
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_OBJECT}',
                 ]:
                     continue
 
@@ -145,23 +222,32 @@ class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
                 tasks[task_id]["manual"] = child.tag in [
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_EXCLUSIVE_GATEWAY}',
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_MANUAL_TASK}',
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_USER_TASK}',
                 ]
 
-                for flow in child:
-                    # print(flow.text, flow.tag, flow.attrib)
-                    mode = get_flow_type(flow.tag)
+                for prop in child:
+                    # print(prop.text, prop.tag, prop.attrib)
+                    mode = get_property_type(prop.tag)
                     if not mode:
                         continue
 
                     if mode not in tasks[task_id].keys():
                         tasks[task_id][mode] = []
 
-                    tasks[task_id][mode].append(sequence_flows[flow.text][mode])
+                    if mode in [XML_PARSER_INPUTS, XML_PARSER_OUTPUTS]:
+                        tasks[task_id][mode].append(sequence_flows[prop.text][mode])
+                    elif mode in [
+                        XML_PARSER_DATA_INPUT_ASSOCIATIONS,
+                        XML_PARSER_DATA_OUTPUT_ASSOCIATIONS,
+                    ]:
+                        tasks[task_id][mode].append(
+                            parse_data_input_associations(stores, prop)
+                        )
 
                 if child.tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SCRIPT_TASK}':
                     tasks[task_id]["class"] = text_annotations[associations[task_id]]
 
-        return tasks
+        return [tasks, stores]
 
 
 WorkflowController = CRUDWorkflow(WorkflowModel)
