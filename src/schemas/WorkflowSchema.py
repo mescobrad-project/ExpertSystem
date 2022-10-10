@@ -7,6 +7,7 @@ from src.schemas._base import Base, FormBase
 class WorkflowBase(FormBase):
     description: str | None = None
     tasks: dict | None = None
+    stores: dict | None = None
     raw_diagram_data: dict | None = None
 
 
@@ -26,6 +27,7 @@ class WorkflowInDBBase(Base):
     name: str
     description: str | None = None
     tasks: dict | None = None
+    stores: dict | None = None
     raw_diagram_data: dict | None = None
 
     class Config:
