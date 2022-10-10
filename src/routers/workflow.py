@@ -42,9 +42,11 @@ def create_workflow(
         workflow = WorkflowController.create(db=db, obj_in=workflow_in)
 
         workflow_upd = WorkflowUpdate()
-        workflow_upd.tasks = WorkflowController.parse_xml(
+        [tasks, stores] = WorkflowController.parse_xml(
             workflow.raw_diagram_data["xml_original"]
         )
+        workflow_upd.tasks = tasks
+        workflow_upd.stores = stores
         workflow = WorkflowController.update(
             db=db, db_obj=workflow, obj_in=workflow_upd
         )
@@ -129,9 +131,11 @@ def update_workflow(
     if not workflow:
         raise HTTPException(status_code=404, detail="Workflow not found")
 
-    workflow_in.tasks = WorkflowController.parse_xml(
+    [tasks, stores] = WorkflowController.parse_xml(
         workflow.raw_diagram_data["xml_original"]
     )
+    workflow_in.tasks = tasks
+    workflow_in.stores = stores
     workflow = WorkflowController.update(db=db, db_obj=workflow, obj_in=workflow_in)
     return workflow
 
