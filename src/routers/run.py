@@ -8,6 +8,7 @@ from src.controllers.WorkflowEngineController import WorkflowEngineController
 from src.database import get_db
 from src.controllers.WorkflowController import WorkflowController
 from src.controllers.RunController import RunController
+from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
 from src.schemas.RunSchema import Run, RunUpdate
 
 router = APIRouter(
@@ -207,7 +208,13 @@ def exec_script_task(
 
 
 @router.patch("/{run_id}/step/{step_id}/task/complete")
-def complete_task(*, db: Session = Depends(get_db), run_id: UUID, step_id: UUID) -> Any:
+def complete_task(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+    step_id: UUID,
+    metadata: TaskMetadataBodyParameter | None = None,
+) -> Any:
     """
     Complete a task.
     """
@@ -224,6 +231,7 @@ def complete_task(*, db: Session = Depends(get_db), run_id: UUID, step_id: UUID)
             run_in["steps"],
             run_in["queue"],
             step_id,
+            metadata,
         )
     except Exception:
         raise HTTPException(

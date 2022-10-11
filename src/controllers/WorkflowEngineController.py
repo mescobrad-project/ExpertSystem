@@ -4,10 +4,12 @@ from src.engine.config import (
     SCRIPT_DIR,
     MANUAL_TASK,
     SCRIPT_TASK,
+    USER_TASK,
 )
 from src.engine.main import WorkflowEngine
 from src.engine.classes.ElementClass import get_class_from_task_name
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
+from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
 
 
 class BaseEngineController:
@@ -146,7 +148,15 @@ class BaseEngineController:
 
         return {"pending": active}
 
-    def task_complete(self, tasks, state, steps, queue, step_id: UUID):
+    def task_complete(
+        self,
+        tasks,
+        state,
+        steps,
+        queue,
+        step_id: UUID,
+        metadata: TaskMetadataBodyParameter | None = None,
+    ):
         (engine, active, details, rules) = self._prepare_step(
             tasks, state, steps, queue, step_id
         )
@@ -154,9 +164,10 @@ class BaseEngineController:
         if "complete" in rules.keys():
             # task = engine.find_task_in_bucket_by_id(engine.steps, step_id)
 
-            if details["type"] not in [MANUAL_TASK, SCRIPT_TASK]:
+            if details["type"] not in [MANUAL_TASK, SCRIPT_TASK, USER_TASK]:
                 raise Exception("Action forbidden.")
 
+            active["metadata"] = metadata
             engine.set_step_completed(active)
 
             # if "task" in rules.keys():
