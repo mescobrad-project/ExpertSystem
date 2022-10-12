@@ -217,6 +217,17 @@ def complete_task(
 ) -> Any:
     """
     Complete a task.
+    Request body schema is not clear enough.
+    Example:
+    {
+        "store": {
+            "store_sid": {
+                \<mode>: [
+                    \<BpmnDataObject> | \<BpmnDataStore>
+                ]
+            }
+        }
+    }
     """
     run = RunController.get(db=db, id=run_id)
     if not run:
