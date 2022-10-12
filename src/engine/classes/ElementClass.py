@@ -115,6 +115,10 @@ class ScriptTask(Element):
         }
 
 
+class UserTask(ManualTask):
+    pass
+
+
 def get_class_from_task_name(elementName: str) -> Element:
     elements = {}
     elements[START_EVENT] = StartEvent
@@ -123,6 +127,7 @@ def get_class_from_task_name(elementName: str) -> Element:
     elements[PARALLEL_GATEWAY] = ParallelGateway
     elements[MANUAL_TASK] = ManualTask
     elements[SCRIPT_TASK] = ScriptTask
+    elements[USER_TASK] = UserTask
 
     if elementName not in elements:
         raise Exception("Not available element.")
