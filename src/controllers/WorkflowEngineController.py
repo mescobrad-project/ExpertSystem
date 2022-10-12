@@ -8,6 +8,7 @@ from src.engine.config import (
 )
 from src.engine.main import WorkflowEngine
 from src.engine.classes.ElementClass import get_class_from_task_name
+from src.engine.utils.Generators import getId
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
 from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
 
@@ -167,7 +168,49 @@ class BaseEngineController:
             if details["type"] not in [MANUAL_TASK, SCRIPT_TASK, USER_TASK]:
                 raise Exception("Action forbidden.")
 
-            active["metadata"] = metadata
+            task_stores = tasks[active["sid"]].get("stores")
+            if task_stores and len(task_stores) > 0:
+                to_store = {}
+
+                ### Start Bad Code
+                for store in task_stores:
+                    sid = list(store.keys())[0]
+                    mode = store[sid].get("mode")
+
+                    if metadata.store.get(sid):
+                        if mode not in ["set", "get"]:
+                            continue
+
+                        data = {}
+                        data[mode] = metadata.store.get(sid).get(mode)
+
+                        # deserialize data because of python's/pydantic's poor handling
+                        deserialized = []
+                        for raw_data in data[mode]:
+                            deserialized.append(raw_data.dict())
+
+                        to_store[sid] = {}
+                        to_store[sid][mode] = deserialized
+                ### End Bad Code
+
+                state_id = getId()
+
+                engine.append_workflow_state_data(
+                    {
+                        "id": state_id,
+                        "sid": active["sid"],
+                        "step_number": active["number"],
+                        "data": to_store,
+                    }
+                )
+
+                active["metadata"] = {
+                    "data": {
+                        "state_data_id": state_id,
+                        "state_data_number": len(state["data"]) - 1,
+                    }
+                }
+
             engine.set_step_completed(active)
 
             # if "task" in rules.keys():
