@@ -73,6 +73,9 @@ class WorkflowEngine:
         self.state["completed"] = True
         self.state["success"] = True
 
+    def append_workflow_state_data(self, data):
+        self.state["data"].append(data)
+
     def update_step_number(self, current: dict, update_state: bool = True):
         steps_len = len(self.steps)
 
