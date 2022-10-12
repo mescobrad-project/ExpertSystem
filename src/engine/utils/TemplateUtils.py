@@ -2,7 +2,7 @@ from .Generators import getId, getDateTimeNow
 
 
 def stateTemplate(stepNumber: int) -> dict:
-    return {"completed": False, "success": False, "step": stepNumber}
+    return {"completed": False, "success": False, "step": stepNumber, "data": []}
 
 
 def stepTemplate(number: int | None, sid: str, task_name: str) -> list[dict]:
