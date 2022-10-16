@@ -3,6 +3,8 @@ from pathlib import Path
 
 WORKDIR = Path(__file__).parent.resolve()
 
+AI_API_BASE_URL = getenv("ARTIFICIAL_INTELLIGENCE_API_BASE_URL", "http://localhost")
+
 CORS_ORIGINS = (getenv("CORS_ORIGINS", "http://localhost,localhost")).split(",")
 CORS_CREDENTIALS = getenv("CORS_CREDENTIALS", True)
 CORS_METHODS = (getenv("CORS_METHODS", "*")).split(",")
