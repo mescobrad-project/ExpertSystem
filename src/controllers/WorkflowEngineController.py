@@ -11,6 +11,7 @@ from src.engine.classes.ElementClass import get_class_from_task_name
 from src.engine.utils.Generators import getId
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
 from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
+from src.clients.artificialintelligence import client as ai_client
 
 
 class BaseEngineController:
@@ -149,6 +150,29 @@ class BaseEngineController:
 
         return {"pending": active}
 
+    def task_send(self, tasks, state, steps, queue, step_id: UUID):
+        (_, active, details, rules) = self._prepare_step(
+            tasks, state, steps, queue, step_id
+        )
+
+        if "task" in rules.keys():
+            active["data"] = []
+
+            for ai_route_name in details["api_fn"]:
+                # call api and show response
+                # on success complete
+                # on then get next and use as step_id
+                ai_client.post_algo(
+                    {
+                        "workflow_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "run_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "step_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    }
+                )
+                pass
+
+        return {"pending": active}
+
     def task_complete(
         self,
         tasks,
@@ -177,7 +201,9 @@ class BaseEngineController:
                     sid = list(store.keys())[0]
                     mode = store[sid].get("mode")
 
-                    if metadata.store.get(sid):
+                    if metadata.error:
+                        to_store["error"] = metadata.error
+                    elif metadata.store.get(sid):
                         if mode not in ["set", "get"]:
                             continue
 
