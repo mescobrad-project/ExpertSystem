@@ -7,6 +7,8 @@ PARALLEL_GATEWAY = getenv("WFE_PARALLEL_GATEWAY", "ParallelGateway")
 MANUAL_TASK = getenv("WFE_MANUAL_TASK", "ManualTask")
 SCRIPT_TASK = getenv("WFE_SCRIPT_TASK", "ScriptTask")
 USER_TASK = getenv("WFE_USER_TASK", "UserTask")
+SEND_TASK = getenv("WFE_SEND_TASK", "SendTask")
+RECEIVE_TASK = getenv("WFE_RECEIVE_TASK", "ReceiveTask")
 DATA_STORE = getenv("WFE_DATA_STORE", "DataStore")
 DATA_OBJECT = getenv("WFE_DATA_OBJECT", "DataObject")
 
@@ -22,6 +24,8 @@ XML_OUTGOING = "outgoing"
 XML_ANNOTATION = "textAnnotation"
 XML_ASSOCIATION = "association"
 XML_USER_TASK = "userTask"
+XML_SEND_TASK = "sendTask"
+XML_RECEIVE_TASK = "receiveTask"
 XML_DATA_INPUT_ASSOCIATION = "dataInputAssociation"
 XML_DATA_OUTPUT_ASSOCIATION = "dataOutputAssociation"
 XML_DATA_STORE_REFERENCE = "dataStoreReference"

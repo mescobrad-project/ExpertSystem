@@ -1,4 +1,6 @@
 from src.engine.config import (
+    RECEIVE_TASK,
+    SEND_TASK,
     START_EVENT,
     END_EVENT,
     EXCLUSIVE_GATEWAY,
@@ -8,6 +10,8 @@ from src.engine.config import (
     USER_TASK,
     DATA_STORE,
     DATA_OBJECT,
+    XML_RECEIVE_TASK,
+    XML_SEND_TASK,
     XML_START_EVENT,
     XML_END_EVENT,
     XML_EXCLUSIVE_GATEWAY,
@@ -44,6 +48,10 @@ def get_task_type(tag):
         return SCRIPT_TASK
     elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_USER_TASK}':
         return USER_TASK
+    elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SEND_TASK}':
+        return SEND_TASK
+    elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_RECEIVE_TASK}':
+        return RECEIVE_TASK
     else:
         return END_EVENT
 
