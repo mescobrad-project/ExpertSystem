@@ -3,6 +3,8 @@ from ._base import CRUDBase
 from src.models._all import WorkflowModel
 from src.schemas.WorkflowSchema import WorkflowCreate, WorkflowUpdate
 from src.engine.config import (
+    RECEIVE_TASK,
+    SEND_TASK,
     START_EVENT,
     END_EVENT,
     EXCLUSIVE_GATEWAY,
@@ -21,6 +23,7 @@ from src.engine.config import (
     XML_PARSER_OUTPUTS,
     XML_ANNOTATION,
     XML_ASSOCIATION,
+    XML_SEND_TASK,
     XML_USER_TASK,
     XML_DATA_INPUT_ASSOCIATION,
     XML_DATA_STORE_REFERENCE,
@@ -46,7 +49,7 @@ class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
         return {
             "event": [START_EVENT, END_EVENT],
             "gateway": [EXCLUSIVE_GATEWAY, PARALLEL_GATEWAY],
-            "task": [MANUAL_TASK, SCRIPT_TASK, USER_TASK],
+            "task": [MANUAL_TASK, SCRIPT_TASK, USER_TASK, SEND_TASK, RECEIVE_TASK],
             "store": [DATA_STORE, DATA_OBJECT],
         }
 
@@ -113,6 +116,7 @@ class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_EXCLUSIVE_GATEWAY}',
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_MANUAL_TASK}',
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_USER_TASK}',
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SEND_TASK}',
                 ]
 
                 for prop in child:
@@ -134,7 +138,10 @@ class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
                             parse_data_input_associations(stores, prop)
                         )
 
-                if child.tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SCRIPT_TASK}':
+                if child.tag in [
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SCRIPT_TASK}',
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SEND_TASK}',
+                ]:
                     tasks[task_id]["class"] = text_annotations[associations[task_id]]
 
         return [tasks, stores]
