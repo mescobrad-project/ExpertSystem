@@ -93,18 +93,7 @@ def get_dataobjects_from_stored_data(
         raise HTTPException(status_code=404, detail="Run not found")
 
     try:
-        file_refs = []
-
-        for activity in run.state["data"]:
-            for sid, data in activity["data"].items():
-                if sid in run.workflow.stores.keys():
-                    if run.workflow.stores[sid]["type"] == "DataObject":
-                        if "get" in data.keys():
-                            file_refs.extend(data["get"])
-                        if "set" in data.keys():
-                            file_refs.extend(data["set"])
-
-        return file_refs
+        return WorkflowEngineController.get_dataobject_refs(run)
     except Exception:
         raise HTTPException(
             status_code=500, detail="Workflow engine faced an unexpected error"
