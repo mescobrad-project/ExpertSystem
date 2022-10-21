@@ -119,6 +119,20 @@ class UserTask(ManualTask):
     pass
 
 
+class SendTask(ManualTask):
+    def post(self):
+        return {
+            "rules": {"complete": False, "store": {"type": "DataObject"}},
+        }
+
+
+class ReceiveTask(ManualTask):
+    def post(self):
+        return {
+            "rules": {"complete": False, "store": {"type": "DataObject"}},
+        }
+
+
 def get_class_from_task_name(elementName: str) -> Element:
     elements = {}
     elements[START_EVENT] = StartEvent
@@ -128,6 +142,8 @@ def get_class_from_task_name(elementName: str) -> Element:
     elements[MANUAL_TASK] = ManualTask
     elements[SCRIPT_TASK] = ScriptTask
     elements[USER_TASK] = UserTask
+    elements[SEND_TASK] = SendTask
+    elements[RECEIVE_TASK] = ReceiveTask
 
     if elementName not in elements:
         raise Exception("Not available element.")
