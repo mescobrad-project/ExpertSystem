@@ -12,6 +12,7 @@ from src.engine.utils.Generators import getId
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
 from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
 from src.clients.artificialintelligence import client as ai_client
+from src.models._all import RunModel
 
 
 class BaseEngineController:
@@ -150,15 +151,15 @@ class BaseEngineController:
 
         return {"pending": active}
 
-    def task_send(self, tasks, state, steps, queue, step_id: UUID):
+    def task_send(self, tasks, state, steps, queue, step_id: UUID, data: list[dict]):
         (_, active, details, rules) = self._prepare_step(
             tasks, state, steps, queue, step_id
         )
 
-        if "task" in rules.keys():
+        if "store" in rules.keys():
             active["data"] = []
 
-            for ai_route_name in details["api_fn"]:
+            for ai_class in details["class"]:
                 # call api and show response
                 # on success complete
                 # on then get next and use as step_id
@@ -273,6 +274,20 @@ class BaseEngineController:
             active["completed"] = False
 
         return {"step": active, "completed": active["completed"]}
+
+    def get_dataobject_refs(self, run: RunModel):
+        file_refs = []
+
+        for activity in run.state["data"]:
+            for sid, data in activity["data"].items():
+                if sid in run.workflow.stores.keys():
+                    if run.workflow.stores[sid]["type"] == "DataObject":
+                        if "get" in data.keys():
+                            file_refs.extend(data["get"])
+                        if "set" in data.keys():
+                            file_refs.extend(data["set"])
+
+        return file_refs
 
 
 WorkflowEngineController = BaseEngineController()
