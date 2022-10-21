@@ -16,6 +16,7 @@ from src.engine.config import (
     DATA_OBJECT,
     XML_EXCLUSIVE_GATEWAY,
     XML_MANUAL_TASK,
+    XML_RECEIVE_TASK,
     XML_SCRIPT_TASK,
     XML_FLOW,
     XML_NAMESPACES,
@@ -117,6 +118,7 @@ class CRUDWorkflow(CRUDBase[WorkflowModel, WorkflowCreate, WorkflowUpdate]):
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_MANUAL_TASK}',
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_USER_TASK}',
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SEND_TASK}',
+                    f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_RECEIVE_TASK}',
                 ]
 
                 for prop in child:
