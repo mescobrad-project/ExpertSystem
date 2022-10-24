@@ -226,6 +226,80 @@ def exec_script_task(
     return response
 
 
+@router.patch("/{run_id}/step/{step_id}/task/send")
+def send_task(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+    step_id: UUID,
+    data: dict = {},
+) -> Any:
+    """
+    Send a remote background task.
+    """
+    run = RunController.get(db=db, id=run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    try:
+        run_in = jsonable_encoder(run)
+        workflow = jsonable_encoder(run.workflow)
+        response = WorkflowEngineController.task_send(
+            workflow["tasks"],
+            run_in["state"],
+            run_in["steps"],
+            run_in["queue"],
+            run.workflow_id,
+            run_id,
+            step_id,
+            data.get("data_input"),
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
+
+    RunController.update(db=db, db_obj=run, obj_in=run_in)
+
+    return response
+
+
+@router.patch("/{run_id}/step/{step_id}/task/receive")
+def receive_task(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+    step_id: UUID,
+    data: dict = {},
+) -> Any:
+    """
+    Send a remote background task.
+    """
+    run = RunController.get(db=db, id=run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    try:
+        run_in = jsonable_encoder(run)
+        workflow = jsonable_encoder(run.workflow)
+        response = WorkflowEngineController.task_receive(
+            workflow["tasks"],
+            run_in["state"],
+            run_in["steps"],
+            run_in["queue"],
+            step_id,
+            data.get("metadata"),
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Workflow engine faced an unexpected error"
+        )
+
+    RunController.update(db=db, db_obj=run, obj_in=run_in)
+
+    return response
+
+
 @router.patch("/{run_id}/step/{step_id}/task/complete")
 def complete_task(
     *,
