@@ -45,11 +45,11 @@ class Router(BaseRouter):
 
 class Api(BaseApi):
     def get_healthcheck(self) -> dict:
-        return self._response_wrapper(self.session.get(self.route.healthcheck()))
+        return self._response_wrapper(self.session.get(self.router.healthcheck()))
 
     def post_regression_svn_train(self, data: dict) -> dict:
         return self._response_wrapper(
-            self.session.post(self.route.regression_svn_train(), json=data)
+            self.session.post(self.router.regression_svn_train(), json=data)
         )
 
 

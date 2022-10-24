@@ -10,7 +10,7 @@ class BaseRouter:
 
 class BaseApi:
     def __init__(self, Router: BaseRouter, host: str) -> None:
-        self.route = Router(host)
+        self.router = Router(host)
         self.session = Session()
 
         self.session.mount(host, HTTPAdapter(max_retries=3))
