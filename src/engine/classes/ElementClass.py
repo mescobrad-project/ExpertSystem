@@ -122,14 +122,22 @@ class UserTask(ManualTask):
 class SendTask(ManualTask):
     def post(self):
         return {
-            "rules": {"complete": False, "store": {"type": "DataObject"}},
+            "rules": {
+                "complete": False,
+                "metadata": True,
+                "store": {"type": "DataObject"},
+            },
         }
 
 
 class ReceiveTask(ManualTask):
     def post(self):
         return {
-            "rules": {"complete": False, "store": {"type": "DataObject"}},
+            "rules": {
+                "complete": False,
+                "metadata": True,
+                "store": {"type": "DataObject"},
+            },
         }
 
 
