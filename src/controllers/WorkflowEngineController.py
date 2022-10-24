@@ -151,26 +151,71 @@ class BaseEngineController:
 
         return {"pending": active}
 
-    def task_send(self, tasks, state, steps, queue, step_id: UUID, data: list[dict]):
-        (_, active, details, rules) = self._prepare_step(
+    def task_send(
+        self,
+        tasks,
+        state,
+        steps,
+        queue,
+        workflow_id: UUID,
+        run_id: UUID,
+        step_id: UUID,
+        data: dict,
+    ):
+        (engine, active, details, rules) = self._prepare_step(
             tasks, state, steps, queue, step_id
         )
 
-        if "store" in rules.keys():
-            active["data"] = []
-
+        if "metadata" in rules.keys() and rules.get("metadata"):
             for ai_class in details["class"]:
-                # call api and show response
-                # on success complete
-                # on then get next and use as step_id
-                ai_client.post_algo(
+                if not ai_client.router.check_if_route_is_available(ai_class):
+                    continue
+
+                for task in queue:
+                    if not task.get("sid") in details.get("outputs"):
+                        continue
+
+                    step_id_of_receive_task = task.get("id")
+                    break
+
+                response = ai_client.post_regression_svn_train(
                     {
-                        "workflow_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                        "run_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                        "step_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "workflow_id": str(workflow_id),
+                        "run_id": str(run_id),
+                        "step_id": step_id_of_receive_task,
+                        "data": data,
                     }
                 )
-                pass
+
+                if response.get("error"):
+                    return {"error": response.get("error")}
+
+                active["metadata"] = response
+
+                engine.set_step_completed(active)
+
+        return {"pending": active}
+
+    def task_receive(
+        self,
+        tasks,
+        state,
+        steps,
+        queue,
+        step_id: UUID,
+        data: dict,
+    ):
+        engine = self._continue_from(tasks, state, steps, queue)
+        active = engine.find_task_in_bucket_by_id(queue, str(step_id))
+        details = engine.graph.find_task_by_id(active["sid"])
+        element = get_class_from_task_name(details["type"])()
+        try:
+            rules = (element.post(details))["rules"]
+        except TypeError:
+            rules = (element.post())["rules"]
+
+        if "metadata" in rules.keys() and rules.get("metadata"):
+            active["metadata"] = data
 
         return {"pending": active}
 
@@ -231,12 +276,18 @@ class BaseEngineController:
                     }
                 )
 
-                active["metadata"] = {
-                    "data": {
+                if active.get("metadata"):
+                    active["metadata"]["store"] = {
                         "state_data_id": state_id,
                         "state_data_number": len(state["data"]) - 1,
                     }
-                }
+                else:
+                    active["metadata"] = {
+                        "store": {
+                            "state_data_id": state_id,
+                            "state_data_number": len(state["data"]) - 1,
+                        }
+                    }
 
             engine.set_step_completed(active)
 
