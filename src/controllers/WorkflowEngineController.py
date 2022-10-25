@@ -1,6 +1,7 @@
 from uuid import UUID
 from importlib.util import spec_from_file_location, module_from_spec
 from src.engine.config import (
+    RECEIVE_TASK,
     SCRIPT_DIR,
     MANUAL_TASK,
     SCRIPT_TASK,
@@ -235,7 +236,12 @@ class BaseEngineController:
         if "complete" in rules.keys():
             # task = engine.find_task_in_bucket_by_id(engine.steps, step_id)
 
-            if details["type"] not in [MANUAL_TASK, SCRIPT_TASK, USER_TASK]:
+            if details["type"] not in [
+                MANUAL_TASK,
+                SCRIPT_TASK,
+                USER_TASK,
+                RECEIVE_TASK,
+            ]:
                 raise Exception("Action forbidden.")
 
             task_stores = tasks[active["sid"]].get("stores")
