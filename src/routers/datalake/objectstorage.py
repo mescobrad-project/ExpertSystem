@@ -20,7 +20,7 @@ def list_buckets() -> Any:
 
 
 @router.get("/{bucket_name}")
-def list_objects_in_bucket(*, bucket_name: str, obj_name: str = None) -> Any:
+def list_objects_in_bucket(*, bucket_name: str, obj_name: str = "") -> Any:
     """
     List all objects in bucket.
     """
