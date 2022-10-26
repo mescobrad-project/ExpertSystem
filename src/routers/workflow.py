@@ -16,7 +16,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[Workflow])
+@router.get("", response_model=list[Workflow])
 def read_workflows(
     db: Session = Depends(get_db), skip: int = 0, limit: int = 100
 ) -> Any:
@@ -31,7 +31,7 @@ def read_workflows(
     return workflows
 
 
-@router.post("/")
+@router.post("")
 def create_workflow(
     *, db: Session = Depends(get_db), workflow_in: WorkflowCreate
 ) -> Any:

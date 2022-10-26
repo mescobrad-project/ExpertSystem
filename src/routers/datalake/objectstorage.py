@@ -9,7 +9,7 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("")
 def list_buckets() -> Any:
     """
     List all buckets in object storage.
