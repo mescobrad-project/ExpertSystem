@@ -34,12 +34,25 @@ class Router(BaseRouter):
         """
         return f"{self.regression_svn()}/train"
 
-    def check_if_route_is_available(self, route_name) -> bool:
+    def regression_svn_predict(self) -> str:
+        """
+        :return: {host}/algo/regression/svn/predict
+        """
+        return f"{self.regression_svn()}/predict"
+
+    def construct_algo(self, route_name: str) -> str:
+        """
+        :return: {host}/algo/{route_name}
+        """
+        return f"{self.algo()}/{route_name}"
+
+    def check_if_route_is_available(self, route_name: str) -> bool:
         """
         :return: if route is available in specific list
         """
         return f"{self.algo()}/{route_name}" in [
-            self.regression_svn(),
+            self.regression_svn_train(),
+            self.regression_svn_predict(),
         ]
 
 
@@ -50,6 +63,12 @@ class Api(BaseApi):
     def post_regression_svn_train(self, data: dict) -> dict:
         return self._response_wrapper(
             self.session.post(self.router.regression_svn_train(), json=data)
+        )
+
+    def post_(self, route_name: str, data: dict) -> dict:
+        print(self.router.construct_algo(route_name))
+        return self._response_wrapper(
+            self.session.post(self.router.construct_algo(route_name), json=data)
         )
 
 
