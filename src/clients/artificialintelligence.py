@@ -46,6 +46,12 @@ class Router(BaseRouter):
         """
         return f"{self.algo()}/{route_name}"
 
+    def construct_algo_instructions(self, route_name: str) -> str:
+        """
+        :return: {host}/algo/{route_name}/instructions
+        """
+        return f"{self.algo()}/{route_name}/instructions"
+
     def check_if_route_is_available(self, route_name: str) -> bool:
         """
         :return: if route is available in specific list
@@ -69,6 +75,12 @@ class Api(BaseApi):
         print(self.router.construct_algo(route_name))
         return self._response_wrapper(
             self.session.post(self.router.construct_algo(route_name), json=data)
+        )
+
+    def get_instructions_for_(self, route_name: str) -> dict:
+        print(self.router.construct_algo_instructions(route_name))
+        return self._response_wrapper(
+            self.session.get(self.router.construct_algo_instructions(route_name))
         )
 
 
