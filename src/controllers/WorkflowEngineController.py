@@ -179,14 +179,20 @@ class BaseEngineController:
                     step_id_of_receive_task = task.get("id")
                     break
 
-                response = ai_client.post_regression_svn_train(
-                    {
-                        "workflow_id": str(workflow_id),
-                        "run_id": str(run_id),
-                        "step_id": step_id_of_receive_task,
-                        "data": data,
-                    }
-                )
+                response = ai_client.get_instructions_for_(ai_class)
+
+                post_data_object = {}
+                for key in response:
+                    if key == "workflow_id":
+                        post_data_object[key] = str(workflow_id)
+                    elif key == "run_id":
+                        post_data_object[key] = str(run_id)
+                    elif key == "step_id":
+                        post_data_object[key] = step_id_of_receive_task
+                    elif key == "data":
+                        post_data_object[key] = data
+
+                response = ai_client.post_(ai_class, post_data_object)
 
                 if response.get("error"):
                     return {"error": response.get("error")}
