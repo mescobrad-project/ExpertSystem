@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
 from src.database import get_db
+from src.models.ModuleCategoryModel import ModuleCategoryModel
 from src.models.ModuleModel import ModuleModel
 from src.controllers.ModuleController import ModuleController
 from src.schemas.ModuleSchema import (
@@ -21,12 +22,30 @@ router = APIRouter(
 
 
 @router.get("", response_model=list[Module])
-def read_module(db: Session = Depends(get_db), skip: int = 0, limit: int = 100) -> Any:
+def read_module(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    task: str = None,
+    category: str = None,
+) -> Any:
     """
     Retrieve module with their metadata.
     """
     try:
-        module = ModuleController.get_multi(db, skip=skip, limit=limit)
+        criteria = {}
+        if task:
+            criteria["task"] = task
+
+        if category:
+            criteria["category"] = {
+                "model": ModuleCategoryModel,
+                "criteria": {"code": category},
+            }
+
+        module = ModuleController.get_multi(
+            db, skip=skip, limit=limit, criteria=criteria
+        )
     except Exception:
         raise HTTPException(status_code=500, detail="Something went wrong")
 
