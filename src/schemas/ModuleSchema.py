@@ -13,7 +13,7 @@ class ModuleBase(FormBase):
 # Properties to receive on obj creation
 class ModuleCreate(ModuleBase):
     code: str
-    workflow_id: UUID
+    category_id: UUID
 
 
 # Properties to receive on obj update
