@@ -22,7 +22,7 @@ router = APIRouter(
 
 
 @router.get("", response_model=list[Module])
-def read_module(
+def read_modules(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
@@ -68,7 +68,7 @@ def create_module(*, db: Session = Depends(get_db), module_in: ModuleCreate) -> 
 
 
 @router.get("/deleted", response_model=list[Module])
-def read_deleted_module(
+def read_deleted_modules(
     db: Session = Depends(get_db), skip: int = 0, limit: int = 100
 ) -> Any:
     """
