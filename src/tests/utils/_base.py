@@ -36,14 +36,27 @@ def check_if_dicts_match(d1: dict, d2: dict) -> bool:
     return set(d1.keys()) == set(d2.keys())
 
 
-def check_if_listofdicts_match(l1: list, l2: list) -> bool:
-    length = len(l1) == len(l2)
-
-    if not length:
+def check_if_dict_values_match(d1: dict, d2: dict) -> bool:
+    if not check_if_dicts_match(d1, d2):
         return False
 
-    for i in l1:
-        if i not in l2:
+    for key in set(d1.keys()):
+        if d1[key] != d2[key]:
             return False
+
+    return True
+
+
+def check_if_listofdicts_match(l1: list, l2: list, checkValues: bool = True) -> bool:
+    if not len(l1) == len(l2):
+        return False
+
+    for index, obj in enumerate(l1):
+        if checkValues:
+            if not check_if_dict_values_match(obj, l2[index]):
+                return False
+        else:
+            if not check_if_dicts_match(obj, l2[index]):
+                return False
 
     return True
