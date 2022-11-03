@@ -1,7 +1,7 @@
 import random
 import string
 from uuid import uuid4
-from random import randint
+from random import randint, getrandbits
 
 
 def random_lower_string() -> str:
@@ -10,6 +10,10 @@ def random_lower_string() -> str:
 
 def random_email() -> str:
     return f"{random_lower_string()}@{random_lower_string()}.com"
+
+
+def random_bool() -> str:
+    return bool(getrandbits(1))
 
 
 def random_unique_string() -> str:
