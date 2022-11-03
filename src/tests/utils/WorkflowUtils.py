@@ -4,6 +4,7 @@ from src.controllers.WorkflowController import WorkflowController
 from src.models.WorkflowModel import WorkflowModel
 from src.schemas.WorkflowSchema import WorkflowCreate, WorkflowUpdate
 from ._base import random_lower_string, random_unique_string, random_dict_obj
+from .WorkflowCategoryUtils import seed_category
 
 
 def create_random_workflow() -> tuple[str, dict]:
@@ -17,14 +18,17 @@ def create_random_workflow() -> tuple[str, dict]:
 
 def seed_workflow(db: Session) -> dict[str, dict, WorkflowModel]:
     name, description, tasks, raw_diagram_data = create_random_workflow()
+    category = seed_category(db)
 
     workflow_in = WorkflowCreate(
+        category_id=category["obj"].id,
         name=name,
         description=description,
         tasks=tasks,
         raw_diagram_data=raw_diagram_data,
     )
     return {
+        "category_id": category["obj"].id,
         "name": name,
         "description": description,
         "tasks": tasks,
