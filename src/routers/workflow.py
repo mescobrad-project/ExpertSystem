@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
 from src.database import get_db
 from src.models.WorkflowModel import WorkflowModel
+from src.models.ModuleCategoryModel import ModuleCategoryModel
 from src.controllers.WorkflowController import WorkflowController
 from src.schemas.WorkflowSchema import Workflow, WorkflowCreate, WorkflowUpdate
 from src.controllers.RunController import RunController
@@ -18,13 +19,24 @@ router = APIRouter(
 
 @router.get("", response_model=list[Workflow])
 def read_workflows(
-    db: Session = Depends(get_db), skip: int = 0, limit: int = 100
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    category: str = None,
 ) -> Any:
     """
     Retrieve workflows with their metadata.
     """
     try:
-        workflows = WorkflowController.get_multi(db, skip=skip, limit=limit)
+        criteria = {}
+        if category:
+            criteria["category"] = {
+                "model": ModuleCategoryModel,
+                "criteria": {"code": category},
+            }
+        workflows = WorkflowController.get_multi(
+            db, skip=skip, limit=limit, criteria=criteria
+        )
     except Exception:
         raise HTTPException(status_code=500, detail="Something went wrong")
 
