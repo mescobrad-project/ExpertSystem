@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, ForeignKey, JSON
+from sqlalchemy import Column, String, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import relationship
 
 from src.models._base import Base, GUID
@@ -15,6 +15,7 @@ class WorkflowModel(Base):
     tasks = Column(JSON, nullable=True)
     stores = Column(JSON, nullable=True)
     raw_diagram_data = Column(JSON, nullable=True)
+    is_template = Column(Boolean, default=False, index=True)
 
     runs = relationship("RunModel", back_populates="workflow")
     category = relationship("WorkflowCategoryModel", back_populates="workflows")
