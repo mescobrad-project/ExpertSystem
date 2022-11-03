@@ -14,6 +14,7 @@ class WorkflowBase(FormBase):
 # Properties to receive on obj creation
 class WorkflowCreate(WorkflowBase):
     name: str
+    category_id: UUID
 
 
 # Properties to receive on obj update
@@ -24,6 +25,7 @@ class WorkflowUpdate(WorkflowBase):
 # Properties shared by models stored in DB
 class WorkflowInDBBase(Base):
     id: UUID = Field(default_factory=lambda: uuid4().hex)
+    category_id: UUID
     name: str
     description: str | None = None
     tasks: dict | None = None
