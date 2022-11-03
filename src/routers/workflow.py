@@ -23,6 +23,7 @@ def read_workflows(
     skip: int = 0,
     limit: int = 100,
     category: str = None,
+    is_template: bool = False,
 ) -> Any:
     """
     Retrieve workflows with their metadata.
@@ -34,6 +35,9 @@ def read_workflows(
                 "model": ModuleCategoryModel,
                 "criteria": {"code": category},
             }
+
+        criteria["is_template"] = is_template
+
         workflows = WorkflowController.get_multi(
             db, skip=skip, limit=limit, criteria=criteria
         )
