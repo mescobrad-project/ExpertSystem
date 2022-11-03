@@ -12,6 +12,7 @@ from src.tests.utils.WorkflowUtils import (
 def test_create_workflow(db: Session) -> None:
     workflow = seed_workflow(db)
 
+    assert workflow["obj"].category_id == workflow["category_id"]
     assert workflow["obj"].name == workflow["name"]
     assert workflow["obj"].description == workflow["description"]
     assert check_if_dicts_match(workflow["obj"].tasks, workflow["tasks"])
@@ -25,6 +26,7 @@ def test_get_workflow(db: Session) -> None:
 
     stored = WorkflowController.get(db=db, id=workflow["obj"].id)
     assert stored
+    assert workflow["obj"].category_id == stored.category_id
     assert workflow["obj"].name == stored.name
     assert workflow["obj"].description == stored.description
     assert check_if_dicts_match(workflow["obj"].tasks, stored.tasks)
