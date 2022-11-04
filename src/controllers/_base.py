@@ -1,6 +1,7 @@
 from typing import Any, Generic, Type, TypeVar
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
+from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
 
 from src.models._base import Base
@@ -42,6 +43,19 @@ def _parse_criteria(model, criteria):
     return filters
 
 
+def _parse_order(model, order: str = None, direction: str = None):
+    if order == None:
+        order = "id"
+
+    if direction == None:
+        direction = "asc"
+
+    if direction == "asc":
+        return [asc(getattr(model, order))]
+    if direction == "desc":
+        return [desc(getattr(model, order))]
+
+
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         """
@@ -67,26 +81,42 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         )
 
     def get_multi(
-        self, db: Session, *, skip: int = 0, limit: int = 100, criteria={}
+        self,
+        db: Session,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        criteria={},
+        order: str = None,
+        direction: str = None
     ) -> list[ModelType]:
         criteria["deleted_at"] = None
 
         return (
             db.query(self.model)
             .filter(*_parse_criteria(self.model, criteria))
+            .order_by(*_parse_order(self.model, order, direction))
             .offset(skip)
             .limit(limit)
             .all()
         )
 
     def get_multi_deleted(
-        self, db: Session, *, skip: int = 0, limit: int = 100, criteria={}
+        self,
+        db: Session,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        criteria={},
+        order: str = None,
+        direction: str = None
     ) -> list[ModelType]:
         criteria["deleted_at__not"] = None
 
         return (
             db.query(self.model)
             .filter(*_parse_criteria(self.model, criteria))
+            .order_by(*_parse_order(self.model, order, direction))
             .offset(skip)
             .limit(limit)
             .all()
