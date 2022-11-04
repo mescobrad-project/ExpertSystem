@@ -12,6 +12,7 @@ from src.schemas.ModuleCategorySchema import (
     ModuleCategoryCreate,
     ModuleCategoryUpdate,
 )
+from src.utils.pagination import paginate
 
 router = APIRouter(
     prefix="/category/module",
@@ -20,21 +21,43 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=list[ModuleCategory])
+@router.get("", response_model=dict[str, Any | list[ModuleCategory]])
 def read_module_categories(
-    db: Session = Depends(get_db), skip: int = 0, limit: int = 100
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    order: str = None,
+    direction: str = None,
 ) -> Any:
     """
     Retrieve module categories with their metadata.
+    Params explain:
+    order: The model's prop as str, e.g. id
+    direction: asc | desc
     """
     try:
-        module_categories = ModuleCategoryController.get_multi(
-            db, skip=skip, limit=limit
-        )
-    except Exception:
-        raise HTTPException(status_code=500, detail="Something went wrong")
+        if skip < 0:
+            skip = 0
 
-    return module_categories
+        categories = ModuleCategory.get_multi(
+            db,
+            skip=skip,
+            limit=limit,
+            order=order,
+            direction=direction,
+        )
+        count_all = ModuleCategory.count(db)
+
+        paging = paginate(count_all, skip, limit)
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error))
+
+    return {
+        "data": categories,
+        "paging": paging,
+        "count": count_all,
+    }
 
 
 @router.post("")
@@ -54,21 +77,43 @@ def create_category(
     return category
 
 
-@router.get("/deleted", response_model=list[ModuleCategory])
+@router.get("/deleted", response_model=dict[str, Any | list[ModuleCategory]])
 def read_deleted_module_categories(
-    db: Session = Depends(get_db), skip: int = 0, limit: int = 100
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    order: str = None,
+    direction: str = None,
 ) -> Any:
     """
     Retrieve deleted module categories.
+    Params explain:
+    order: The model's prop as str, e.g. id
+    direction: asc | desc
     """
     try:
-        module_categories = ModuleCategoryController.get_multi_deleted(
-            db, skip=skip, limit=limit
-        )
-    except Exception:
-        raise HTTPException(status_code=500, detail="Something went wrong")
+        if skip < 0:
+            skip = 0
 
-    return module_categories
+        categories = ModuleCategory.get_multi_deleted(
+            db,
+            skip=skip,
+            limit=limit,
+            order=order,
+            direction=direction,
+        )
+        count_all = ModuleCategory.count_deleted(db)
+
+        paging = paginate(count_all, skip, limit)
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error))
+
+    return {
+        "data": categories,
+        "paging": paging,
+        "count": count_all,
+    }
 
 
 @router.get("/deleted/{category_id}", response_model=ModuleCategory)
