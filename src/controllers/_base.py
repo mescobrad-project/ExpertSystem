@@ -80,6 +80,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             .first()
         )
 
+    def count(self, db: Session, criteria={}) -> int:
+        criteria["deleted_at"] = None
+        return (
+            db.query(self.model).filter(*_parse_criteria(self.model, criteria)).count()
+        )
+
     def get_multi(
         self,
         db: Session,
@@ -99,6 +105,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             .offset(skip)
             .limit(limit)
             .all()
+        )
+
+    def count_deleted(self, db: Session, criteria={}) -> int:
+        criteria["deleted_at__not"] = None
+        return (
+            db.query(self.model).filter(*_parse_criteria(self.model, criteria)).count()
         )
 
     def get_multi_deleted(
