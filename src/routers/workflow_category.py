@@ -11,6 +11,7 @@ from src.schemas.WorkflowCategorySchema import (
     WorkflowCategoryCreate,
     WorkflowCategoryUpdate,
 )
+from src.utils.pagination import paginate
 
 router = APIRouter(
     prefix="/category/workflow",
@@ -19,19 +20,43 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=list[WorkflowCategory])
+@router.get("", response_model=dict[str, Any | list[WorkflowCategory]])
 def read_workflow_categories(
-    db: Session = Depends(get_db), skip: int = 0, limit: int = 100
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    order: str = None,
+    direction: str = None,
 ) -> Any:
     """
     Retrieve workflow categories with their metadata.
+    Params explain:
+    order: The model's prop as str, e.g. id
+    direction: asc | desc
     """
     try:
-        categories = WorkflowCategoryController.get_multi(db, skip=skip, limit=limit)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Something went wrong")
+        if skip < 0:
+            skip = 0
 
-    return categories
+        categories = WorkflowCategoryController.get_multi(
+            db,
+            skip=skip,
+            limit=limit,
+            order=order,
+            direction=direction,
+        )
+        count_all = WorkflowCategoryController.count(db)
+
+        paging = paginate(count_all, skip, limit)
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error))
+
+    return {
+        "data": categories,
+        "paging": paging,
+        "count": count_all,
+    }
 
 
 @router.post("")
@@ -51,21 +76,43 @@ def create_workflow_category(
     return category
 
 
-@router.get("/deleted", response_model=list[WorkflowCategory])
+@router.get("/deleted", response_model=dict[str, Any | list[WorkflowCategory]])
 def read_deleted_workflow_categories(
-    db: Session = Depends(get_db), skip: int = 0, limit: int = 100
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    order: str = None,
+    direction: str = None,
 ) -> Any:
     """
     Retrieve deleted workflow categories.
+    Params explain:
+    order: The model's prop as str, e.g. id
+    direction: asc | desc
     """
     try:
-        categories = WorkflowCategoryController.get_multi_deleted(
-            db, skip=skip, limit=limit
-        )
-    except Exception:
-        raise HTTPException(status_code=500, detail="Something went wrong")
+        if skip < 0:
+            skip = 0
 
-    return categories
+        categories = WorkflowCategoryController.get_multi_deleted(
+            db,
+            skip=skip,
+            limit=limit,
+            order=order,
+            direction=direction,
+        )
+        count_all = WorkflowCategoryController.count_deleted(db)
+
+        paging = paginate(count_all, skip, limit)
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error))
+
+    return {
+        "data": categories,
+        "paging": paging,
+        "count": count_all,
+    }
 
 
 @router.get("/deleted/{category_id}", response_model=WorkflowCategory)
