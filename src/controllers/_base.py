@@ -66,17 +66,17 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    def get(self, db: Session, id: Any) -> ModelType | None:
-        return (
-            db.query(self.model)
-            .filter(*_parse_criteria(self.model, {"id": id, "deleted_at": None}))
-            .first()
-        )
+    def get(
+        self,
+        db: Session,
+        id: Any,
+        criteria={},
+    ) -> ModelType | None:
+        criteria["id"] = id
 
-    def get_deleted(self, db: Session, id: Any) -> ModelType | None:
         return (
             db.query(self.model)
-            .filter(*_parse_criteria(self.model, {"id": id, "deleted_at__not": None}))
+            .filter(*_parse_criteria(self.model, criteria=criteria))
             .first()
         )
 
@@ -96,35 +96,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         order: str = None,
         direction: str = None
     ) -> list[ModelType]:
-        criteria["deleted_at"] = None
-
-        return (
-            db.query(self.model)
-            .filter(*_parse_criteria(self.model, criteria))
-            .order_by(*_parse_order(self.model, order, direction))
-            .offset(skip)
-            .limit(limit)
-            .all()
-        )
-
-    def count_deleted(self, db: Session, criteria={}) -> int:
-        criteria["deleted_at__not"] = None
-        return (
-            db.query(self.model).filter(*_parse_criteria(self.model, criteria)).count()
-        )
-
-    def get_multi_deleted(
-        self,
-        db: Session,
-        *,
-        skip: int = 0,
-        limit: int = 100,
-        criteria={},
-        order: str = None,
-        direction: str = None
-    ) -> list[ModelType]:
-        criteria["deleted_at__not"] = None
-
         return (
             db.query(self.model)
             .filter(*_parse_criteria(self.model, criteria))

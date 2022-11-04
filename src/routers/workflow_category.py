@@ -11,7 +11,9 @@ from src.schemas.WorkflowCategorySchema import (
     WorkflowCategoryCreate,
     WorkflowCategoryUpdate,
 )
-from src.utils.pagination import paginate
+from ._base import RouteHelper
+
+route_helper = RouteHelper(WorkflowCategoryController)
 
 router = APIRouter(
     prefix="/category/workflow",
@@ -34,29 +36,9 @@ def read_workflow_categories(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    try:
-        if skip < 0:
-            skip = 0
-
-        categories = WorkflowCategoryController.get_multi(
-            db,
-            skip=skip,
-            limit=limit,
-            order=order,
-            direction=direction,
-        )
-        count_all = WorkflowCategoryController.count(db)
-
-        paging = paginate(count_all, skip, limit)
-
-    except Exception as error:
-        raise HTTPException(status_code=500, detail=str(error))
-
-    return {
-        "data": categories,
-        "paging": paging,
-        "count": count_all,
-    }
+    return route_helper.read_multi(
+        db, skip, limit, order, direction, criteria={"deleted_at": None}
+    )
 
 
 @router.post("")
@@ -90,29 +72,9 @@ def read_deleted_workflow_categories(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    try:
-        if skip < 0:
-            skip = 0
-
-        categories = WorkflowCategoryController.get_multi_deleted(
-            db,
-            skip=skip,
-            limit=limit,
-            order=order,
-            direction=direction,
-        )
-        count_all = WorkflowCategoryController.count_deleted(db)
-
-        paging = paginate(count_all, skip, limit)
-
-    except Exception as error:
-        raise HTTPException(status_code=500, detail=str(error))
-
-    return {
-        "data": categories,
-        "paging": paging,
-        "count": count_all,
-    }
+    return route_helper.read_multi(
+        db, skip, limit, order, direction, criteria={"deleted_at__not": None}
+    )
 
 
 @router.get("/deleted/{category_id}", response_model=WorkflowCategory)
@@ -124,11 +86,7 @@ def read_deleted_workflow_category(
     """
     Get deleted workflow category by ID.
     """
-    category = WorkflowCategoryController.get_deleted(db=db, id=category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Workflow Category not found")
-
-    return category
+    return route_helper.read(category_id, db=db, criteria={"deleted_at__not": None})
 
 
 @router.get("/{category_id}", response_model=WorkflowCategory)
@@ -140,11 +98,7 @@ def read_workflow_category(
     """
     Get workflow category by ID.
     """
-    category = WorkflowCategoryController.get(db=db, id=category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Workflow Category not found")
-
-    return category
+    return route_helper.read(category_id, db=db, criteria={"deleted_at": None})
 
 
 @router.put("/{category_id}", response_model=WorkflowCategory)
@@ -157,9 +111,7 @@ def update_workflow_category(
     """
     Update a workflow category.
     """
-    category = WorkflowCategoryController.get(db=db, id=category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Workflow Category not found")
+    category = route_helper.read(category_id, db=db, criteria={"deleted_at": None})
 
     category = WorkflowCategoryController.update(
         db=db, db_obj=category, obj_in=category_in
@@ -176,9 +128,7 @@ def destroy_workflow_category(
     """
     Delete a workflow category.
     """
-    category = WorkflowCategoryController.get(db=db, id=category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Workflow Category not found")
+    category = route_helper.read(category_id, db=db, criteria={"deleted_at": None})
 
     if category.deleted_at:
         raise HTTPException(
@@ -202,9 +152,7 @@ def revert_workflow_category(
     """
     Revert the deletion of a workflow category.
     """
-    category = WorkflowCategoryController.get_deleted(db=db, id=category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Workflow Category not found")
+    category = route_helper.read(category_id, db=db, criteria={"deleted_at__not": None})
 
     if not category.deleted_at:
         raise HTTPException(status_code=405, detail="Workflow Category is active")
