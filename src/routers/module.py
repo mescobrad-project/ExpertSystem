@@ -13,7 +13,10 @@ from src.schemas.ModuleSchema import (
     ModuleCreate,
     ModuleUpdate,
 )
-from src.utils.pagination import paginate, append_query_in_uri
+from src.utils.pagination import append_query_in_uri
+from ._base import RouteHelper
+
+route_helper = RouteHelper(ModuleController)
 
 router = APIRouter(
     prefix="/module",
@@ -38,55 +41,37 @@ def read_modules(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    try:
-        if skip < 0:
-            skip = 0
+    criteria = {}
+    if category:
+        criteria["category"] = {
+            "model": ModuleCategoryModel,
+            "criteria": {"code": category},
+        }
 
-        criteria = {}
-        if category:
-            criteria["category"] = {
-                "model": ModuleCategoryModel,
-                "criteria": {"code": category},
-            }
+    if task:
+        criteria["task"] = task
 
-        if task:
-            criteria["task"] = task
+    criteria["deleted_at"] = None
 
-        module = ModuleController.get_multi(
-            db,
-            skip=skip,
-            limit=limit,
-            criteria=criteria,
-            order=order,
-            direction=direction,
+    response = route_helper.read_multi(db, skip, limit, order, direction, criteria)
+
+    if category != None:
+        response["paging"]["previous_link"] = append_query_in_uri(
+            response["paging"]["previous_link"], f"category={category}"
         )
-        count_all = ModuleController.count(db, criteria=criteria)
+        response["paging"]["next_link"] = append_query_in_uri(
+            response["paging"]["next_link"], f"category={category}"
+        )
 
-        paging = paginate(count_all, skip, limit)
+    if task != None:
+        response["paging"]["previous_link"] = append_query_in_uri(
+            response["paging"]["previous_link"], f"task={task}"
+        )
+        response["paging"]["next_link"] = append_query_in_uri(
+            response["paging"]["next_link"], f"task={task}"
+        )
 
-        if category != None:
-            paging["previous_link"] = append_query_in_uri(
-                paging["previous_link"], f"category={category}"
-            )
-            paging["next_link"] = append_query_in_uri(
-                paging["next_link"], f"category={category}"
-            )
-        if task != None:
-            paging["previous_link"] = append_query_in_uri(
-                paging["previous_link"], f"task={task}"
-            )
-            paging["next_link"] = append_query_in_uri(
-                paging["next_link"], f"task={task}"
-            )
-
-    except Exception as error:
-        raise HTTPException(status_code=500, detail=str(error))
-
-    return {
-        "data": module,
-        "paging": paging,
-        "count": count_all,
-    }
+    return response
 
 
 @router.post("")
@@ -120,55 +105,37 @@ def read_modules(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    try:
-        if skip < 0:
-            skip = 0
+    criteria = {}
+    if category:
+        criteria["category"] = {
+            "model": ModuleCategoryModel,
+            "criteria": {"code": category},
+        }
 
-        criteria = {}
-        if category:
-            criteria["category"] = {
-                "model": ModuleCategoryModel,
-                "criteria": {"code": category},
-            }
+    if task:
+        criteria["task"] = task
 
-        if task:
-            criteria["task"] = task
+    criteria["deleted_at__not"] = None
 
-        module = ModuleController.get_multi_deleted(
-            db,
-            skip=skip,
-            limit=limit,
-            criteria=criteria,
-            order=order,
-            direction=direction,
+    response = route_helper.read_multi(db, skip, limit, order, direction, criteria)
+
+    if category != None:
+        response["paging"]["previous_link"] = append_query_in_uri(
+            response["paging"]["previous_link"], f"category={category}"
         )
-        count_all = ModuleController.count_deleted(db, criteria=criteria)
+        response["paging"]["next_link"] = append_query_in_uri(
+            response["paging"]["next_link"], f"category={category}"
+        )
 
-        paging = paginate(count_all, skip, limit)
+    if task != None:
+        response["paging"]["previous_link"] = append_query_in_uri(
+            response["paging"]["previous_link"], f"task={task}"
+        )
+        response["paging"]["next_link"] = append_query_in_uri(
+            response["paging"]["next_link"], f"task={task}"
+        )
 
-        if category != None:
-            paging["previous_link"] = append_query_in_uri(
-                paging["previous_link"], f"category={category}"
-            )
-            paging["next_link"] = append_query_in_uri(
-                paging["next_link"], f"category={category}"
-            )
-        if task != None:
-            paging["previous_link"] = append_query_in_uri(
-                paging["previous_link"], f"task={task}"
-            )
-            paging["next_link"] = append_query_in_uri(
-                paging["next_link"], f"task={task}"
-            )
-
-    except Exception as error:
-        raise HTTPException(status_code=500, detail=str(error))
-
-    return {
-        "data": module,
-        "paging": paging,
-        "count": count_all,
-    }
+    return response
 
 
 @router.get("/deleted/{module_id}", response_model=Module)
@@ -180,11 +147,7 @@ def read_deleted_module(
     """
     Get deleted module by ID.
     """
-    module = ModuleController.get_deleted(db=db, id=module_id)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
-
-    return module
+    return route_helper.read(module_id, db=db, criteria={"deleted_at__not": None})
 
 
 @router.get("/{module_id}", response_model=Module)
@@ -196,11 +159,7 @@ def read_module(
     """
     Get module by ID.
     """
-    module = ModuleController.get(db=db, id=module_id)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
-
-    return module
+    return route_helper.read(module_id, db=db, criteria={"deleted_at": None})
 
 
 @router.put("/{module_id}", response_model=Module)
@@ -213,12 +172,9 @@ def update_module(
     """
     Update a module.
     """
-    module = ModuleController.get(db=db, id=module_id)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
+    module = route_helper.read(module_id, db=db, criteria={"deleted_at": None})
 
-    module = ModuleController.update(db=db, db_obj=module, obj_in=module_in)
-    return module
+    return ModuleController.update(db=db, db_obj=module, obj_in=module_in)
 
 
 @router.delete("/{module_id}", response_model=Module)
@@ -230,9 +186,7 @@ def destroy_module(
     """
     Delete a module.
     """
-    module = ModuleController.get(db=db, id=module_id)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
+    module = route_helper.read(module_id, db=db, criteria={"deleted_at": None})
 
     if module.deleted_at:
         raise HTTPException(status_code=405, detail="Module already destroyed")
@@ -254,9 +208,7 @@ def revert_module(
     """
     Revert the deletion of a module.
     """
-    module = ModuleController.get_deleted(db=db, id=module_id)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
+    module = route_helper.read(module_id, db=db, criteria={"deleted_at__not": None})
 
     if not module.deleted_at:
         raise HTTPException(status_code=405, detail="Module is active")

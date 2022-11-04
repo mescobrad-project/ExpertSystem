@@ -5,14 +5,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
 from src.database import get_db
-from src.models.ModuleCategoryModel import ModuleCategoryModel
 from src.controllers.ModuleCategoryController import ModuleCategoryController
 from src.schemas.ModuleCategorySchema import (
     ModuleCategory,
     ModuleCategoryCreate,
     ModuleCategoryUpdate,
 )
-from src.utils.pagination import paginate
+from ._base import RouteHelper
+
+route_helper = RouteHelper(ModuleCategoryController)
 
 router = APIRouter(
     prefix="/category/module",
@@ -35,29 +36,9 @@ def read_module_categories(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    try:
-        if skip < 0:
-            skip = 0
-
-        categories = ModuleCategory.get_multi(
-            db,
-            skip=skip,
-            limit=limit,
-            order=order,
-            direction=direction,
-        )
-        count_all = ModuleCategory.count(db)
-
-        paging = paginate(count_all, skip, limit)
-
-    except Exception as error:
-        raise HTTPException(status_code=500, detail=str(error))
-
-    return {
-        "data": categories,
-        "paging": paging,
-        "count": count_all,
-    }
+    return route_helper.read_multi(
+        db, skip, limit, order, direction, criteria={"deleted_at": None}
+    )
 
 
 @router.post("")
@@ -91,29 +72,9 @@ def read_deleted_module_categories(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    try:
-        if skip < 0:
-            skip = 0
-
-        categories = ModuleCategory.get_multi_deleted(
-            db,
-            skip=skip,
-            limit=limit,
-            order=order,
-            direction=direction,
-        )
-        count_all = ModuleCategory.count_deleted(db)
-
-        paging = paginate(count_all, skip, limit)
-
-    except Exception as error:
-        raise HTTPException(status_code=500, detail=str(error))
-
-    return {
-        "data": categories,
-        "paging": paging,
-        "count": count_all,
-    }
+    return route_helper.read_multi(
+        db, skip, limit, order, direction, criteria={"deleted_at__not": None}
+    )
 
 
 @router.get("/deleted/{category_id}", response_model=ModuleCategory)
@@ -125,11 +86,7 @@ def read_deleted_category(
     """
     Get deleted category by ID.
     """
-    category = ModuleCategoryController.get_deleted(db=db, id=category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Module Category not found")
-
-    return category
+    return route_helper.read(category_id, db=db, criteria={"deleted_at__not": None})
 
 
 @router.get("/{category_id}", response_model=ModuleCategory)
@@ -141,11 +98,7 @@ def read_category(
     """
     Get category by ID.
     """
-    category = ModuleCategoryController.get(db=db, id=category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Module Category not found")
-
-    return category
+    return route_helper.read(category_id, db=db, criteria={"deleted_at": None})
 
 
 @router.put("/{category_id}", response_model=ModuleCategory)
@@ -158,9 +111,7 @@ def update_category(
     """
     Update a category.
     """
-    category = ModuleCategoryController.get(db=db, id=category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Module Category not found")
+    category = route_helper.read(category_id, db=db, criteria={"deleted_at": None})
 
     category = ModuleCategoryController.update(
         db=db, db_obj=category, obj_in=category_in
@@ -177,9 +128,7 @@ def destroy_category(
     """
     Delete a category.
     """
-    category = ModuleCategoryController.get(db=db, id=category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Module Category not found")
+    category = route_helper.read(category_id, db=db, criteria={"deleted_at": None})
 
     if category.deleted_at:
         raise HTTPException(status_code=405, detail="Module Category already destroyed")
@@ -201,9 +150,7 @@ def revert_category(
     """
     Revert the deletion of a category.
     """
-    category = ModuleCategoryController.get_deleted(db=db, id=category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Module Category not found")
+    category = route_helper.read(category_id, db=db, criteria={"deleted_at__not": None})
 
     if not category.deleted_at:
         raise HTTPException(status_code=405, detail="Module Category is active")
