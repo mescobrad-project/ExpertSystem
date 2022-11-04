@@ -11,24 +11,33 @@ from src.controllers.WorkflowController import WorkflowController
 from src.schemas.WorkflowSchema import Workflow, WorkflowCreate, WorkflowUpdate
 from src.controllers.RunController import RunController
 from src.schemas.RunSchema import Run
+from src.utils.pagination import paginate, append_query_in_uri
 
 router = APIRouter(
     prefix="/workflow", tags=["workflow"], responses={404: {"message": "Not found"}}
 )
 
 
-@router.get("", response_model=list[Workflow])
+@router.get("", response_model=dict[str, Any | list[Workflow]])
 def read_workflows(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
     is_template: bool = False,
+    order: str = None,
+    direction: str = None,
 ) -> Any:
     """
     Retrieve workflows with their metadata.
+    Params explain:
+    order: The model's prop as str, e.g. id
+    direction: asc | desc
     """
     try:
+        if skip < 0:
+            skip = 0
+
         criteria = {}
         if category:
             criteria["category"] = {
@@ -39,12 +48,40 @@ def read_workflows(
         criteria["is_template"] = is_template
 
         workflows = WorkflowController.get_multi(
-            db, skip=skip, limit=limit, criteria=criteria
+            db,
+            skip=skip,
+            limit=limit,
+            criteria=criteria,
+            order=order,
+            direction=direction,
         )
-    except Exception:
-        raise HTTPException(status_code=500, detail="Something went wrong")
+        count_all = WorkflowController.count(db, criteria=criteria)
 
-    return workflows
+        paging = paginate(count_all, skip, limit)
+
+        if category != None:
+            paging["previous_link"] = append_query_in_uri(
+                paging["previous_link"], f"category={category}"
+            )
+            paging["next_link"] = append_query_in_uri(
+                paging["next_link"], f"category={category}"
+            )
+        if is_template:
+            paging["previous_link"] = append_query_in_uri(
+                paging["previous_link"], f"is_template={is_template}"
+            )
+            paging["next_link"] = append_query_in_uri(
+                paging["next_link"], f"is_template={is_template}"
+            )
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error))
+
+    return {
+        "data": workflows,
+        "paging": paging,
+        "count": count_all,
+    }
 
 
 @router.post("")
@@ -86,19 +123,67 @@ def read_entity_types() -> Any:
     return entity_types
 
 
-@router.get("/deleted", response_model=list[Workflow])
+@router.get("/deleted", response_model=dict[str, Any | list[Workflow]])
 def read_deleted_workflows(
-    db: Session = Depends(get_db), skip: int = 0, limit: int = 100
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    category: str = None,
+    is_template: bool = False,
+    order: str = None,
+    direction: str = None,
 ) -> Any:
     """
     Retrieve deleted workflows.
     """
     try:
-        workflows = WorkflowController.get_multi_deleted(db, skip=skip, limit=limit)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Something went wrong")
+        if skip < 0:
+            skip = 0
 
-    return workflows
+        criteria = {}
+        if category:
+            criteria["category"] = {
+                "model": ModuleCategoryModel,
+                "criteria": {"code": category},
+            }
+
+        criteria["is_template"] = is_template
+
+        workflows = WorkflowController.get_multi_deleted(
+            db,
+            skip=skip,
+            limit=limit,
+            criteria=criteria,
+            order=order,
+            direction=direction,
+        )
+        count_all = WorkflowController.count_deleted(db, criteria=criteria)
+
+        paging = paginate(count_all, skip, limit)
+
+        if category != None:
+            paging["previous_link"] = append_query_in_uri(
+                paging["previous_link"], f"category={category}"
+            )
+            paging["next_link"] = append_query_in_uri(
+                paging["next_link"], f"category={category}"
+            )
+        if is_template:
+            paging["previous_link"] = append_query_in_uri(
+                paging["previous_link"], f"is_template={is_template}"
+            )
+            paging["next_link"] = append_query_in_uri(
+                paging["next_link"], f"is_template={is_template}"
+            )
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error))
+
+    return {
+        "data": workflows,
+        "paging": paging,
+        "count": count_all,
+    }
 
 
 @router.get("/deleted/{workflow_id}", response_model=Workflow)
@@ -220,7 +305,13 @@ def read_task_details(
 
 @router.get("/{workflow_id}/run", response_model=list[Run])
 def read_workflow_runs(
-    *, db: Session = Depends(get_db), workflow_id: UUID, skip: int = 0, limit: int = 100
+    *,
+    db: Session = Depends(get_db),
+    workflow_id: UUID,
+    skip: int = 0,
+    limit: int = 100,
+    order: str = None,
+    direction: str = None,
 ) -> Any:
     """
     Retrieve running instances of specific workflow.
@@ -234,6 +325,8 @@ def read_workflow_runs(
                 "workflow_id": workflow_id,
                 "workflow": {"model": WorkflowModel, "criteria": {"deleted_at": None}},
             },
+            order=order,
+            direction=direction,
         )
     except Exception:
         raise HTTPException(status_code=500, detail="Something went wrong")
