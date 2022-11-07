@@ -190,7 +190,11 @@ class BaseEngineController:
                     elif key == "step_id":
                         post_data_object[key] = step_id_of_receive_task
                     elif key == "data":
-                        post_data_object[key] = data
+                        post_data_object[key] = data.get("data_input")
+                    elif key == "user_input":
+                        post_data_object[key] = data.get("user_input")
+                    elif key == "params":
+                        post_data_object[key] = data.get("params")
 
                 response = ai_client.post_(ai_class, post_data_object)
 
