@@ -252,7 +252,7 @@ def send_task(
             run.workflow_id,
             run_id,
             step_id,
-            data.get("data_input"),
+            data,
         )
     except Exception:
         raise HTTPException(

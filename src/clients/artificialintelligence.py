@@ -1,6 +1,5 @@
 from .classes.BaseApi import BaseApi, BaseRouter
 from src.config import AI_API_BASE_URL
-from uuid import UUID
 
 
 class Router(BaseRouter):
@@ -10,55 +9,96 @@ class Router(BaseRouter):
         """
         return f"{self.host}/healthcheck"
 
-    def algo(self) -> str:
+    def ai(self) -> str:
         """
-        :return: {host}/algo
+        :return: {host}/ai
         """
-        return f"{self.host}/algo"
+        return f"{self.host}/ai"
 
     def regression(self) -> str:
         """
-        :return: {host}/algo/regression
+        :return: {ai}/regression
         """
-        return f"{self.algo()}/regression"
+        return f"{self.ai()}/regression"
 
-    def regression_svn(self) -> str:
+    def regression_svr_train(self) -> str:
         """
-        :return: {host}/algo/regression/svn
+        :return: {ai}/regression/svr/train
         """
-        return f"{self.regression()}/svn"
+        return f"{self.regression()}/svr/train"
 
-    def regression_svn_train(self) -> str:
+    def regression_predict(self) -> str:
         """
-        :return: {host}/algo/regression/svn/train
+        :return: {ai}/regression/predict
         """
-        return f"{self.regression_svn()}/train"
+        return f"{self.regression()}/predict"
 
-    def regression_svn_predict(self) -> str:
+    def classification(self) -> str:
         """
-        :return: {host}/algo/regression/svn/predict
+        :return: {ai}/classification
         """
-        return f"{self.regression_svn()}/predict"
+        return f"{self.ai()}/classification"
 
-    def construct_algo(self, route_name: str) -> str:
+    def classification_svc_train(self) -> str:
         """
-        :return: {host}/algo/{route_name}
+        :return: {ai}/classification/svc/train
         """
-        return f"{self.algo()}/{route_name}"
+        return f"{self.classification()}/svc/train"
 
-    def construct_algo_instructions(self, route_name: str) -> str:
+    def classification_lda_train(self) -> str:
         """
-        :return: {host}/algo/{route_name}/instructions
+        :return: {ai}/classification/lda/train
         """
-        return f"{self.algo()}/{route_name}/instructions"
+        return f"{self.classification()}/lda/train"
+
+    def classification_predict(self) -> str:
+        """
+        :return: {ai}/classification/predict
+        """
+        return f"{self.classification()}/predict"
+
+    def clustering(self) -> str:
+        """
+        :return: {ai}/clustering
+        """
+        return f"{self.ai()}/clustering"
+
+    def clustering_kmeans_train(self) -> str:
+        """
+        :return: {ai}/clustering/kmeans/train
+        """
+        return f"{self.clustering()}/kmeans/train"
+
+    def clustering_predict(self) -> str:
+        """
+        :return: {ai}/clustering/predict
+        """
+        return f"{self.clustering()}/predict"
+
+    def construct_ai(self, route_name: str) -> str:
+        """
+        :return: {ai}/{route_name}
+        """
+        return f"{self.ai()}/{route_name}"
+
+    def construct_ai_instructions(self, route_name: str) -> str:
+        """
+        :return: {ai}/{route_name}/instructions
+        """
+        return f"{self.ai()}/{route_name}/instructions"
 
     def check_if_route_is_available(self, route_name: str) -> bool:
         """
         :return: if route is available in specific list
         """
-        return f"{self.algo()}/{route_name}" in [
-            self.regression_svn_train(),
-            self.regression_svn_predict(),
+        return f"{self.ai()}/{route_name}" in [
+            self.regression_svr_train(),
+            self.regression_predict(),
+            self.classification_svc_train(),
+            self.classification_lda_train(),
+            self.classification_predict(),
+            self.clustering_kmeans_train(),
+            self.clustering_predict(),
         ]
 
 
@@ -66,21 +106,14 @@ class Api(BaseApi):
     def get_healthcheck(self) -> dict:
         return self._response_wrapper(self.session.get(self.router.healthcheck()))
 
-    def post_regression_svn_train(self, data: dict) -> dict:
-        return self._response_wrapper(
-            self.session.post(self.router.regression_svn_train(), json=data)
-        )
-
     def post_(self, route_name: str, data: dict) -> dict:
-        print(self.router.construct_algo(route_name))
         return self._response_wrapper(
-            self.session.post(self.router.construct_algo(route_name), json=data)
+            self.session.post(self.router.construct_ai(route_name), json=data)
         )
 
     def get_instructions_for_(self, route_name: str) -> dict:
-        print(self.router.construct_algo_instructions(route_name))
         return self._response_wrapper(
-            self.session.get(self.router.construct_algo_instructions(route_name))
+            self.session.get(self.router.construct_ai_instructions(route_name))
         )
 
 
