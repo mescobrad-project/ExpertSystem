@@ -9,7 +9,7 @@ from src.database import get_db
 from src.controllers.WorkflowController import WorkflowController
 from src.controllers.RunController import RunController
 from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
-from src.schemas.RunSchema import Run, RunUpdate
+from src.schemas.RunSchema import Run, RunUpdate, RunNameUpdate
 
 router = APIRouter(
     prefix="/run", tags=["run"], responses={404: {"message": "Not found"}}
@@ -58,6 +58,28 @@ def read_run(
         raise HTTPException(status_code=404, detail="Run not found")
 
     return run
+
+
+@router.put("/{run_id}", response_model=Run)
+def name_a_run(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+    props: RunNameUpdate,
+) -> Any:
+    """
+    Name a running instance.
+    """
+    run = RunController.get(db=db, id=run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    run_upd = RunUpdate(
+        workflow_id=run.workflow_id, state=run.state, steps=run.steps, queue=run.queue
+    )
+    run_upd.name = props.name
+
+    return RunController.update(db=db, db_obj=run, obj_in=run_upd)
 
 
 @router.get("/{run_id}/next")
