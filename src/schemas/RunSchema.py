@@ -1,10 +1,11 @@
 from pydantic import Field
 from uuid import UUID, uuid4
-from src.schemas._base import Base, FormBase
+from src.schemas._base import BaseModel, Base, FormBase
 
 
 # Shared properties
 class RunBase(FormBase):
+    name: str | None = None
     state: dict
     steps: list
     queue: list
@@ -20,9 +21,15 @@ class RunUpdate(RunBase):
     pass
 
 
+# Properties to receive on obj update
+class RunNameUpdate(BaseModel):
+    name: str
+
+
 # Properties shared by models stored in DB
 class RunInDBBase(Base):
     id: UUID = Field(default_factory=lambda: uuid4().hex)
+    name: str | None = None
     workflow_id: UUID
     state: dict
     steps: list
