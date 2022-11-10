@@ -258,7 +258,7 @@ def read_task_details(
     raise HTTPException(status_code=404, detail="Task not found")
 
 
-@router.get("/{workflow_id}/run", response_model=list[Run])
+@router.get("/{workflow_id}/run", response_model=dict[str, Any | list[Run]])
 def read_workflow_runs(
     *,
     db: Session = Depends(get_db),
