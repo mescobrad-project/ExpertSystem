@@ -2,12 +2,13 @@ from sqlalchemy import Column, ForeignKey, String, JSON
 from sqlalchemy.orm import relationship
 
 from src.models._base import Base, GUID
+from src.config import DB_SCHEMA
 
 
 class RunModel(Base):
     __tablename__ = "runs"
 
-    workflow_id = Column(GUID(), ForeignKey("workflows.id"), index=True)
+    workflow_id = Column(GUID(), ForeignKey(f"{DB_SCHEMA}.workflows.id"), index=True)
     name = Column(String, nullable=True, index=True)
     state = Column(JSON, nullable=True)
     steps = Column(JSON, nullable=True)
