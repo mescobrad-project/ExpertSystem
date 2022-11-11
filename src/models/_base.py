@@ -1,8 +1,9 @@
-from sqlalchemy import DateTime, Column
+from sqlalchemy import DateTime, Column, MetaData
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID as SAUUID
 from uuid import uuid4, UUID
+from src.config import DB_SCHEMA
 from src.database import Base as ModelBase
 
 
@@ -45,6 +46,7 @@ class GUID(TypeDecorator):
 class Base(ModelBase):
 
     __abstract__ = True
+    __table_args__ = {"schema": DB_SCHEMA}
 
     id = Column(GUID(), primary_key=True, default=lambda: str(uuid4()))
     created_at = Column(DateTime(timezone=True), server_default=func.now())

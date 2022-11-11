@@ -2,13 +2,17 @@ from sqlalchemy import Column, String, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import relationship
 
 from src.models._base import Base, GUID
+from src.config import DB_SCHEMA
 
 
 class WorkflowModel(Base):
     __tablename__ = "workflows"
 
     category_id = Column(
-        GUID(), ForeignKey("workflow_categories.id"), nullable=True, index=True
+        GUID(),
+        ForeignKey(f"{DB_SCHEMA}.workflow_categories.id"),
+        nullable=True,
+        index=True,
     )
     name = Column(String, nullable=False, unique=True, index=True)
     description = Column(String, nullable=True)
