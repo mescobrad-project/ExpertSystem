@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from src.routers import workflow, run, home, module_category, module, workflow_category
 from src.routers.datalake import objectstorage
 from src.config import (
@@ -41,3 +45,23 @@ def start_app():
 
 
 main = start_app()
+
+
+@main.exception_handler(StarletteHTTPException)
+async def http_exception_handler(_: Request, exc: StarletteHTTPException):
+    return JSONResponse(
+        content={
+            "message": exc.detail.get("message"),
+            "details": exc.detail.get("details"),
+            "id": exc.detail.get("id"),
+        },
+        status_code=exc.status_code,
+    )
+
+
+@main.exception_handler(RequestValidationError)
+async def validation_exception_handler(_: Request, exc: RequestValidationError):
+    return JSONResponse(
+        content=jsonable_encoder({"message": str(exc), "details": exc.errors()}),
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    )
