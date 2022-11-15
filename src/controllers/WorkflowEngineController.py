@@ -12,7 +12,10 @@ from src.engine.classes.ElementClass import get_class_from_task_name
 from src.engine.utils.Generators import getId
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
 from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
+from src.schemas.ExternalApiSchema import DataAnalyticsInput
 from src.clients.artificialintelligence import client as ai_client
+from src.clients.querybuilder import client as qb_client
+from src.clients.dataanalytics import client as da_client
 from src.models._all import RunModel
 
 
@@ -133,22 +136,50 @@ class BaseEngineController:
 
         return {"pending": active}
 
-    def task_exec(self, tasks, state, steps, queue, step_id: UUID):
+    def task_exec(
+        self,
+        tasks,
+        state,
+        steps,
+        queue,
+        run_id: UUID,
+        step_id: UUID,
+        data: dict,
+    ):
         (_, active, details, rules) = self._prepare_step(
             tasks, state, steps, queue, step_id
         )
 
         if "task" in rules.keys():
-            active["data"] = []
+            if "metadata" in active.keys():
+                return {"pending": active}
 
-            for script_file_name in details["class"]:
-                spec = spec_from_file_location(
-                    "main", f"{SCRIPT_DIR}/{script_file_name}.py"
-                )
-                script = module_from_spec(spec)
-                spec.loader.exec_module(script)
+            for module_name in details["class"]:
+                if module_name.startswith("dataanalytics"):
+                    [_, func_name] = module_name.split("/")
 
-                active["data"].append(script.main())
+                    if not da_client.check_if_function_exists(func_name):
+                        return {"error": "Function name does not exist!"}
+
+                    da_input = DataAnalyticsInput(
+                        run_id=str(run_id),
+                        step_id=step_id,
+                        save_loc_bucket=data.get("save_bucket"),
+                        save_loc_folder=data.get("save_folder"),
+                        function=func_name,
+                        metadata={"files": data.get("files")},
+                    )
+
+                    response = da_client.post(da_input)
+
+                    if not response.get("is_success"):
+                        return response
+
+                    active["metadata"] = response
+                elif module_name.startswith("querybuilder"):
+                    active["metadata"] = {"url": da_client.redirect()}
+                else:
+                    return {"error": "Please provide a valid module!"}
 
         return {"pending": active}
 
@@ -179,10 +210,13 @@ class BaseEngineController:
                     step_id_of_receive_task = task.get("id")
                     break
 
-                response = ai_client.get_instructions_for_(ai_class)
+                instructions_response = ai_client.get_instructions_for_(ai_class)
+
+                if not instructions_response.get("is_success"):
+                    return instructions_response
 
                 post_data_object = {}
-                for key in response:
+                for key in instructions_response:
                     if key == "workflow_id":
                         post_data_object[key] = str(workflow_id)
                     elif key == "run_id":
@@ -198,8 +232,8 @@ class BaseEngineController:
 
                 response = ai_client.post_(ai_class, post_data_object)
 
-                if response.get("error"):
-                    return {"error": response.get("error")}
+                if not response.get("is_success"):
+                    return response
 
                 active["metadata"] = response
 
