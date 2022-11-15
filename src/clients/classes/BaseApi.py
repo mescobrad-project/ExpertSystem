@@ -20,6 +20,13 @@ class BaseApi:
             try:
                 response.raise_for_status()
             except HTTPError as err:
-                return {"error": err.response.json()}
+                return {
+                    "error": err.response.json(),
+                    "is_success": False,
+                    "code": response.status_code,
+                }
 
-        return response.json()
+        custom_response = response.json()
+        custom_response["is_success"] = True
+
+        return custom_response
