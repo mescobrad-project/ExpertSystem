@@ -5,18 +5,19 @@ from src.schemas._base import Base, FormBase
 
 # Shared properties
 class WorkflowCategoryBase(FormBase):
-    code: str
-    name: str
+    pass
 
 
 # Properties to receive on obj creation
 class WorkflowCategoryCreate(WorkflowCategoryBase):
-    pass
+    code: str
+    name: str
 
 
 # Properties to receive on obj update
 class WorkflowCategoryUpdate(WorkflowCategoryBase):
-    pass
+    code: str | None = None
+    name: str | None = None
 
 
 # Properties shared by models stored in DB
