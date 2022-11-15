@@ -4,6 +4,8 @@ from pathlib import Path
 WORKDIR = Path(__file__).parent.resolve()
 
 AI_API_BASE_URL = getenv("ARTIFICIAL_INTELLIGENCE_API_BASE_URL", "http://localhost")
+QB_API_BASE_URL = getenv("QUERY_BUILDER_API_BASE_URL", "http://localhost")
+DA_API_BASE_URL = getenv("DATA_ANALYTICS_API_BASE_URL", "http://localhost")
 
 CORS_ORIGINS = (getenv("CORS_ORIGINS", "http://localhost,localhost")).split(",")
 CORS_CREDENTIALS = getenv("CORS_CREDENTIALS", True)
