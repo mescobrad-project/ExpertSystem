@@ -1,12 +1,9 @@
-from ._base import CRUDBase
-from src.models._all import ModuleCategoryModel
-from src.schemas.ModuleCategorySchema import ModuleCategoryCreate, ModuleCategoryUpdate
+from src.repositories.ModuleCategoryRepository import ModuleCategoryRepository
+from ._base import BaseController
 
 
-class CRUDModuleCategory(
-    CRUDBase[ModuleCategoryModel, ModuleCategoryCreate, ModuleCategoryUpdate]
-):
+class _ModuleCategoryController(BaseController):
     pass
 
 
-ModuleCategoryController = CRUDModuleCategory(ModuleCategoryModel)
+ModuleCategoryController = _ModuleCategoryController(ModuleCategoryRepository)
