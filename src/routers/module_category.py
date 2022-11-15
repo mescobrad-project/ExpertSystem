@@ -36,7 +36,7 @@ def read_module_categories(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    return route_helper.read_multi(
+    return ModuleCategoryController.read_multi(
         db, skip, limit, order, direction, criteria={"deleted_at": None}
     )
 
@@ -48,14 +48,7 @@ def create_category(
     """
     Create new category.
     """
-    try:
-        category = ModuleCategoryController.create(db=db, obj_in=category_in)
-    except IntegrityError:
-        raise HTTPException(status_code=409, detail="Module Category already exists")
-    except Exception:
-        raise HTTPException(status_code=400, detail="Provided input is wrong")
-
-    return category
+    return ModuleCategoryController.create(db=db, obj_in=category_in)
 
 
 @router.get("/deleted", response_model=dict[str, Any | list[ModuleCategory]])
@@ -72,7 +65,7 @@ def read_deleted_module_categories(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    return route_helper.read_multi(
+    return ModuleCategoryController.read_multi(
         db, skip, limit, order, direction, criteria={"deleted_at__not": None}
     )
 
@@ -86,7 +79,9 @@ def read_deleted_category(
     """
     Get deleted category by ID.
     """
-    return route_helper.read(category_id, db=db, criteria={"deleted_at__not": None})
+    return ModuleCategoryController.read(
+        db=db, resource_id=category_id, criteria={"deleted_at__not": None}
+    )
 
 
 @router.get("/{category_id}", response_model=ModuleCategory)
@@ -98,7 +93,9 @@ def read_category(
     """
     Get category by ID.
     """
-    return route_helper.read(category_id, db=db, criteria={"deleted_at": None})
+    return ModuleCategoryController.read(
+        db=db, resource_id=category_id, criteria={"deleted_at": None}
+    )
 
 
 @router.put("/{category_id}", response_model=ModuleCategory)
@@ -111,12 +108,9 @@ def update_category(
     """
     Update a category.
     """
-    category = route_helper.read(category_id, db=db, criteria={"deleted_at": None})
-
-    category = ModuleCategoryController.update(
-        db=db, db_obj=category, obj_in=category_in
+    return ModuleCategoryController.update(
+        db=db, resource_id=category_id, resource_in=category_in
     )
-    return category
 
 
 @router.delete("/{category_id}", response_model=ModuleCategory)
@@ -128,17 +122,9 @@ def destroy_category(
     """
     Delete a category.
     """
-    category = route_helper.read(category_id, db=db, criteria={"deleted_at": None})
-
-    if category.deleted_at:
-        raise HTTPException(status_code=405, detail="Module Category already destroyed")
-
-    category_in = ModuleCategoryUpdate(code=category.code, name=category.name)
-    category_in.deleted_at = datetime.now(tz=timezone.utc)
-    category = ModuleCategoryController.update(
-        db=db, db_obj=category, obj_in=category_in
+    return ModuleCategoryController.destroy(
+        db=db, resource_id=category_id, resource_in=ModuleCategoryUpdate()
     )
-    return category
 
 
 @router.delete("/{category_id}/revert", response_model=ModuleCategory)
@@ -150,14 +136,6 @@ def revert_category(
     """
     Revert the deletion of a category.
     """
-    category = route_helper.read(category_id, db=db, criteria={"deleted_at__not": None})
-
-    if not category.deleted_at:
-        raise HTTPException(status_code=405, detail="Module Category is active")
-
-    category_in = ModuleCategoryUpdate(code=category.code, name=category.name)
-    category_in.deleted_at = None
-    category = ModuleCategoryController.update(
-        db=db, db_obj=category, obj_in=category_in
+    return ModuleCategoryController.revert(
+        db=db, resource_id=category_id, resource_in=ModuleCategoryUpdate()
     )
-    return category
