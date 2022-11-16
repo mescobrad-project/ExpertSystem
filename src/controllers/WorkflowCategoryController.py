@@ -1,15 +1,9 @@
-from ._base import CRUDBase
-from src.models._all import WorkflowCategoryModel
-from src.schemas.WorkflowCategorySchema import (
-    WorkflowCategoryCreate,
-    WorkflowCategoryUpdate,
-)
+from src.repositories.WorkflowCategoryRepository import WorkflowCategoryRepository
+from ._base import BaseController
 
 
-class CRUDWorkflowCategory(
-    CRUDBase[WorkflowCategoryModel, WorkflowCategoryCreate, WorkflowCategoryUpdate]
-):
+class _WorkflowCategoryController(BaseController):
     pass
 
 
-WorkflowCategoryController = CRUDWorkflowCategory(WorkflowCategoryModel)
+WorkflowCategoryController = _WorkflowCategoryController(WorkflowCategoryRepository)
