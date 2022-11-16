@@ -1,9 +1,7 @@
 from typing import Any
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from datetime import datetime, timezone
 from src.database import get_db
 from src.controllers.ModuleCategoryController import ModuleCategoryController
 from src.schemas.ModuleCategorySchema import (
@@ -11,9 +9,6 @@ from src.schemas.ModuleCategorySchema import (
     ModuleCategoryCreate,
     ModuleCategoryUpdate,
 )
-from ._base import RouteHelper
-
-route_helper = RouteHelper(ModuleCategoryController)
 
 router = APIRouter(
     prefix="/category/module",
