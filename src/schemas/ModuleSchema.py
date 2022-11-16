@@ -5,9 +5,9 @@ from src.schemas._base import Base, FormBase
 
 # Shared properties
 class ModuleBase(FormBase):
-    name: str
-    task: str
-    instructions: dict
+    name: str | None = None
+    task: str | None = None
+    instructions: dict = {}
 
 
 # Properties to receive on obj creation
@@ -18,7 +18,8 @@ class ModuleCreate(ModuleBase):
 
 # Properties to receive on obj update
 class ModuleUpdate(ModuleBase):
-    pass
+    code: str = None
+    category_id: UUID = None
 
 
 # Properties shared by models stored in DB
