@@ -17,7 +17,6 @@ class _ModuleController(BaseController):
         category: str = None,
         criteria: dict = {},
     ):
-        criteria = {}
         if category:
             criteria["category"] = {
                 "model": ModuleCategoryModel,
