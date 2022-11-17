@@ -6,19 +6,21 @@ from src.schemas._base import BaseModel, Base, FormBase
 # Shared properties
 class RunBase(FormBase):
     name: str | None = None
-    state: dict
-    steps: list
-    queue: list
 
 
 # Properties to receive on obj creation
 class RunCreate(RunBase):
     workflow_id: UUID
+    state: dict
+    steps: list
+    queue: list
 
 
 # Properties to receive on obj update
 class RunUpdate(RunBase):
-    pass
+    state: dict | None = None
+    steps: list | None = None
+    queue: list | None = None
 
 
 # Properties to receive on obj update
