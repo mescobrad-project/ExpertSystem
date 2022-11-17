@@ -1,10 +1,12 @@
 from uuid import UUID
-from ._base import CRUDBase, Session, ModelType
-from src.models._all import RunModel
-from src.schemas.RunSchema import RunCreate, RunUpdate
+from sqlalchemy.orm import Session
+from src.repositories._base import ModelType
+from src.repositories.RunRepository import RunRepository
+from src.schemas.RunSchema import RunCreate
+from ._base import BaseController
 
 
-class CRUDRun(CRUDBase[RunModel, RunCreate, RunUpdate]):
+class _RunController(BaseController):
     def initialize(self, db: Session, *, workflow_id: UUID) -> ModelType:
         run_in = RunCreate(
             workflow_id=workflow_id,
@@ -16,4 +18,4 @@ class CRUDRun(CRUDBase[RunModel, RunCreate, RunUpdate]):
         return self.create(db=db, obj_in=run_in)
 
 
-RunController = CRUDRun(RunModel)
+RunController = _RunController(RunRepository)
