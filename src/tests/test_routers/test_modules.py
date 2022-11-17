@@ -22,7 +22,9 @@ def test_create_module(db: Session) -> None:
 def test_get_module(db: Session) -> None:
     module = seed_module(db)
 
-    stored = ModuleController.get(db=db, id=module["obj"].id)
+    stored = ModuleController.read(
+        db=db, resource_id=module["obj"].id, criteria={"deleted_at": None}
+    )
     assert stored
     assert module["obj"].category_id == stored.category_id
     assert module["obj"].name == stored.name
@@ -33,7 +35,7 @@ def test_get_module(db: Session) -> None:
 
 def test_update_module(db: Session) -> None:
     module1 = seed_module(db)
-    module2 = update_seed_module(db, module1["obj"])
+    module2 = update_seed_module(db, module1["obj"].id)
 
     assert module2["obj"].name == module2["name"]
     assert module2["obj"].task == module2["task"]
@@ -42,6 +44,6 @@ def test_update_module(db: Session) -> None:
 
 def test_delete_module(db: Session) -> None:
     module = seed_module(db)
-    module_validate = remove_module(db, module["obj"])
+    module_validate = remove_module(db, module["obj"].id)
 
     assert module_validate is None

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-
+from uuid import UUID
 from src.controllers.WorkflowCategoryController import WorkflowCategoryController
 from src.models.WorkflowCategoryModel import WorkflowCategoryModel
 from src.schemas.WorkflowCategorySchema import (
@@ -28,7 +28,7 @@ def seed_category(db: Session) -> dict[str, dict, WorkflowCategoryModel]:
 
 
 def update_seed_category(
-    db: Session, category: WorkflowCategoryModel
+    db: Session, category_id: UUID
 ) -> dict[str, dict, WorkflowCategoryModel]:
     name, code = create_random_category()
 
@@ -37,17 +37,21 @@ def update_seed_category(
         "name": name,
         "code": code,
         "obj": WorkflowCategoryController.update(
-            db=db, db_obj=category, obj_in=category_update
+            db=db, resource_id=category_id, resource_in=category_update
         ),
     }
 
 
 def remove_category(
-    db: Session, category: WorkflowCategoryModel
+    db: Session, category_id: UUID
 ) -> tuple[WorkflowCategoryModel | None]:
-    _ = WorkflowCategoryController.remove(db=db, id=category.id)
+    _ = WorkflowCategoryController.destroy(
+        db=db, resource_id=category_id, resource_in=WorkflowCategoryUpdate()
+    )
     try:
-        category_validated = WorkflowCategoryController.get(db=db, id=category.id)
+        category_validated = WorkflowCategoryController.read(
+            db=db, resource_id=category_id, criteria={"deleted_at": None}
+        )
     except:
         category_validated = None
 

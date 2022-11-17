@@ -25,7 +25,9 @@ def test_create_workflow(db: Session) -> None:
 def test_get_workflow(db: Session) -> None:
     workflow = seed_workflow(db)
 
-    stored = WorkflowController.get(db=db, id=workflow["obj"].id)
+    stored = WorkflowController.read(
+        db=db, resource_id=workflow["obj"].id, criteria={"deleted_at": None}
+    )
     assert stored
     assert workflow["obj"].category_id == stored.category_id
     assert workflow["obj"].name == stored.name
@@ -39,7 +41,7 @@ def test_get_workflow(db: Session) -> None:
 
 def test_update_workflow(db: Session) -> None:
     workflow1 = seed_workflow(db)
-    workflow2 = update_seed_workflow(db, workflow1["obj"])
+    workflow2 = update_seed_workflow(db, workflow1["obj"].id)
 
     assert workflow2["obj"].description == workflow2["description"]
     assert workflow2["obj"].is_template == workflow2["is_template"]
@@ -51,6 +53,6 @@ def test_update_workflow(db: Session) -> None:
 
 def test_delete_workflow(db: Session) -> None:
     workflow = seed_workflow(db)
-    workflow_validate = remove_workflow(db, workflow["obj"])
+    workflow_validate = remove_workflow(db, workflow["obj"].id)
 
     assert workflow_validate is None
