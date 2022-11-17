@@ -1,15 +1,11 @@
 from typing import Any
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from src.controllers.WorkflowEngineController import WorkflowEngineController
 from src.database import get_db
-from src.controllers.WorkflowController import WorkflowController
 from src.controllers.RunController import RunController
 from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
-from src.schemas.RunSchema import Run, RunUpdate, RunNameUpdate
+from src.schemas.RunSchema import Run, RunNameUpdate
 
 router = APIRouter(
     prefix="/run", tags=["run"], responses={404: {"message": "Not found"}}
@@ -21,27 +17,7 @@ def run_workflow(*, db: Session = Depends(get_db), workflow_id: UUID):
     """
     Initiate a workflow process
     """
-    workflow = WorkflowController.get(db=db, id=workflow_id)
-    if not workflow:
-        raise HTTPException(status_code=404, detail="Workflow not found")
-
-    try:
-        run = RunController.initialize(db=db, workflow_id=workflow.id)
-    except IntegrityError:
-        raise HTTPException(status_code=409, detail="Run already exists")
-    except Exception:
-        raise HTTPException(status_code=400, detail="Something went wrong")
-
-    try:
-        state, steps, queue = WorkflowEngineController.initialize(workflow.tasks)
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    run_in = RunUpdate(state=state, steps=steps, queue=queue)
-    run = RunController.update(db=db, db_obj=run, obj_in=run_in)
-    return run
+    return RunController.initialize(db=db, workflow_id=workflow_id)
 
 
 @router.get("/{run_id}", response_model=Run)
@@ -53,11 +29,7 @@ def read_run(
     """
     Get specific workflow run by ID.
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    return run
+    return RunController.read(db=db, resource_id=run_id, criteria={"deleted_at": None})
 
 
 @router.put("/{run_id}", response_model=Run)
@@ -70,16 +42,7 @@ def name_a_run(
     """
     Name a running instance.
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    run_upd = RunUpdate(
-        workflow_id=run.workflow_id, state=run.state, steps=run.steps, queue=run.queue
-    )
-    run_upd.name = props.name
-
-    return RunController.update(db=db, db_obj=run, obj_in=run_upd)
+    return RunController.update_name(db=db, resource_id=run_id, name=props.name)
 
 
 @router.get("/{run_id}/next")
@@ -87,20 +50,7 @@ def show_next_task(*, db: Session = Depends(get_db), run_id: UUID) -> Any:
     """
     Retrieve running instance and return next task(s).
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        waiting = WorkflowEngineController.get_waiting_steps(
-            run.workflow.tasks, run.state, run.steps, run.queue
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    return waiting
+    return RunController.get_next_task(db, run_id)
 
 
 @router.get("/{run_id}/stores/dataobject")
@@ -110,16 +60,7 @@ def get_dataobjects_from_stored_data(
     """
     Get all data object references mined from stored data.
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        return WorkflowEngineController.get_dataobject_refs(run)
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
+    return RunController.get_dataobjects_from_stored_data(db, run_id)
 
 
 @router.get("/{run_id}/step/{step_id}")
@@ -129,28 +70,7 @@ def run_specific_task(
     """
     Initiate next step (specific task).
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflow)
-        pending_and_waiting = WorkflowEngineController.run_pending_step(
-            workflow["tasks"],
-            run_in["state"],
-            run_in["steps"],
-            run_in["queue"],
-            step_id,
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    RunController.update(db=db, db_obj=run, obj_in=run_in)
-
-    return pending_and_waiting
+    return RunController.run_specific_task(db, run_id, step_id)
 
 
 @router.patch("/{run_id}/step/{step_id}/exclusive/{next_step_id}")
@@ -160,29 +80,7 @@ def select_next_task(
     """
     Select the next task while on Exclusive Gateway
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflow)
-        response = WorkflowEngineController.gateway_exclusive_choice(
-            workflow["tasks"],
-            run_in["state"],
-            run_in["steps"],
-            run_in["queue"],
-            step_id,
-            next_step_id,
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    RunController.update(db=db, db_obj=run, obj_in=run_in)
-
-    return response
+    return RunController.select_next_task(db, run_id, step_id, next_step_id)
 
 
 @router.patch("/{run_id}/step/{step_id}/parallel/{next_step_id}")
@@ -192,29 +90,7 @@ def init_parallel_gateway(
     """
     Initalize a Parallel Gateway by selecting next task in waiting queue.
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflow)
-        response = WorkflowEngineController.gateway_parallel_choice(
-            workflow["tasks"],
-            run_in["state"],
-            run_in["steps"],
-            run_in["queue"],
-            step_id,
-            next_step_id,
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    RunController.update(db=db, db_obj=run, obj_in=run_in)
-
-    return response
+    return RunController.init_parallel_gateway(db, run_id, step_id, next_step_id)
 
 
 @router.patch("/{run_id}/step/{step_id}/task/exec")
@@ -224,28 +100,7 @@ def exec_script_task(
     """
     Execute a script task.
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflow)
-        response = WorkflowEngineController.task_exec(
-            workflow["tasks"],
-            run_in["state"],
-            run_in["steps"],
-            run_in["queue"],
-            step_id,
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    RunController.update(db=db, db_obj=run, obj_in=run_in)
-
-    return response
+    return RunController.exec_script_task(db, run_id, step_id)
 
 
 @router.patch("/{run_id}/step/{step_id}/task/send")
@@ -259,31 +114,7 @@ def send_task(
     """
     Send a remote background task.
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflow)
-        response = WorkflowEngineController.task_send(
-            workflow["tasks"],
-            run_in["state"],
-            run_in["steps"],
-            run_in["queue"],
-            run.workflow_id,
-            run_id,
-            step_id,
-            data,
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    RunController.update(db=db, db_obj=run, obj_in=run_in)
-
-    return response
+    return RunController.send_task(db, run_id, step_id, data)
 
 
 @router.patch("/{run_id}/step/{step_id}/task/receive")
@@ -297,29 +128,7 @@ def receive_task(
     """
     Send a remote background task.
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflow)
-        response = WorkflowEngineController.task_receive(
-            workflow["tasks"],
-            run_in["state"],
-            run_in["steps"],
-            run_in["queue"],
-            step_id,
-            data.get("metadata"),
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    RunController.update(db=db, db_obj=run, obj_in=run_in)
-
-    return response
+    return RunController.receive_task(db, run_id, step_id, data.get("metadata"))
 
 
 @router.patch("/{run_id}/step/{step_id}/task/complete")
@@ -344,29 +153,7 @@ def complete_task(
         }
     }
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflow)
-        response = WorkflowEngineController.task_complete(
-            workflow["tasks"],
-            run_in["state"],
-            run_in["steps"],
-            run_in["queue"],
-            step_id,
-            metadata,
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    RunController.update(db=db, db_obj=run, obj_in=run_in)
-
-    return response
+    return RunController.complete_task(db, run_id, step_id, metadata)
 
 
 @router.patch("/{run_id}/step/{step_id}/event")
@@ -376,28 +163,7 @@ def exec_event_task_actions(
     """
     Execute the actions of an event task.
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        run_in = jsonable_encoder(run)
-        workflow = jsonable_encoder(run.workflow)
-        response = WorkflowEngineController.event_actions(
-            workflow["tasks"],
-            run_in["state"],
-            run_in["steps"],
-            run_in["queue"],
-            step_id,
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    RunController.update(db=db, db_obj=run, obj_in=run_in)
-
-    return response
+    return RunController.exec_event_task_actions(db, run_id, step_id)
 
 
 @router.get("/{run_id}/step/{step_id}/ping")
@@ -407,17 +173,4 @@ def ping_task_status(
     """
     Get the status of specific task.
     """
-    run = RunController.get(db=db, id=run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    try:
-        response = WorkflowEngineController.ping_step_status(
-            run.workflow.tasks, run.state, run.steps, run.queue, step_id
-        )
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Workflow engine faced an unexpected error"
-        )
-
-    return response
+    return RunController.ping_task_status(db, run_id, step_id)
