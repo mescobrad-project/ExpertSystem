@@ -67,7 +67,7 @@ class _RunController(BaseController):
         try:
             return WorkflowEngineController.get_dataobject_refs(run)
         except Exception as error:
-            raise InternalServerErrorException(details=jsonable_encoder(error))
+            raise InternalServerErrorException(details=str(error))
 
     def run_specific_task(self, db: Session, run_id: UUID, step_id: UUID):
         return self._run_execution_wrapper(
