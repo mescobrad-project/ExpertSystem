@@ -28,17 +28,19 @@ class BaseEngineController:
 
         return state, steps, queue
 
-    def _continue_from(self, tasks, state, steps, queue):
-        engine = WorkflowEngine(tasks)
-        engine.continue_from(state, steps, queue)
+    def _continue_from(self, workflow, run):
+        engine = WorkflowEngine(workflow["tasks"])
+        engine.continue_from(
+            run["workflow_id"], run["id"], run["state"], run["steps"], run["queue"]
+        )
         return engine
 
-    def get_waiting_steps(self, tasks, state, steps, queue):
-        engine = self._continue_from(tasks, state, steps, queue)
+    def get_waiting_steps(self, workflow, run):
+        engine = self._continue_from(workflow, run)
         return engine.get_waiting_steps()
 
-    def run_pending_step(self, tasks, state, steps, queue, step_id: UUID):
-        engine = self._continue_from(tasks, state, steps, queue)
+    def run_pending_step(self, workflow, run, step_id: UUID):
+        engine = self._continue_from(workflow, run)
 
         # check if current step is not completed
         # if not, then return current info
@@ -47,7 +49,7 @@ class BaseEngineController:
             return current_step_completed
         # else, check for next steps to display
 
-        index, active = engine.find_active_step(queue, step_id)
+        index, active = engine.find_active_step(engine.queue, step_id)
 
         details = engine.graph.find_task_by_id(active["sid"])
         element = get_class_from_task_name(details["type"])()
@@ -59,13 +61,13 @@ class BaseEngineController:
         if actions["next_steps"]:
             engine.add_to_queue(active["sid"])
             engine.set_task_as_active_step(active)
-            engine.remove_from_bucket(queue, index)
+            engine.remove_from_bucket(engine.queue, index)
 
         if actions.get("end_event") is not None and actions.get("end_event"):
             engine.set_task_as_active_step(active)
-            engine.remove_from_bucket(queue, index)
+            engine.remove_from_bucket(engine.queue, index)
 
-        return pending_and_waiting_template(active, queue)
+        return pending_and_waiting_template(active, engine.queue)
 
     def _set_parallelqueue_task_to_queue(self, engine, active, step_id):
         index, next_step = engine.find_active_step(engine.queue, step_id)
@@ -82,8 +84,8 @@ class BaseEngineController:
 
         return next_step
 
-    def _prepare_step(self, tasks, state, steps, queue, step_id: UUID):
-        engine = self._continue_from(tasks, state, steps, queue)
+    def _prepare_step(self, workflow, run, step_id: UUID):
+        engine = self._continue_from(workflow, run)
 
         (_, active) = engine.find_active_step(engine.steps, step_id)
 
@@ -97,11 +99,9 @@ class BaseEngineController:
         return (engine, active, details, rules)
 
     def gateway_exclusive_choice(
-        self, tasks, state, steps, queue, step_id: UUID, next_step_id: UUID
+        self, workflow, run, step_id: UUID, next_step_id: UUID
     ):
-        (engine, active, _, rules) = self._prepare_step(
-            tasks, state, steps, queue, step_id
-        )
+        (engine, active, _, rules) = self._prepare_step(workflow, run, step_id)
 
         if "choice" in rules.keys() and rules["choice"] == "one":
             index, next_step = engine.find_active_step(engine.queue, next_step_id)
@@ -112,12 +112,8 @@ class BaseEngineController:
 
         return {"pending": active}
 
-    def gateway_parallel_choice(
-        self, tasks, state, steps, queue, step_id: UUID, next_step_id: UUID
-    ):
-        (engine, active, _, rules) = self._prepare_step(
-            tasks, state, steps, queue, step_id
-        )
+    def gateway_parallel_choice(self, workflow, run, step_id: UUID, next_step_id: UUID):
+        (engine, active, _, rules) = self._prepare_step(workflow, run, step_id)
 
         if "choice" in rules.keys():
             if rules["choice"] == "all":
@@ -138,17 +134,13 @@ class BaseEngineController:
 
     def task_exec(
         self,
-        tasks,
-        state,
-        steps,
-        queue,
+        workflow,
+        run,
         run_id: UUID,
         step_id: UUID,
         data: dict,
     ):
-        (_, active, details, rules) = self._prepare_step(
-            tasks, state, steps, queue, step_id
-        )
+        (_, active, details, rules) = self._prepare_step(workflow, run, step_id)
 
         if "task" in rules.keys():
             if "metadata" in active.keys():
@@ -185,25 +177,19 @@ class BaseEngineController:
 
     def task_send(
         self,
-        tasks,
-        state,
-        steps,
-        queue,
-        workflow_id: UUID,
-        run_id: UUID,
+        workflow,
+        run,
         step_id: UUID,
         data: dict,
     ):
-        (engine, active, details, rules) = self._prepare_step(
-            tasks, state, steps, queue, step_id
-        )
+        (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
 
         if "metadata" in rules.keys() and rules.get("metadata"):
             for ai_class in details["class"]:
                 if not ai_client.router.check_if_route_is_available(ai_class):
                     continue
 
-                for task in queue:
+                for task in engine.queue:
                     if not task.get("sid") in details.get("outputs"):
                         continue
 
@@ -218,9 +204,9 @@ class BaseEngineController:
                 post_data_object = {}
                 for key in instructions_response:
                     if key == "workflow_id":
-                        post_data_object[key] = str(workflow_id)
+                        post_data_object[key] = str(engine.workflow_id)
                     elif key == "run_id":
-                        post_data_object[key] = str(run_id)
+                        post_data_object[key] = str(engine.run_id)
                     elif key == "step_id":
                         post_data_object[key] = step_id_of_receive_task
                     elif key == "data":
@@ -243,15 +229,13 @@ class BaseEngineController:
 
     def task_receive(
         self,
-        tasks,
-        state,
-        steps,
-        queue,
+        workflow,
+        run,
         step_id: UUID,
         data: dict,
     ):
-        engine = self._continue_from(tasks, state, steps, queue)
-        active = engine.find_task_in_bucket_by_id(queue, str(step_id))
+        engine = self._continue_from(workflow, run)
+        active = engine.find_task_in_bucket_by_id(engine.queue, str(step_id))
         details = engine.graph.find_task_by_id(active["sid"])
         element = get_class_from_task_name(details["type"])()
         try:
@@ -266,16 +250,12 @@ class BaseEngineController:
 
     def task_complete(
         self,
-        tasks,
-        state,
-        steps,
-        queue,
+        workflow,
+        run,
         step_id: UUID,
         metadata: TaskMetadataBodyParameter | None = None,
     ):
-        (engine, active, details, rules) = self._prepare_step(
-            tasks, state, steps, queue, step_id
-        )
+        (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
 
         if "complete" in rules.keys():
             # task = engine.find_task_in_bucket_by_id(engine.steps, step_id)
@@ -288,7 +268,9 @@ class BaseEngineController:
             ]:
                 raise Exception("Action forbidden.")
 
-            task_stores = tasks[active["sid"]].get("stores")
+            task_stores = workflow["tasks"][active["sid"]].get("stores")
+            print(active["sid"])
+            print(task_stores)
             if task_stores and len(task_stores) > 0:
                 to_store = {}
 
@@ -329,13 +311,13 @@ class BaseEngineController:
                 if active.get("metadata"):
                     active["metadata"]["store"] = {
                         "state_data_id": state_id,
-                        "state_data_number": len(state["data"]) - 1,
+                        "state_data_number": len(engine.state["data"]) - 1,
                     }
                 else:
                     active["metadata"] = {
                         "store": {
                             "state_data_id": state_id,
-                            "state_data_number": len(state["data"]) - 1,
+                            "state_data_number": len(engine.state["data"]) - 1,
                         }
                     }
 
@@ -351,10 +333,8 @@ class BaseEngineController:
 
         return {"pending": active}
 
-    def event_actions(self, tasks, state, steps, queue, step_id: UUID):
-        (engine, active, _, rules) = self._prepare_step(
-            tasks, state, steps, queue, step_id
-        )
+    def event_actions(self, workflow, run, step_id: UUID):
+        (engine, active, _, rules) = self._prepare_step(workflow, run, step_id)
 
         if "event" in rules.keys():
             if rules["complete"]:
@@ -366,8 +346,8 @@ class BaseEngineController:
 
         return {"pending": active}
 
-    def ping_step_status(self, tasks, state, steps, queue, step_id: UUID):
-        engine = self._continue_from(tasks, state, steps, queue)
+    def ping_step_status(self, workflow, run, step_id: UUID):
+        engine = self._continue_from(workflow, run)
 
         (_, active) = engine.find_active_step(engine.steps, step_id)
 

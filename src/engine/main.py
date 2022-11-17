@@ -31,7 +31,9 @@ class WorkflowEngine:
 
         return startTask["value"]
 
-    def continue_from(self, state, steps, queue):
+    def continue_from(self, workflow_id, run_id, state, steps, queue):
+        self.workflow_id = workflow_id
+        self.run_id = run_id
         self.state = state
         self.steps = steps
         self.queue = queue
