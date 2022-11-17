@@ -20,8 +20,8 @@ class BaseController:
     def create(self, db: Session, *, obj_in: CreateSchemaType):
         try:
             return self.repository.create(db=db, obj_in=obj_in)
-        except IntegrityError:
-            raise ConflictException(details=f"Resource already exists")
+        except IntegrityError as error:
+            raise ConflictException(details=jsonable_encoder(error))
         except Exception as error:
             raise BadRequestException(
                 message="Provided input is wrong", details=jsonable_encoder(error)
