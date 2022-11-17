@@ -19,8 +19,8 @@ class _WorkflowController(BaseController):
         limit: int = 100,
         order: str = None,
         direction: str = None,
-        category: str = None,
         is_template: bool = False,
+        category: str = None,
         criteria: dict = {},
     ):
         if category:
