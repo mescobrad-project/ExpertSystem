@@ -159,15 +159,15 @@ def revert_workflow(
     )
 
 
-@router.get("/{workflow_id}/task/{task_name}")
+@router.get("/{workflow_id}/task/{task_sid}")
 def read_task_details(
-    *, db: Session = Depends(get_db), workflow_id: UUID, task_name: str
+    *, db: Session = Depends(get_db), workflow_id: UUID, task_sid: str
 ) -> Any:
     """
-    Get task details given its name and workflow ID.
+    Get task details given its SID (e.g. Activity_04n854t) and workflow ID.
     """
     return WorkflowController.read_task_details(
-        db=db, resource_id=workflow_id, task_name=task_name
+        db=db, resource_id=workflow_id, task_sid=task_sid
     )
 
 
