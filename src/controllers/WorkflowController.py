@@ -81,13 +81,13 @@ class _WorkflowController(BaseController):
 
         return super().update(db=db, resource_id=resource_id, resource_in=resource_in)
 
-    def read_task_details(self, db: Session, resource_id: UUID, task_name: str):
+    def read_task_details(self, db: Session, resource_id: UUID, task_sid: str):
         workflow = super().read(
             db=db, resource_id=resource_id, criteria={"deleted_at": None}
         )
 
         for key, task in workflow.tasks.items():
-            if key == task_name:
+            if key == task_sid:
                 return task
 
         raise NotFoundException(details="Task not found in workflow")
