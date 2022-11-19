@@ -71,12 +71,19 @@ class WorkflowEngine:
         step["completed"] = True
         step["finish"] = getDateTimeNow()
 
+    def unset_step_completed(self, step: dict):
+        step["completed"] = False
+        step["finish"] = None
+
     def set_workflow_as_finished(self):
         self.state["completed"] = True
         self.state["success"] = True
 
     def append_workflow_state_data(self, data):
         self.state["data"].append(data)
+
+    def decrease_step_number(self):
+        self.state["step"] -= 1
 
     def update_step_number(self, current: dict, update_state: bool = True):
         steps_len = len(self.steps)
@@ -162,6 +169,13 @@ class WorkflowEngine:
             self.set_step_completed(self.steps[_stepNumber])
 
             self.add_to_queue(self.steps[_stepNumber]["sid"])
+
+    def revert_step(self, step_id: UUID):
+        task = self.find_task_in_bucket_by_id(self.steps, step_id)
+        self.decrease_step_number()
+        self.unset_step_completed(task)
+        self.remove_from_bucket(self.steps, task["number"])
+        self.add_current_to_queue(task["sid"])
 
     def get_waiting_steps(self):
         if self.state["completed"]:
