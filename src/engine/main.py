@@ -172,9 +172,11 @@ class WorkflowEngine:
 
     def revert_step(self, step_id: UUID):
         task = self.find_task_in_bucket_by_id(self.steps, step_id)
+        details = self.graph.find_task_by_id(task["sid"])
         self.decrease_step_number()
         self.unset_step_completed(task)
         self.remove_from_bucket(self.steps, task["number"])
+        self.remove_output_tasks_from_queue(details["outputs"])
         self.add_current_to_queue(task["sid"])
 
     def get_waiting_steps(self):
@@ -206,6 +208,15 @@ class WorkflowEngine:
 
     def remove_from_bucket(self, bucket: list[dict], index):
         del bucket[index]
+
+    def remove_output_tasks_from_queue(self, listOfOutputTasks: list):
+        idxs = []
+        for index, task in enumerate(self.queue):
+            if task["sid"] in listOfOutputTasks:
+                idxs.append(index)
+
+        for i in sorted(idxs, reverse=True):
+            self.remove_from_bucket(self.queue, i)
 
     def count_waiting_steps_in_bucket(self, bucket: list[dict]):
         if isinstance(bucket, list):
