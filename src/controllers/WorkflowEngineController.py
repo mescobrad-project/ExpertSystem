@@ -1,8 +1,7 @@
 from uuid import UUID
-from importlib.util import spec_from_file_location, module_from_spec
 from src.engine.config import (
     RECEIVE_TASK,
-    SCRIPT_DIR,
+    SEND_TASK,
     MANUAL_TASK,
     SCRIPT_TASK,
     USER_TASK,
@@ -202,7 +201,7 @@ class BaseEngineController:
                     return instructions_response
 
                 post_data_object = {}
-                for key in instructions_response:
+                for key in instructions_response.get("key_name"):
                     if key == "workflow_id":
                         post_data_object[key] = str(engine.workflow_id)
                     elif key == "run_id":
@@ -343,6 +342,22 @@ class BaseEngineController:
 
             if rules["finish"]:
                 engine.set_workflow_as_finished()
+
+        return {"pending": active}
+
+    def task_revert(self, workflow, run, *, step_id: UUID):
+        (engine, active, details, _) = self._prepare_step(workflow, run, step_id)
+
+        if details["type"] not in [
+            MANUAL_TASK,
+            SCRIPT_TASK,
+            USER_TASK,
+            SEND_TASK,
+            RECEIVE_TASK,
+        ]:
+            return {"pending": active}
+
+        engine.revert_step(step_id)
 
         return {"pending": active}
 
