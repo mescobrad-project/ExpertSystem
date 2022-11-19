@@ -41,16 +41,28 @@ class _RunController(BaseController):
     def _run_execution_wrapper(self, func: any, db: Session, run_id: UUID, *args):
         run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
 
+        run_in = jsonable_encoder(run)
+        workflow = jsonable_encoder(run.workflow)
         try:
-            run_in = jsonable_encoder(run)
-            workflow = jsonable_encoder(run.workflow)
-            response = func(
-                workflow,
-                run_in,
-                *args,
-            )
+            error_if_existed = ""
+            try:
+                response = func(
+                    workflow,
+                    run_in,
+                    *args,
+                )
+            except Exception as error:
+                error_if_existed = str(error)
+                response = WorkflowEngineController.task_revert(
+                    workflow, run_in, step_id=str(args[0])
+                )
+                pass
+            finally:
+                super().update(db=db, resource_id=run_id, resource_in=run_in)
+                pass
 
-            super().update(db=db, resource_id=run_id, resource_in=run_in)
+            if error_if_existed != "":
+                raise Exception(error_if_existed)
 
             return response
         except Exception as error:
