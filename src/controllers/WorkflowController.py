@@ -64,22 +64,28 @@ class _WorkflowController(BaseController):
 
         return super().update(db=db, resource_id=workflow.id, resource_in=workflow_upd)
 
-    def update(self, db: Session, resource_id: UUID, resource_in: WorkflowUpdate):
+    def update(
+        self,
+        db: Session,
+        resource_id: UUID,
+        resource_in: WorkflowUpdate,
+        criteria: any = {"deleted_at": None},
+    ):
         if resource_in.raw_diagram_data and resource_in.raw_diagram_data.get(
             "xml_original"
         ):
             raw_diagram = resource_in.raw_diagram_data.get("xml_original")
         else:
-            workflow = super().read(
-                db=db, resource_id=resource_id, criteria={"deleted_at": None}
-            )
+            workflow = super().read(db=db, resource_id=resource_id, criteria=criteria)
             raw_diagram = workflow.raw_diagram_data["xml_original"]
 
         [tasks, stores] = parse_xml(raw_diagram)
         resource_in.tasks = tasks
         resource_in.stores = stores
 
-        return super().update(db=db, resource_id=resource_id, resource_in=resource_in)
+        return super().update(
+            db=db, resource_id=resource_id, resource_in=resource_in, criteria=criteria
+        )
 
     def read_task_details(self, db: Session, resource_id: UUID, task_sid: str):
         workflow = super().read(
