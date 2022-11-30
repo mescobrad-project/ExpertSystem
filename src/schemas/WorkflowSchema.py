@@ -20,7 +20,7 @@ class WorkflowCreate(WorkflowBase):
 
 # Properties to receive on obj update
 class WorkflowUpdate(WorkflowBase):
-    pass
+    category_id: UUID | None = None
 
 
 # Properties shared by models stored in DB
