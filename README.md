@@ -180,6 +180,15 @@ version you want from your docker registry and use it accordingly. Keep a note
 that every time you make a version update, you have to run the migration script
 to update the database up to date.
 
+> 🚨 **In order to start the app** you need to generate a cryptographic
+> key, by executing the command below in a python3 environment and pasting it in
+> the appropriate env variable:
+>
+> ```python
+> from cryptography.fernet import Fernet
+> print(Fernet.generate_key().decode("utf-8"))
+> ```
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of
