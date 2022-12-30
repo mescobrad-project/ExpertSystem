@@ -49,6 +49,14 @@ main = start_app()
 
 @main.exception_handler(StarletteHTTPException)
 async def http_exception_handler(_: Request, exc: StarletteHTTPException):
+    if type(exc.detail) == str:
+        return JSONResponse(
+            content={
+                "details": exc.detail,
+            },
+            status_code=exc.status_code,
+        )
+
     return JSONResponse(
         content={
             "message": exc.detail.get("message"),
