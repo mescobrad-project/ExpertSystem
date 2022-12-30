@@ -7,10 +7,14 @@ from src.models.WorkflowModel import WorkflowModel
 from src.controllers.WorkflowController import WorkflowController
 from src.schemas.WorkflowSchema import Workflow, WorkflowCreate, WorkflowUpdate
 from src.controllers.RunController import RunController
+from src.dependencies.authentication import validate_user
 from src.schemas.RunSchema import Run
 
 router = APIRouter(
-    prefix="/workflow", tags=["workflow"], responses={404: {"message": "Not found"}}
+    prefix="/workflow",
+    tags=["workflow"],
+    responses={404: {"message": "Not found"}},
+    dependencies=[Depends(validate_user)],
 )
 
 
