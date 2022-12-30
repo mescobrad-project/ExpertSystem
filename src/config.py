@@ -29,3 +29,16 @@ SQLALCHEMY_DATABASE_URL = (
 )
 
 PROJECT_NAME = getenv("APP_NAME", "test_app")
+
+OAUTH_HOST = getenv("OAUTH_HOST", "https://sso.example.com/auth/")
+OAUTH_TOKEN_URL = getenv("OAUTH_TOKEN_URL", "https://sso.example.com/token/")
+OAUTH_CLIENT_ID = getenv("OAUTH_CLIENT_ID", "client-id")
+OAUTH_CLIENT_SECRET = getenv("OAUTH_CLIENT_SECRET", "client-secret")
+OAUTH_REALM = getenv("OAUTH_REALM", "realm")
+OAUTH_CALLBACK_URL = getenv("OAUTH_CALLBACK_URL", "https://app.example.com/")
+OAUTH_SIGN_OUT_URL = getenv(
+    "OAUTH_SIGN_OUT_URL", "https://app.example.com/auth/logout/"
+)
+OAUTH_LOGIN_SCOPE = getenv("OAUTH_LOGIN_SCOPE", "openid,profile")
+
+ENCRYPTION_KEY = getenv("ENCRYPTION_KEY", "")
