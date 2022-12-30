@@ -4,7 +4,15 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from src.routers import workflow, run, home, module_category, module, workflow_category
+from src.routers import (
+    workflow,
+    run,
+    home,
+    module_category,
+    module,
+    workflow_category,
+    oauth,
+)
 from src.routers.datalake import objectstorage
 from src.config import (
     CORS_ORIGINS,
@@ -28,6 +36,7 @@ def include_middlewares(app):
 
 def include_router(app):
     app.include_router(home.router)
+    app.include_router(oauth.router)
     app.include_router(run.router)
     app.include_router(workflow_category.router)
     app.include_router(workflow.router)
