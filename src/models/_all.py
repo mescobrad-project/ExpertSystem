@@ -6,3 +6,4 @@ from .WorkflowCategoryModel import WorkflowCategoryModel
 from .RunModel import RunModel
 from .ModuleCategoryModel import ModuleCategoryModel
 from .ModuleModel import ModuleModel
+from .UserModel import UserModel
