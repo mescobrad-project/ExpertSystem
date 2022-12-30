@@ -4,11 +4,15 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.database import get_db
 from src.controllers.RunController import RunController
+from src.dependencies.authentication import validate_user
 from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
 from src.schemas.RunSchema import Run, RunNameUpdate
 
 router = APIRouter(
-    prefix="/run", tags=["run"], responses={404: {"message": "Not found"}}
+    prefix="/run",
+    tags=["run"],
+    responses={404: {"message": "Not found"}},
+    dependencies=[Depends(validate_user)],
 )
 
 

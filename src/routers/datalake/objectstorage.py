@@ -1,12 +1,14 @@
 from typing import Any
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from urllib.parse import unquote_plus
 from src.controllers.ObjectStorageController import ObjectStorageController
+from src.dependencies.authentication import validate_user
 
 router = APIRouter(
     prefix="/datalake/objectstorage",
     tags=["datalake objectstorage"],
     responses={404: {"message": "Not found"}},
+    dependencies=[Depends(validate_user)],
 )
 
 

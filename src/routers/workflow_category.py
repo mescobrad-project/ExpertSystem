@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.database import get_db
 from src.controllers.WorkflowCategoryController import WorkflowCategoryController
+from src.dependencies.authentication import validate_user
 from src.schemas.WorkflowCategorySchema import (
     WorkflowCategory,
     WorkflowCategoryCreate,
@@ -14,6 +15,7 @@ router = APIRouter(
     prefix="/category/workflow",
     tags=["Workflow Category"],
     responses={404: {"message": "Not found"}},
+    dependencies=[Depends(validate_user)],
 )
 
 
