@@ -1,5 +1,10 @@
 from typing import Any
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
+from src.database import get_db
+from src.controllers.OAuthController import OAuthController
+from src.dependencies.authentication import clean_before_login
 
 router = APIRouter(prefix="", tags=["home"], responses={404: {"message": "Not found"}})
 
@@ -11,3 +16,14 @@ def get_app_healthcheck() -> Any:
     """
 
     return {"status": 200, "success": True}
+
+
+@router.get("/")
+def oauth_callback(
+    *, db: Session = Depends(get_db), code: str, clean_token=Depends(clean_before_login)
+) -> Any:
+    """
+    Route used to retrieve auth token.
+    """
+    return OAuthController.oauth_callback(db, code)
+    # return RedirectResponse("localhost:3000")
