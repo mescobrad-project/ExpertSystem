@@ -1,5 +1,5 @@
 from typing import Any
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from src.database import get_db
@@ -20,10 +20,16 @@ def get_app_healthcheck() -> Any:
 
 @router.get("/")
 def oauth_callback(
-    *, db: Session = Depends(get_db), code: str, clean_token=Depends(clean_before_login)
+    *,
+    db: Session = Depends(get_db),
+    code: str,
+    clean_token=Depends(clean_before_login),
 ) -> Any:
     """
     Route used to retrieve auth token.
     """
-    return OAuthController.oauth_callback(db, code)
-    # return RedirectResponse("localhost:3000")
+    # return OAuthController.oauth_callback(db, code)
+    token, user = OAuthController.oauth_callback(db, code)
+    return Response(
+        f"<html><body><script defer>window.location.assign('http://localhost:3000/auth/callback/{user}/{token}')</script></body></html>"
+    )
