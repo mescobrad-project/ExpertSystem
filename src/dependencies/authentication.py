@@ -12,11 +12,13 @@ from src.schemas.UserSchema import UserUpdate
 
 
 def _prepare_token(x_es_token, db, raise_a_raise=True):
+    if x_es_token == None or x_es_token == "null":
+        return (None, None, None)
+
     try:
         decrypted = loads(client.decrypt(x_es_token))
     except:
-        if raise_a_raise:
-            raise BadRequestException(message="X-ES-Token header is invalid")
+        raise BadRequestException(message="X-ES-Token header is invalid")
 
     user_id = decrypted["user"]
     token_id = decrypted["token"]
@@ -68,6 +70,9 @@ def _parse_mode(date_now, token):
 
 async def validate_user(x_es_token: str = Header(), db: Session = Depends(get_db)):
     user, token, token_id = _prepare_token(x_es_token, db)
+
+    if not token:
+        raise UnauthorizedException(message="Invalid Access Token")
 
     date_now = datetime.now(tz=timezone.utc)
 
