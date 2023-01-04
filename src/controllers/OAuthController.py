@@ -86,11 +86,13 @@ class BaseController:
                 ),
             )
 
-        return {
+        response = {
             "token": crypto.encrypt(
                 dumps({"user": str(user_db.id), "token": token_id}).encode("utf-8")
-            )
+            ),
+            "user": user_db.info["email"],
         }
+        return (response["token"], response["user"])
 
 
 OAuthController = BaseController(client)
