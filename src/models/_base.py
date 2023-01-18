@@ -1,10 +1,15 @@
-from sqlalchemy import DateTime, Column, MetaData
+from sqlalchemy import DateTime, Column, func, text
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID as SAUUID
 from uuid import uuid4, UUID
 from src.config import DB_SCHEMA
 from src.database import Base as ModelBase
+
+
+def to_tsvector_ix(*columns):
+    s = " || ' ' || ".join(columns)
+    return func.to_tsvector("english", text(s))
 
 
 class GUID(TypeDecorator):
