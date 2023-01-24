@@ -21,12 +21,34 @@ def list_buckets() -> Any:
     return ObjectStorageController.list_buckets()
 
 
-@router.get("/{bucket_name}")
+@router.get("/list/{bucket_name}")
 def list_objects_in_bucket(*, bucket_name: str, obj_name: str = "") -> Any:
     """
     List all objects in bucket.
     """
 
     return ObjectStorageController.list_objects(
+        unquote_plus(bucket_name), unquote_plus(obj_name)
+    )
+
+
+@router.get("/get/{bucket_name}")
+def get_object_in_bucket(*, bucket_name: str, obj_name: str = "") -> Any:
+    """
+    Get an object in bucket.
+    """
+
+    return ObjectStorageController.get_object(
+        unquote_plus(bucket_name), unquote_plus(obj_name)
+    )
+
+
+@router.get("/info/{bucket_name}")
+def stat_object_in_bucket(*, bucket_name: str, obj_name: str = "") -> Any:
+    """
+    Get info of an object in bucket.
+    """
+
+    return ObjectStorageController.stat_object(
         unquote_plus(bucket_name), unquote_plus(obj_name)
     )
