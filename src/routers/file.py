@@ -1,15 +1,10 @@
 from typing import Any
-from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from urllib.parse import unquote_plus
 from src.database import get_db
 from src.controllers.FileController import FileController
 from src.dependencies.authentication import validate_user
-from src.schemas.FileSchema import (
-    FileSearch,
-    FileCreate,
-    FileUpdate,
-)
 
 router = APIRouter(
     prefix="/file",
@@ -27,4 +22,4 @@ def read_files(
     """
     Retrieve files with their metadata.
     """
-    return FileController.search(db, term=term)
+    return FileController.search(db, term=unquote_plus(term))
