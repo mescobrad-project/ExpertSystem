@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 from src.controllers.ModuleController import ModuleController
-from src.models.ModuleModel import ModuleModel
+from src.models._all import ModuleModel
 from src.schemas.ModuleSchema import ModuleCreate, ModuleUpdate
 from ._base import (
     random_dict_obj,

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.models.ModuleCategoryModel import ModuleCategoryModel
+from src.models._all import ModuleCategoryModel
 from src.repositories.ModuleRepository import ModuleRepository
 from src.utils.pagination import append_query_in_uri
 from ._base import BaseController

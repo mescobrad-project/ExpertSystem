@@ -1,4 +1,5 @@
-from sqlalchemy import DateTime, Column, func, text
+from sqlalchemy import DateTime, func, text
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID as SAUUID
@@ -53,11 +54,13 @@ class Base(ModelBase):
     __abstract__ = True
     __table_args__ = {"schema": DB_SCHEMA}
 
-    id = Column(GUID(), primary_key=True, default=lambda: str(uuid4()))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
+    id: Mapped[GUID] = mapped_column(
+        GUID(), primary_key=True, default=lambda: str(uuid4())
     )
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[DateTime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[DateTime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    deleted_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=True)

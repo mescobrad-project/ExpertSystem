@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.database import get_db
-from src.models.WorkflowModel import WorkflowModel
+from src.models._all import WorkflowModel
 from src.controllers.WorkflowController import WorkflowController
 from src.schemas.WorkflowSchema import Workflow, WorkflowCreate, WorkflowUpdate
 from src.controllers.RunController import RunController

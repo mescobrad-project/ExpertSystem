@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 from src.controllers.WorkflowCategoryController import WorkflowCategoryController
-from src.models.WorkflowCategoryModel import WorkflowCategoryModel
+from src.models._all import WorkflowCategoryModel
 from src.schemas.WorkflowCategorySchema import (
     WorkflowCategoryCreate,
     WorkflowCategoryUpdate,
