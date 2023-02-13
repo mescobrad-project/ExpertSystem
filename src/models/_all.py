@@ -4,6 +4,8 @@ from ._base import Base
 
 # Import tables with relationships from _associations
 from ._association import (
+    FeatureModel,
+    VariableModel,
     UserModel,
     FileModel,
     ModuleCategoryModel,
