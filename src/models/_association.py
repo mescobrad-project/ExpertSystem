@@ -1,11 +1,35 @@
+from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy.orm import Mapped, relationship
+from src.config import DB_SCHEMA
+from ._base import Base
 from .ModuleModel import BaseModuleModel
 from .ModuleCategoryModel import BaseModuleCategoryModel
+from .FeatureModel import BaseFeatureModel
+from .VariableModel import BaseVariableModel
 from .UserModel import BaseUserModel
 from .FileModel import BaseFileModel
 from .WorkflowCategoryModel import BaseWorkflowCategoryModel
 from .WorkflowModel import BaseWorkflowModel
 from .RunModel import BaseRunModel
+
+variables_features = Table(
+    "variables_features",
+    Base.metadata,
+    Column("variable_id", ForeignKey(f"{DB_SCHEMA}.variables.id"), primary_key=True),
+    Column("feature_id", ForeignKey(f"{DB_SCHEMA}.features.id"), primary_key=True),
+)
+
+
+class FeatureModel(BaseFeatureModel):
+    variables: Mapped[list["VariableModel"]] = relationship(
+        secondary=variables_features, back_populates="features"
+    )
+
+
+class VariableModel(BaseVariableModel):
+    features: Mapped[list["FeatureModel"]] = relationship(
+        secondary=variables_features, back_populates="variables"
+    )
 
 
 class UserModel(BaseUserModel):
