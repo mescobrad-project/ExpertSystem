@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 from src.controllers.WorkflowController import WorkflowController
-from src.models.WorkflowModel import WorkflowModel
+from src.models._all import WorkflowModel
 from src.schemas.WorkflowSchema import WorkflowCreate, WorkflowUpdate
 from src.utils.workflow import parse_xml
 from ._base import (
