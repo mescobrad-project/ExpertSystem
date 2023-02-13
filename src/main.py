@@ -12,6 +12,7 @@ from src.routers import (
     home,
     module_category,
     module,
+    variable,
     workflow_category,
     oauth,
 )
@@ -42,6 +43,7 @@ def include_router(app):
     app.include_router(home.router)
     app.include_router(oauth.router)
     app.include_router(run.router)
+    app.include_router(variable.router)
     app.include_router(workflow_category.router)
     app.include_router(workflow.router)
     app.include_router(module_category.router)
