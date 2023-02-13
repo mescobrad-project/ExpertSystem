@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 from src.controllers.ModuleCategoryController import ModuleCategoryController
-from src.models.ModuleCategoryModel import ModuleCategoryModel
+from src.models._all import ModuleCategoryModel
 from src.schemas.ModuleCategorySchema import ModuleCategoryCreate, ModuleCategoryUpdate
 from ._base import random_lower_string, random_unique_string, random_dict_obj
 
