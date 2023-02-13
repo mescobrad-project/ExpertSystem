@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 from src.controllers.RunController import RunController
-from src.models.RunModel import RunModel
+from src.models._all import RunModel
 from src.schemas.RunSchema import RunCreate, RunUpdate
 from ._base import random_dict_obj, random_listofdict_obj
 from .WorkflowUtils import seed_workflow

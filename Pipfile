@@ -16,6 +16,7 @@ minio = "*"
 trino = "*"
 python-keycloak = "*"
 cryptography = "*"
+httpx = "*"
 
 [dev-packages]
 black = "*"

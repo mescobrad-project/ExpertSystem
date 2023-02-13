@@ -1,9 +1,7 @@
 from uuid import UUID
 from sqlalchemy.orm import Session
 from src.errors.ApiRequestException import NotFoundException
-from src.models.RunModel import RunModel
-from src.models.WorkflowModel import WorkflowModel
-from src.models.WorkflowCategoryModel import WorkflowCategoryModel
+from src.models._all import WorkflowCategoryModel
 from src.repositories.WorkflowRepository import WorkflowRepository
 from src.schemas.WorkflowSchema import WorkflowCreate, WorkflowUpdate
 from src.utils.pagination import append_query_in_uri

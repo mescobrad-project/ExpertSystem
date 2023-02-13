@@ -1,17 +1,16 @@
-from sqlalchemy import Column, ForeignKey, String, JSON
-from sqlalchemy.orm import relationship
-
-from src.models._base import Base, GUID
+from sqlalchemy import ForeignKey, String, JSON
+from sqlalchemy.orm import Mapped, mapped_column
 from src.config import DB_SCHEMA
+from ._base import Base, GUID
 
 
-class RunModel(Base):
+class BaseRunModel(Base):
     __tablename__ = "runs"
 
-    workflow_id = Column(GUID(), ForeignKey(f"{DB_SCHEMA}.workflows.id"), index=True)
-    name = Column(String, nullable=True, index=True)
-    state = Column(JSON, nullable=True)
-    steps = Column(JSON, nullable=True)
-    queue = Column(JSON, nullable=True)
-
-    workflow = relationship("WorkflowModel", back_populates="runs")
+    workflow_id: Mapped[GUID] = mapped_column(
+        GUID(), ForeignKey(f"{DB_SCHEMA}.workflows.id"), index=True
+    )
+    name: Mapped[str] = mapped_column(String, nullable=True, index=True)
+    state: Mapped[any] = mapped_column(JSON, nullable=True)
+    steps: Mapped[any] = mapped_column(JSON, nullable=True)
+    queue: Mapped[any] = mapped_column(JSON, nullable=True)

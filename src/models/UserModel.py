@@ -1,19 +1,17 @@
-from sqlalchemy import Column, String, JSON, Boolean, Index
-from sqlalchemy.orm import relationship
-from src.models._base import Base
+from sqlalchemy import String, JSON, Boolean, Index
+from sqlalchemy.orm import Mapped, mapped_column
+from ._base import Base
 
 
-class UserModel(Base):
+class BaseUserModel(Base):
     __tablename__ = "users"
 
-    sub = Column(String, nullable=False, index=True)
-    provider = Column(String, nullable=False, index=True)
-    info = Column(JSON, nullable=True)
-    permission = Column(JSON, nullable=True)
-    session = Column(JSON, nullable=True)
-    is_active = Column(Boolean, default=True, index=True)
-
-    files = relationship("FileModel", back_populates="user")
+    sub: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    info: Mapped[any] = mapped_column(JSON, nullable=True, default=lambda: {})
+    permission: Mapped[any] = mapped_column(JSON, nullable=True, default=lambda: {})
+    session: Mapped[any] = mapped_column(JSON, nullable=True, default=lambda: {})
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
 
 
-Index("ix_expert_system_users_sub_provider", UserModel.sub, UserModel.provider)
+Index("ix_expert_system_users_sub_provider", BaseUserModel.sub, BaseUserModel.provider)

@@ -1,19 +1,16 @@
-from sqlalchemy import Column, String, ForeignKey, JSON
-from sqlalchemy.orm import relationship
-
-from src.models._base import Base, GUID
+from sqlalchemy import String, ForeignKey, JSON
+from sqlalchemy.orm import Mapped, mapped_column
 from src.config import DB_SCHEMA
+from ._base import Base, GUID
 
 
-class ModuleModel(Base):
+class BaseModuleModel(Base):
     __tablename__ = "modules"
 
-    category_id = Column(
+    category_id: Mapped[GUID] = mapped_column(
         GUID(), ForeignKey(f"{DB_SCHEMA}.module_categories.id"), index=True
     )
-    code = Column(String, nullable=False, unique=True, index=True)
-    name = Column(String, nullable=False, index=True)
-    task = Column(String, nullable=False, index=True)
-    instructions = Column(JSON, nullable=True)
-
-    category = relationship("ModuleCategoryModel", back_populates="modules")
+    code: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    task: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    instructions: Mapped[any] = mapped_column(JSON, nullable=True)

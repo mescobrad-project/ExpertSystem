@@ -1,13 +1,10 @@
-from sqlalchemy import Column, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
+from ._base import Base
 
-from src.models._base import Base
 
-
-class ModuleCategoryModel(Base):
+class BaseModuleCategoryModel(Base):
     __tablename__ = "module_categories"
 
-    code = Column(String, nullable=False, index=True)
-    name = Column(String, nullable=False, index=True)
-
-    modules = relationship("ModuleModel", back_populates="category")
+    code: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
