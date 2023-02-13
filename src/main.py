@@ -7,6 +7,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from src.routers import (
     workflow,
     run,
+    feature,
     file,
     home,
     module_category,
@@ -36,6 +37,7 @@ def include_middlewares(app):
 
 
 def include_router(app):
+    app.include_router(feature.router)
     app.include_router(file.router)
     app.include_router(home.router)
     app.include_router(oauth.router)
