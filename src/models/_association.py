@@ -12,6 +12,8 @@ from .WorkflowCategoryModel import BaseWorkflowCategoryModel
 from .WorkflowModel import BaseWorkflowModel
 from .RunModel import BaseRunModel
 
+Base.metadata.schema = DB_SCHEMA
+
 variables_features = Table(
     "variables_features",
     Base.metadata,
@@ -22,13 +24,13 @@ variables_features = Table(
 
 class FeatureModel(BaseFeatureModel):
     variables: Mapped[list["VariableModel"]] = relationship(
-        secondary=variables_features, back_populates="features"
+        secondary=variables_features, back_populates="features", cascade="all"
     )
 
 
 class VariableModel(BaseVariableModel):
     features: Mapped[list["FeatureModel"]] = relationship(
-        secondary=variables_features, back_populates="variables"
+        secondary=variables_features, back_populates="variables", cascade="all"
     )
 
 
