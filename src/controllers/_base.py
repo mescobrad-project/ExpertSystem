@@ -1,7 +1,7 @@
 from uuid import UUID
 from datetime import datetime, timezone
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, MultipleResultsFound
 from sqlalchemy.orm import Session
 from src.errors.ApiRequestException import (
     ConflictException,
@@ -21,6 +21,8 @@ class BaseController:
         try:
             return self.repository.create(db=db, obj_in=obj_in)
         except IntegrityError as error:
+            raise ConflictException(details=jsonable_encoder(error))
+        except MultipleResultsFound as error:
             raise ConflictException(details=jsonable_encoder(error))
         except Exception as error:
             raise BadRequestException(
