@@ -36,6 +36,9 @@ def _parse_criteria(model, criteria):
             for m_key, m_value in value["criteria"].items():
                 prop = getattr(model_ref_class, m_key.split("__")[0])
                 filters.append(model_ref.has(_parse_operations(m_key, prop, m_value)))
+        elif type(value) is list:
+            prop = getattr(model, key)
+            filters.append(prop.in_(value))
         else:
             prop = getattr(model, key.split("__")[0])
             filters.append(_parse_operations(key, prop, value))
@@ -77,7 +80,7 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return (
             db.query(self.model)
             .filter(*_parse_criteria(self.model, criteria=criteria))
-            .first()
+            .one()
         )
 
     def count(self, db: Session, criteria={}) -> int:
@@ -105,8 +108,17 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             .all()
         )
 
-    def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
-        obj_in_data = jsonable_encoder(obj_in)
+    def create(
+        self,
+        db: Session,
+        *,
+        obj_in: CreateSchemaType,
+        fields_to_exclude: list | None = []
+    ) -> ModelType:
+        obj_in_data = jsonable_encoder(obj_in, exclude=fields_to_exclude)
+        if fields_to_exclude:
+            for field in fields_to_exclude:
+                obj_in_data[field] = getattr(obj_in, field)
         db_obj = self.model(**obj_in_data)  # type: ignore
         db.add(db_obj)
         db.commit()
@@ -118,8 +130,13 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: Session,
         *,
         db_obj: ModelType,
-        obj_in: UpdateSchemaType | dict[str, Any]
+        obj_in: UpdateSchemaType | dict[str, Any],
+        fields_to_exclude: list | None = []
     ) -> ModelType:
+        """
+        fields_to_exclude is a list for fields to not be parsed as JSON. This is an error
+        that is raised because of some models that need custom Objects (e.g. SQLAlchemy model)
+        """
         obj_data = jsonable_encoder(db_obj)
         if isinstance(obj_in, dict):
             update_data = obj_in
@@ -127,7 +144,8 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             update_data = obj_in.dict(exclude_unset=True)
         for field in obj_data:
             if field in update_data:
-                setattr(db_obj, field, update_data[field])
+                if field not in fields_to_exclude:
+                    setattr(db_obj, field, update_data[field])
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)
