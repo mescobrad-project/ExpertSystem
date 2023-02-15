@@ -8,7 +8,7 @@ router = APIRouter(
     prefix="/datalake/objectstorage",
     tags=["datalake objectstorage"],
     responses={404: {"message": "Not found"}},
-    dependencies=[Depends(validate_user)],
+    # dependencies=[Depends(validate_user)],
 )
 
 

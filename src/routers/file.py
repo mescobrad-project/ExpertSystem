@@ -10,7 +10,7 @@ router = APIRouter(
     prefix="/file",
     tags=["Files"],
     responses={404: {"message": "Not found"}},
-    dependencies=[Depends(validate_user)],
+    # dependencies=[Depends(validate_user)],
 )
 
 
