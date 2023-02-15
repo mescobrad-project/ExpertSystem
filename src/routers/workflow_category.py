@@ -15,7 +15,7 @@ router = APIRouter(
     prefix="/category/workflow",
     tags=["Workflow Category"],
     responses={404: {"message": "Not found"}},
-    dependencies=[Depends(validate_user)],
+    # dependencies=[Depends(validate_user)],
 )
 
 

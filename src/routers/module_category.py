@@ -15,7 +15,7 @@ router = APIRouter(
     prefix="/category/module",
     tags=["Module Categories"],
     responses={404: {"message": "Not found"}},
-    dependencies=[Depends(validate_user)],
+    # dependencies=[Depends(validate_user)],
 )
 
 

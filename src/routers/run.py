@@ -12,7 +12,7 @@ router = APIRouter(
     prefix="/run",
     tags=["run"],
     responses={404: {"message": "Not found"}},
-    dependencies=[Depends(validate_user)],
+    # dependencies=[Depends(validate_user)],
 )
 
 
