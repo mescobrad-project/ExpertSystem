@@ -9,6 +9,12 @@ class Router(BaseRouter):
         """
         return f"{self.host}/healthcheck"
 
+    def base_save_path(self) -> str:
+        """
+        :return: {host}/datalake/objectstorage/basepath
+        """
+        return f"{self.host}/datalake/objectstorage/basepath"
+
     def ai(self) -> str:
         """
         :return: {host}/ai
@@ -115,6 +121,9 @@ class Api(BaseApi):
         return self._response_wrapper(
             self.session.get(self.router.construct_ai_instructions(route_name))
         )
+
+    def get_base_save_path(self) -> dict:
+        return self._response_wrapper(self.session.get(self.router.base_save_path()))
 
 
 client = Api(Router, AI_API_BASE_URL)
