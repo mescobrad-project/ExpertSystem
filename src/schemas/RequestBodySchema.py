@@ -17,3 +17,9 @@ class BpmnDataStore(BaseModel):
 class TaskMetadataBodyParameter(BaseModel):
     store: dict[str, dict[str, list[BpmnDataObject] | list[BpmnDataStore]]] = {}
     error: str | None = None
+
+
+# Used to model the request body params of task complete route
+class ScriptTaskCompleteParams(BaseModel):
+    data: list[BpmnDataObject] = []
+    error: str | None = None

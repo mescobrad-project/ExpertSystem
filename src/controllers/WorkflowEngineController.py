@@ -10,7 +10,10 @@ from src.engine.main import WorkflowEngine
 from src.engine.classes.ElementClass import get_class_from_task_name
 from src.engine.utils.Generators import getId
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
-from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
+from src.schemas.RequestBodySchema import (
+    TaskMetadataBodyParameter,
+    ScriptTaskCompleteParams,
+)
 from src.schemas.ExternalApiSchema import DataAnalyticsInput
 from src.clients.artificialintelligence import client as ai_client
 from src.clients.querybuilder import client as qb_client
@@ -135,11 +138,10 @@ class BaseEngineController:
         self,
         workflow,
         run,
-        run_id: UUID,
         step_id: UUID,
         data: dict,
     ):
-        (_, active, details, rules) = self._prepare_step(workflow, run, step_id)
+        (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
 
         if "task" in rules.keys():
             if "metadata" in active.keys():
@@ -153,7 +155,7 @@ class BaseEngineController:
                         return {"error": "Function name does not exist!"}
 
                     da_input = DataAnalyticsInput(
-                        run_id=str(run_id),
+                        run_id=str(engine.run_id),
                         step_id=step_id,
                         save_loc_bucket=data.get("save_bucket"),
                         save_loc_folder=data.get("save_folder"),
@@ -168,9 +170,99 @@ class BaseEngineController:
 
                     active["metadata"] = response
                 elif module_name.startswith("querybuilder"):
-                    active["metadata"] = {"url": da_client.redirect()}
+                    base_save_path = ai_client.get_base_save_path()
+                    if not base_save_path.get("is_success"):
+                        return base_save_path
+
+                    active["metadata"] = {
+                        "url": f"query_builder/{engine.run_id}/{step_id}",
+                        "base_save_path": {
+                            "bucket_name": base_save_path.get("bucket_name"),
+                            "object_name": f"{base_save_path.get('object_name')}/{engine.workflow_id}",
+                        },
+                        "data_use": data.get("data_input_multiple"),
+                    }
                 else:
                     return {"error": "Please provide a valid module!"}
+
+        return {"pending": active}
+
+    def task_script_complete(
+        self,
+        workflow,
+        run,
+        step_id: UUID,
+        params: ScriptTaskCompleteParams | None = None,
+    ):
+        (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
+
+        if "complete" in rules.keys():
+            if details["type"] not in [
+                SCRIPT_TASK,
+            ]:
+                raise Exception("Action forbidden.")
+
+            task_stores = workflow["tasks"][active["sid"]].get("stores")
+
+            if task_stores and len(task_stores) > 0:
+                ### Start Bad Code
+                for store in task_stores:
+                    to_store = {}
+
+                    sid = list(store.keys())[0]
+                    mode = store[sid].get("mode")
+
+                    if params.error:
+                        to_store["error"] = params.error
+                    else:
+                        if mode not in ["set", "get"]:
+                            continue
+
+                        data = {}
+                        data[mode] = params.data
+
+                        # deserialize data because of python's/pydantic's poor handling
+                        deserialized = []
+                        for raw_data in data[mode]:
+                            deserialized.append(raw_data.dict())
+
+                        to_store[sid] = {}
+                        to_store[sid][mode] = deserialized
+                ### End Bad Code
+
+                state_id = getId()
+
+                engine.append_workflow_state_data(
+                    {
+                        "id": state_id,
+                        "sid": active["sid"],
+                        "step_number": active["number"],
+                        "data": to_store,
+                    }
+                )
+
+                if active.get("metadata"):
+                    active["metadata"]["store"] = {
+                        "state_data_id": state_id,
+                        "state_data_number": len(engine.state["data"]) - 1,
+                    }
+                else:
+                    active["metadata"] = {
+                        "store": {
+                            "state_data_id": state_id,
+                            "state_data_number": len(engine.state["data"]) - 1,
+                        }
+                    }
+
+            engine.set_step_completed(active)
+
+            # if "task" in rules.keys():
+            #     (_, next_step) = engine.find_active_step(engine.queue)
+            #     engine.set_task_as_active_step(next_step)
+            #     engine.remove_from_bucket(
+            #         engine.queue,
+            #         engine.get_step_position_index(engine.queue, next_step["id"]),
+            #     )
 
         return {"pending": active}
 
@@ -261,15 +353,13 @@ class BaseEngineController:
 
             if details["type"] not in [
                 MANUAL_TASK,
-                SCRIPT_TASK,
                 USER_TASK,
                 RECEIVE_TASK,
             ]:
                 raise Exception("Action forbidden.")
 
             task_stores = workflow["tasks"][active["sid"]].get("stores")
-            print(active["sid"])
-            print(task_stores)
+
             if task_stores and len(task_stores) > 0:
                 to_store = {}
 
