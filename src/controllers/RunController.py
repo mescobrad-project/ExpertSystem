@@ -111,12 +111,13 @@ class _RunController(BaseController):
             next_step_id,
         )
 
-    def exec_script_task(self, db: Session, run_id: UUID, step_id: UUID):
+    def exec_script_task(self, db: Session, run_id: UUID, step_id: UUID, data: any):
         return self._run_execution_wrapper(
             WorkflowEngineController.task_exec,
             db,
             run_id,
             step_id,
+            data,
         )
 
     def send_task(self, db: Session, run_id: UUID, step_id: UUID, data: any):
@@ -140,6 +141,15 @@ class _RunController(BaseController):
     def complete_task(self, db: Session, run_id: UUID, step_id: UUID, data: any):
         return self._run_execution_wrapper(
             WorkflowEngineController.task_complete,
+            db,
+            run_id,
+            step_id,
+            data,
+        )
+
+    def complete_script_task(self, db: Session, run_id: UUID, step_id: UUID, data: any):
+        return self._run_execution_wrapper(
+            WorkflowEngineController.task_script_complete,
             db,
             run_id,
             step_id,

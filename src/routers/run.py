@@ -5,7 +5,10 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.controllers.RunController import RunController
 from src.dependencies.authentication import validate_user
-from src.schemas.RequestBodySchema import TaskMetadataBodyParameter
+from src.schemas.RequestBodySchema import (
+    TaskMetadataBodyParameter,
+    ScriptTaskCompleteParams,
+)
 from src.schemas.RunSchema import Run, RunNameUpdate
 
 router = APIRouter(
@@ -99,12 +102,16 @@ def init_parallel_gateway(
 
 @router.patch("/{run_id}/step/{step_id}/task/exec")
 def exec_script_task(
-    *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+    step_id: UUID,
+    data: dict = {},
 ) -> Any:
     """
     Execute a script task.
     """
-    return RunController.exec_script_task(db, run_id, step_id)
+    return RunController.exec_script_task(db, run_id, step_id, data)
 
 
 @router.patch("/{run_id}/step/{step_id}/task/send")
@@ -158,6 +165,29 @@ def complete_task(
     }
     """
     return RunController.complete_task(db, run_id, step_id, metadata)
+
+
+@router.patch("/{run_id}/step/{step_id}/task/script/complete")
+def complete_script_task(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+    step_id: UUID,
+    params: ScriptTaskCompleteParams | None = None,
+) -> Any:
+    """
+    Complete a task.
+    Request body schema is not clear enough.
+    Example:
+    {
+        "data": {
+            [
+                \<BpmnDataObject>
+            ]
+        }
+    }
+    """
+    return RunController.complete_script_task(db, run_id, step_id, params)
 
 
 @router.patch("/{run_id}/step/{step_id}/event")
