@@ -23,6 +23,8 @@ from src.config import (
     CORS_METHODS,
     CORS_HEADERS,
     PROJECT_NAME,
+    APP_HOSTS,
+    APP_ROOT,
 )
 from src.database import create_tables
 
@@ -51,8 +53,19 @@ def include_router(app):
     app.include_router(objectstorage.router)
 
 
+def generate_servers():
+    servers = []
+    for server in APP_HOSTS:
+        servers.append({"url": server})
+    return servers
+
+
 def start_app():
-    app = FastAPI(title=PROJECT_NAME)
+    app = FastAPI(
+        title=PROJECT_NAME,
+        servers=generate_servers(),
+        root_path=APP_ROOT,
+    )
     include_router(app)
     include_middlewares(app)
     create_tables()
