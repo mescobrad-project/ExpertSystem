@@ -2,6 +2,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
+from src.config import ES_UI_BASE_URL
 from src.database import get_db
 from src.controllers.OAuthController import OAuthController
 from src.dependencies.authentication import clean_before_login
@@ -28,8 +29,7 @@ def oauth_callback(
     """
     Route used to retrieve auth token.
     """
-    # return OAuthController.oauth_callback(db, code)
     token, user = OAuthController.oauth_callback(db, code)
     return Response(
-        f"<html><body><script defer>window.location.assign('http://localhost:3000/auth/callback/{user}/{token}')</script></body></html>"
+        f"<html><body><script defer>window.location.assign('{ES_UI_BASE_URL}/auth/callback/{user}/{token}')</script></body></html>"
     )

@@ -6,6 +6,7 @@ WORKDIR = Path(__file__).parent.resolve()
 APP_HOSTS = (getenv("APP_HOSTS", "http://localhost")).split(",")
 APP_ROOT = getenv("APP_ROOT", "/")
 
+ES_UI_BASE_URL = getenv("EXPERT_SYSTEM_UI_BASE_URL", "http://localhost")
 AI_API_BASE_URL = getenv("ARTIFICIAL_INTELLIGENCE_API_BASE_URL", "http://localhost")
 QB_API_BASE_URL = getenv("QUERY_BUILDER_API_BASE_URL", "http://localhost")
 DA_API_BASE_URL = getenv("DATA_ANALYTICS_API_BASE_URL", "http://localhost")
