@@ -29,6 +29,20 @@ class BaseController:
     def refresh_token(self, token=Depends(token)):
         return self.__client.refresh_token(token["refresh_token"])
 
+    def logout(self, db: Session, user, token, token_id):
+        response = self.__client.logout(token["refresh_token"])
+        parsed_sessions = jsonable_encoder(user.session)
+
+        del parsed_sessions[token_id]
+
+        UserController.update(
+            db,
+            resource_id=user.id,
+            resource_in=UserUpdate(session=parsed_sessions),
+        )
+
+        return response
+
     def oauth_callback(self, db: Session, code: str):
         token = self.token(code)
         user_info = self.get_user_info(token)
