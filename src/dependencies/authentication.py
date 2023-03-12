@@ -112,6 +112,8 @@ async def validate_user(x_es_token: str = Header(), db: Session = Depends(get_db
     else:
         raise UnauthorizedException(message="Invalid Access Token")
 
+    return (user, token, token_id)
+
 
 async def clean_before_login(
     x_es_token: str = Header(default=""), db: Session = Depends(get_db)
