@@ -39,7 +39,7 @@ class BaseOAuthClient:
         return self.__client.userinfo(access_token)
 
     def logout(self, refresh_token: str):
-        return self.__client.logout(token=refresh_token)
+        return self.__client.logout(refresh_token)
 
 
 client = BaseOAuthClient(
