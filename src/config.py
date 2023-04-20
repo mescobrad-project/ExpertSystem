@@ -28,6 +28,12 @@ S3_ENDPOINT = getenv("S3_ENDPOINT", "localhost")
 S3_ACCESS_KEY_ID = getenv("S3_ACCESS_KEY_ID", "access_key")
 S3_SECRET_ACCESS_KEY = getenv("S3_SECRET_ACCESS_KEY", "secret_key")
 
+TRINO_HOST = getenv("TRINO_HOST", "localhost")
+TRINO_PORT = getenv("TRINO_PORT", 443)
+TRINO_SCHEME = getenv("TRINO_SCHEME", "https")
+TRINO_USERNAME = getenv("TRINO_USERNAME", "test_user")
+TRINO_PASSWORD = getenv("TRINO_PASSWORD", "")
+
 SQLALCHEMY_DATABASE_URL = (
     f"{DB_CONNECTION}://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}"
 )
