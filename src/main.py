@@ -16,7 +16,7 @@ from src.routers import (
     workflow_category,
     oauth,
 )
-from src.routers.datalake import objectstorage
+from src.routers.datalake import objectstorage, datastorage
 from src.config import (
     CORS_ORIGINS,
     CORS_CREDENTIALS,
@@ -51,6 +51,7 @@ def include_router(app):
     app.include_router(module_category.router)
     app.include_router(module.router)
     app.include_router(objectstorage.router)
+    app.include_router(datastorage.router)
 
 
 def generate_servers():
