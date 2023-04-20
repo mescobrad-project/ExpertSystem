@@ -23,8 +23,6 @@ from src.config import (
     CORS_METHODS,
     CORS_HEADERS,
     PROJECT_NAME,
-    APP_HOSTS,
-    APP_ROOT,
 )
 from src.database import create_tables
 
@@ -52,13 +50,6 @@ def include_router(app):
     app.include_router(module.router)
     app.include_router(objectstorage.router)
     app.include_router(datastorage.router)
-
-
-def generate_servers():
-    servers = []
-    for server in APP_HOSTS:
-        servers.append({"url": server})
-    return servers
 
 
 def start_app():
