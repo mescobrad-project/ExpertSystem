@@ -64,8 +64,6 @@ def generate_servers():
 def start_app():
     app = FastAPI(
         title=PROJECT_NAME,
-        servers=generate_servers(),
-        root_path=APP_ROOT,
     )
     include_router(app)
     include_middlewares(app)
