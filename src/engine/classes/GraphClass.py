@@ -25,7 +25,6 @@ class Graph:
         next_queue = []
 
         while queue:
-
             # Dequeue a vertex from
             # queue and print it
             (s, level) = queue.pop(0)
@@ -53,7 +52,6 @@ class Graph:
         color[self.keys.index(u)] = "GRAY"
 
         for v in self.graph[u]:
-
             if color[self.keys.index(v)] == "GRAY":
                 return True
 
