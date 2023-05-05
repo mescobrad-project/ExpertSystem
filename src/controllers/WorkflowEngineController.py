@@ -157,8 +157,10 @@ class BaseEngineController:
                     da_input = DataAnalyticsInput(
                         run_id=str(engine.run_id),
                         step_id=step_id,
-                        save_loc_bucket=data.get("save_bucket"),
-                        save_loc_folder=data.get("save_folder"),
+                        datalake={
+                            "bucket_name": data.get("save_bucket"),
+                            "object_name": data.get("save_folder"),
+                        },
                         function=func_name,
                         metadata={"files": data.get("files")},
                     )
@@ -176,11 +178,16 @@ class BaseEngineController:
 
                     active["metadata"] = {
                         "url": f"query_builder/{engine.run_id}/{step_id}",
+                        "workflow_id": engine.workflow_id,
+                        "run_id": engine.run_id,
                         "base_save_path": {
                             "bucket_name": base_save_path.get("bucket_name"),
                             "object_name": f"{base_save_path.get('object_name')}/{engine.workflow_id}",
                         },
-                        "data_use": data.get("data_input_multiple"),
+                        "data_use": {
+                            "datalake": data.get("data_input_multiple_datalake"),
+                            "trino": data.get("data_input_multiple_trino"),
+                        },
                     }
                 else:
                     return {"error": "Please provide a valid module!"}
@@ -219,7 +226,7 @@ class BaseEngineController:
                             continue
 
                         data = {}
-                        data[mode] = params.data
+                        data[mode] = params.data["datalake"]
 
                         # deserialize data because of python's/pydantic's poor handling
                         deserialized = []
