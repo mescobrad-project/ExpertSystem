@@ -5,12 +5,12 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from .database import SessionLocal as SessionTesting, create_tables, drop_tables, engine
-from src.routers import workflow
+from src.routers import home
 
 
 def start_application():
     main = FastAPI()
-    main.include_router(workflow.router)
+    main.include_router(home.router)
     return main
 
 
