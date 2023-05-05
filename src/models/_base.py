@@ -50,7 +50,6 @@ class GUID(TypeDecorator):
 
 
 class Base(ModelBase):
-
     __abstract__ = True
     __table_args__ = {"schema": DB_SCHEMA}
 
