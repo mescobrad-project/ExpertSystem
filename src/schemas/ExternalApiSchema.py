@@ -10,7 +10,7 @@ class DataAnalyticsMetadataSchema(BaseModel):
 class DataAnalyticsInput(BaseModel):
     run_id: str | UUID
     step_id: str | UUID
-    save_loc_bucket: str
-    save_loc_folder: str
+    datalake: dict
+    trino: dict
     function: str
     metadata: DataAnalyticsMetadataSchema
