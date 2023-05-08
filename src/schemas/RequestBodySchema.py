@@ -1,5 +1,5 @@
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class BpmnDataObject(BaseModel):
@@ -9,8 +9,9 @@ class BpmnDataObject(BaseModel):
 
 class BpmnDataStore(BaseModel):
     table: str
-    prop: str
-    id: str | UUID
+    catalog: str
+    name: str
+    schema_: str = Field("", alias="schema")
 
 
 # Used to model the request body params of task complete route

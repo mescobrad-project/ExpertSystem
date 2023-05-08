@@ -81,6 +81,14 @@ class _RunController(BaseController):
         except Exception as error:
             raise InternalServerErrorException(details=str(error))
 
+    def get_datastores_from_stored_data(self, db: Session, run_id: UUID):
+        run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
+
+        try:
+            return WorkflowEngineController.get_datastore_refs(run)
+        except Exception as error:
+            raise InternalServerErrorException(details=str(error))
+
     def run_specific_task(self, db: Session, run_id: UUID, step_id: UUID):
         return self._run_execution_wrapper(
             WorkflowEngineController.run_pending_step,

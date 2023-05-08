@@ -70,6 +70,16 @@ def get_dataobjects_from_stored_data(
     return RunController.get_dataobjects_from_stored_data(db, run_id)
 
 
+@router.get("/{run_id}/stores/datastore")
+def get_datastores_from_stored_data(
+    *, db: Session = Depends(get_db), run_id: UUID
+) -> Any:
+    """
+    Get all data object references mined from stored data.
+    """
+    return RunController.get_datastores_from_stored_data(db, run_id)
+
+
 @router.get("/{run_id}/step/{step_id}")
 def run_specific_task(
     *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID
@@ -173,7 +183,7 @@ def complete_script_task(
     db: Session = Depends(get_db),
     run_id: UUID,
     step_id: UUID,
-    params: ScriptTaskCompleteParams | None = None,
+    data: dict | None = None,
 ) -> Any:
     """
     Complete a task.
@@ -187,7 +197,7 @@ def complete_script_task(
         }
     }
     """
-    return RunController.complete_script_task(db, run_id, step_id, params)
+    return RunController.complete_script_task(db, run_id, step_id, data)
 
 
 @router.patch("/{run_id}/step/{step_id}/event")

@@ -167,35 +167,44 @@ class BaseEngineController:
                         },
                     }
                 else:
-                    func_name = module_name.split("/")[-1]
+                    func_name = data.get("module").split("/")[-1]
 
                     if not da_client.check_if_function_exists(func_name):
                         return {"error": "Function name does not exist!"}
 
                     metadata_to_send = {}
 
-                    if data.get("files"):
+                    if data.get("data_input"):
                         metadata_to_send["files"] = []
-                        for f in data.get("files"):
-                            metadata_to_send["files"].append(
-                                {
-                                    "bucket": f["bucket_name"],
-                                    "file": f["object_name"],
-                                }
-                            )
-                    if data.get("reference"):
+                        if "datalake" in data.get("data_input"):
+                            for obj in data["data_input"]["datalake"]:
+                                metadata_to_send["files"].append(
+                                    {
+                                        "bucket": obj["bucket_name"],
+                                        "file": obj["object_name"],
+                                    }
+                                )
+                    if data.get("ref_completed_task"):
                         metadata_to_send["reference"] = data.get("ref_completed_task")
 
-                    da_input = DataAnalyticsInput(
-                        workflow_id=str(engine.workflow_id),
-                        run_id=str(engine.run_id),
-                        step_id=step_id,
-                        datalake={
+                    request_body = {
+                        "workflow_id": str(engine.workflow_id),
+                        "run_id": str(engine.run_id),
+                        "step_id": step_id,
+                        "datalake": {
                             "bucket_name": data.get("save_bucket"),
                             "object_name": data.get("save_folder"),
                         },
-                        function=func_name,
-                        metadata=metadata_to_send,
+                        "function": func_name,
+                        "metadata": metadata_to_send,
+                    }
+                    da_input = DataAnalyticsInput(
+                        workflow_id=request_body["workflow_id"],
+                        run_id=request_body["run_id"],
+                        step_id=request_body["step_id"],
+                        datalake=request_body["datalake"],
+                        function=request_body["function"],
+                        metadata=request_body["metadata"],
                     )
 
                     response = da_client.put(da_input)
@@ -203,7 +212,8 @@ class BaseEngineController:
                     if not response.get("is_success"):
                         return response
 
-                    response["class"] = module_name
+                    response["class"] = data.get("module")
+                    # response.update(request_body)
 
                     active["metadata"] = response
 
@@ -226,7 +236,7 @@ class BaseEngineController:
 
             task_stores = workflow["tasks"][active["sid"]].get("stores")
 
-            if task_stores and len(task_stores) > 0:
+            if task_stores and len(task_stores) > 0 and params["data"].get("datalake"):
                 ### Start Bad Code
                 for store in task_stores:
                     to_store = {}
@@ -234,19 +244,22 @@ class BaseEngineController:
                     sid = list(store.keys())[0]
                     mode = store[sid].get("mode")
 
-                    if params.error:
+                    if params.get("error") and params.error:
                         to_store["error"] = params.error
                     else:
                         if mode not in ["set", "get"]:
                             continue
 
                         data = {}
-                        data[mode] = params.data["datalake"]
+                        data[mode] = params["data"]["datalake"]
 
                         # deserialize data because of python's/pydantic's poor handling
                         deserialized = []
                         for raw_data in data[mode]:
-                            deserialized.append(raw_data.dict())
+                            try:
+                                deserialized.append(raw_data.dict())
+                            except:
+                                deserialized.append(raw_data)
 
                         to_store[sid] = {}
                         to_store[sid][mode] = deserialized
@@ -483,13 +496,13 @@ class BaseEngineController:
 
         return {"step": active, "completed": active["completed"]}
 
-    def get_dataobject_refs(self, run: RunModel):
+    def _get_data_refs(self, run: RunModel, data_type: str):
         file_refs = []
 
         for activity in run.state["data"]:
             for sid, data in activity["data"].items():
                 if sid in run.workflow.stores.keys():
-                    if run.workflow.stores[sid]["type"] == "DataObject":
+                    if run.workflow.stores[sid]["type"] == data_type:
                         if "get" in data.keys():
                             file_refs.extend(data["get"])
                         if "set" in data.keys():
@@ -497,8 +510,14 @@ class BaseEngineController:
 
         return file_refs
 
+    def get_dataobject_refs(self, run: RunModel):
+        return self._get_data_refs(run, "DataObject")
+
+    def get_datastore_refs(self, run: RunModel):
+        return self._get_data_refs(run, "DataStore")
+
     def get_previously_completed_steps(self, workflow, run, criteria: dict = {}):
-        steps = []
+        _steps = []
 
         for step in run.steps:
             if step["completed"]:
@@ -514,21 +533,22 @@ class BaseEngineController:
                     "sid": step["sid"],
                     "name": step["name"],
                     "type": task_type,
+                    "metadata": step.get("metadata"),
                 }
-                if criteria.get("include"):
-                    if criteria.get("metadata") and steps.get("metadata"):
-                        if criteria["metadata"].get("class") and steps["metadata"].get(
-                            "class"
-                        ):
-                            if (
-                                criteria["metadata"]["class"]
-                                != steps["metadata"]["class"]
-                            ):
-                                steps.append(data)
-                else:
-                    steps.append(data)
 
-        return steps
+                if criteria.get("include"):
+                    if criteria["include"].get("class"):
+                        if step.get("metadata"):
+                            if step["metadata"].get("class"):
+                                if (
+                                    criteria["include"]["class"]
+                                    == step["metadata"]["class"]
+                                ):
+                                    _steps.append(data)
+                else:
+                    _steps.append(data)
+
+        return _steps
 
 
 WorkflowEngineController = BaseEngineController()
