@@ -172,5 +172,28 @@ class _RunController(BaseController):
             step_id,
         )
 
+    def get_completed_script_tasks(
+        self,
+        db: Session,
+        run_id: UUID,
+        class_name: str | None = None,
+        not_in_type: str | None = None,
+    ):
+        run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
+
+        criteria = {}
+        if class_name and class_name != "":
+            criteria["include"] = {"class": class_name}
+
+        if not_in_type and not_in_type != "":
+            criteria["exclude"] = {"not_in_type": not_in_type}
+
+        try:
+            return WorkflowEngineController.get_previously_completed_steps(
+                run.workflow, run, criteria
+            )
+        except Exception as error:
+            raise InternalServerErrorException(details=str(error))
+
 
 RunController = _RunController(RunRepository)

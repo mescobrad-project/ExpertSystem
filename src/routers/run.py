@@ -208,3 +208,19 @@ def ping_task_status(
     Get the status of specific task.
     """
     return RunController.ping_task_status(db, run_id, step_id)
+
+
+@router.get("/{run_id}/completed/tasks")
+def get_completed_tasks(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+    class_name: str | None = None,
+    not_in_type: str | None = None,
+) -> Any:
+    """
+    Get previously completed Tasks
+    """
+    return RunController.get_completed_script_tasks(
+        db, run_id, class_name=class_name, not_in_type=not_in_type
+    )
