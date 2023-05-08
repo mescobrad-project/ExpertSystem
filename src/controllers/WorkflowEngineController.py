@@ -148,30 +148,7 @@ class BaseEngineController:
                 return {"pending": active}
 
             for module_name in details["class"]:
-                if module_name.startswith("dataanalytics"):
-                    [_, func_name] = module_name.split("/")
-
-                    if not da_client.check_if_function_exists(func_name):
-                        return {"error": "Function name does not exist!"}
-
-                    da_input = DataAnalyticsInput(
-                        run_id=str(engine.run_id),
-                        step_id=step_id,
-                        datalake={
-                            "bucket_name": data.get("save_bucket"),
-                            "object_name": data.get("save_folder"),
-                        },
-                        function=func_name,
-                        metadata={"files": data.get("files")},
-                    )
-
-                    response = da_client.post(da_input)
-
-                    if not response.get("is_success"):
-                        return response
-
-                    active["metadata"] = response
-                elif module_name.startswith("querybuilder"):
+                if module_name.startswith("querybuilder"):
                     base_save_path = ai_client.get_base_save_path()
                     if not base_save_path.get("is_success"):
                         return base_save_path
@@ -185,12 +162,50 @@ class BaseEngineController:
                             "object_name": f"{base_save_path.get('object_name')}/{engine.workflow_id}",
                         },
                         "data_use": {
-                            "datalake": data.get("data_input_multiple_datalake"),
-                            "trino": data.get("data_input_multiple_trino"),
+                            "datalake": data.get("data_input").get("datalake"),
+                            "trino": data.get("data_input").get("trino"),
                         },
                     }
                 else:
-                    return {"error": "Please provide a valid module!"}
+                    func_name = module_name.split("/")[-1]
+
+                    if not da_client.check_if_function_exists(func_name):
+                        return {"error": "Function name does not exist!"}
+
+                    metadata_to_send = {}
+
+                    if data.get("files"):
+                        metadata_to_send["files"] = []
+                        for f in data.get("files"):
+                            metadata_to_send["files"].append(
+                                {
+                                    "bucket": f["bucket_name"],
+                                    "file": f["object_name"],
+                                }
+                            )
+                    if data.get("reference"):
+                        metadata_to_send["reference"] = data.get("ref_completed_task")
+
+                    da_input = DataAnalyticsInput(
+                        workflow_id=str(engine.workflow_id),
+                        run_id=str(engine.run_id),
+                        step_id=step_id,
+                        datalake={
+                            "bucket_name": data.get("save_bucket"),
+                            "object_name": data.get("save_folder"),
+                        },
+                        function=func_name,
+                        metadata=metadata_to_send,
+                    )
+
+                    response = da_client.put(da_input)
+
+                    if not response.get("is_success"):
+                        return response
+
+                    response["class"] = module_name
+
+                    active["metadata"] = response
 
         return {"pending": active}
 
