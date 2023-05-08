@@ -3,7 +3,8 @@ from pydantic import BaseModel
 
 
 class DataAnalyticsMetadataSchema(BaseModel):
-    files: list[list[str]]
+    files: list[dict] | None = None
+    reference: list[dict] | None = None
 
 
 # Used to model the request input params of Data Analytics POST fn
