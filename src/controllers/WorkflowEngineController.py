@@ -497,5 +497,38 @@ class BaseEngineController:
 
         return file_refs
 
+    def get_previously_completed_steps(self, workflow, run, criteria: dict = {}):
+        steps = []
+
+        for step in run.steps:
+            if step["completed"]:
+                task_type = workflow.tasks[step["sid"]]["type"]
+
+                if criteria.get("exclude"):
+                    if criteria["exclude"].get("not_in_type"):
+                        if criteria["exclude"]["not_in_type"] != task_type:
+                            continue
+
+                data = {
+                    "id": step["id"],
+                    "sid": step["sid"],
+                    "name": step["name"],
+                    "type": task_type,
+                }
+                if criteria.get("include"):
+                    if criteria.get("metadata") and steps.get("metadata"):
+                        if criteria["metadata"].get("class") and steps["metadata"].get(
+                            "class"
+                        ):
+                            if (
+                                criteria["metadata"]["class"]
+                                != steps["metadata"]["class"]
+                            ):
+                                steps.append(data)
+                else:
+                    steps.append(data)
+
+        return steps
+
 
 WorkflowEngineController = BaseEngineController()

@@ -8,9 +8,10 @@ class DataAnalyticsMetadataSchema(BaseModel):
 
 # Used to model the request input params of Data Analytics POST fn
 class DataAnalyticsInput(BaseModel):
+    workflow_id: str | UUID
     run_id: str | UUID
     step_id: str | UUID
     datalake: dict
-    trino: dict
+    trino: dict | None = None
     function: str
     metadata: DataAnalyticsMetadataSchema
