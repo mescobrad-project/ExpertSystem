@@ -1,11 +1,11 @@
 from uuid import UUID
+from src.config import QB_API_BASE_URL
 from src.engine.config import (
     RECEIVE_TASK,
     SEND_TASK,
     MANUAL_TASK,
     SCRIPT_TASK,
     USER_TASK,
-    QB_API_BASE_URL,
 )
 from src.engine.main import WorkflowEngine
 from src.engine.classes.ElementClass import get_class_from_task_name
