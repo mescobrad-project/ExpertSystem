@@ -5,6 +5,7 @@ from src.engine.config import (
     MANUAL_TASK,
     SCRIPT_TASK,
     USER_TASK,
+    QB_API_BASE_URL,
 )
 from src.engine.main import WorkflowEngine
 from src.engine.classes.ElementClass import get_class_from_task_name
@@ -154,7 +155,7 @@ class BaseEngineController:
                         return base_save_path
 
                     active["metadata"] = {
-                        "url": f"query_builder/{engine.run_id}/{step_id}",
+                        "url": f"{QB_API_BASE_URL}/{engine.run_id}/{step_id}",
                         "workflow_id": engine.workflow_id,
                         "run_id": engine.run_id,
                         "base_save_path": {
