@@ -15,9 +15,7 @@ from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
     ScriptTaskCompleteParams,
 )
-from src.schemas.ExternalApiSchema import DataAnalyticsInput
 from src.clients.artificialintelligence import client as ai_client
-from src.clients.querybuilder import client as qb_client
 from src.clients.dataanalytics import client as da_client
 from src.models._all import RunModel
 
@@ -148,12 +146,12 @@ class BaseEngineController:
             if "metadata" in active.keys():
                 return {"pending": active}
 
+            base_save_path = ai_client.get_base_save_path()
+            if not base_save_path.get("is_success"):
+                raise Exception(base_save_path)
+
             for module_name in details["class"]:
                 if module_name.startswith("querybuilder"):
-                    base_save_path = ai_client.get_base_save_path()
-                    if not base_save_path.get("is_success"):
-                        return base_save_path
-
                     active["metadata"] = {
                         "url": f"{QB_API_BASE_URL}/{engine.run_id}/{step_id}",
                         "workflow_id": engine.workflow_id,
@@ -191,29 +189,22 @@ class BaseEngineController:
                     request_body = {
                         "workflow_id": str(engine.workflow_id),
                         "run_id": str(engine.run_id),
-                        "step_id": step_id,
+                        "step_id": str(step_id),
                         "datalake": {
-                            "bucket_name": data.get("save_bucket"),
-                            "object_name": data.get("save_folder"),
+                            "bucket_name": base_save_path.get("bucket_name"),
+                            "object_name": f"{base_save_path.get('object_name')}/{engine.workflow_id}",
                         },
                         "function": func_name,
                         "metadata": metadata_to_send,
                     }
-                    da_input = DataAnalyticsInput(
-                        workflow_id=request_body["workflow_id"],
-                        run_id=request_body["run_id"],
-                        step_id=request_body["step_id"],
-                        datalake=request_body["datalake"],
-                        function=request_body["function"],
-                        metadata=request_body["metadata"],
-                    )
 
-                    response = da_client.put(da_input)
+                    response = da_client.put(request_body)
 
                     if not response.get("is_success"):
                         return response
 
                     response["class"] = data.get("module")
+                    response["initial_request"] = request_body
                     # response.update(request_body)
 
                     active["metadata"] = response
