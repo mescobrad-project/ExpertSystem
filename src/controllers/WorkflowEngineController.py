@@ -11,6 +11,7 @@ from src.engine.main import WorkflowEngine
 from src.engine.classes.ElementClass import get_class_from_task_name
 from src.engine.utils.Generators import getId
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
+from src.errors.ApiRequestException import InternalServerErrorException
 from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
     ScriptTaskCompleteParams,
@@ -226,60 +227,75 @@ class BaseEngineController:
             ]:
                 raise Exception("Action forbidden.")
 
-            task_stores = workflow["tasks"][active["sid"]].get("stores")
+            if params["data"].get("datalake") or params["data"].get("trino"):
+                task_stores = workflow["tasks"][active["sid"]].get("stores")
 
-            if task_stores and len(task_stores) > 0 and params["data"].get("datalake"):
-                ### Start Bad Code
-                for store in task_stores:
+                if task_stores and len(task_stores) > 0:
+                    ### Start Bad Code
                     to_store = {}
 
-                    sid = list(store.keys())[0]
-                    mode = store[sid].get("mode")
+                    for store in task_stores:
+                        sid = list(store.keys())[0]
 
-                    if params.get("error") and params.error:
-                        to_store["error"] = params.error
-                    else:
-                        if mode not in ["set", "get"]:
-                            continue
+                        mode = store[sid].get("mode")
 
-                        data = {}
-                        data[mode] = params["data"]["datalake"]
+                        if params.get("error") and params.error:
+                            raise InternalServerErrorException(details=params.error)
+                        else:
+                            if mode not in ["set", "get"]:
+                                continue
 
-                        # deserialize data because of python's/pydantic's poor handling
-                        deserialized = []
-                        for raw_data in data[mode]:
-                            try:
-                                deserialized.append(raw_data.dict())
-                            except:
-                                deserialized.append(raw_data)
+                            data = {mode: []}
+                            if (
+                                run.workflow.stores[sid]["type"] == "DataObject"
+                                and params["data"].get("datalake")
+                                and len(params["data"]["datalake"]) > 0
+                            ):
+                                data[mode] = params["data"]["datalake"]
+                            elif (
+                                run.workflow.stores[sid]["type"] == "DataStore"
+                                and params["data"].get("trino")
+                                and len(params["data"]["trino"]) > 0
+                            ):
+                                data[mode] = params["data"]["trino"]
 
-                        to_store[sid] = {}
-                        to_store[sid][mode] = deserialized
-                ### End Bad Code
+                            # deserialize data because of python's/pydantic's poor handling
+                            deserialized = []
+                            for raw_data in data[mode]:
+                                try:
+                                    deserialized.append(raw_data.dict())
+                                except:
+                                    deserialized.append(raw_data)
 
-                state_id = getId()
+                            if len(deserialized) > 0:
+                                to_store[sid] = {}
+                                to_store[sid][mode] = deserialized
+                    ### End Bad Code
 
-                engine.append_workflow_state_data(
-                    {
-                        "id": state_id,
-                        "sid": active["sid"],
-                        "step_number": active["number"],
-                        "data": to_store,
-                    }
-                )
+                    if to_store:
+                        state_id = getId()
 
-                if active.get("metadata"):
-                    active["metadata"]["store"] = {
-                        "state_data_id": state_id,
-                        "state_data_number": len(engine.state["data"]) - 1,
-                    }
-                else:
-                    active["metadata"] = {
-                        "store": {
-                            "state_data_id": state_id,
-                            "state_data_number": len(engine.state["data"]) - 1,
-                        }
-                    }
+                        engine.append_workflow_state_data(
+                            {
+                                "id": state_id,
+                                "sid": active["sid"],
+                                "step_number": active["number"],
+                                "data": to_store,
+                            }
+                        )
+
+                        if active.get("metadata"):
+                            active["metadata"]["store"] = {
+                                "state_data_id": state_id,
+                                "state_data_number": len(engine.state["data"]) - 1,
+                            }
+                        else:
+                            active["metadata"] = {
+                                "store": {
+                                    "state_data_id": state_id,
+                                    "state_data_number": len(engine.state["data"]) - 1,
+                                }
+                            }
 
             engine.set_step_completed(active)
 
