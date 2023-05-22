@@ -247,13 +247,13 @@ class BaseEngineController:
 
                             data = {mode: []}
                             if (
-                                workflow.stores[sid]["type"] == "DataObject"
+                                workflow["stores"][sid]["type"] == "DataObject"
                                 and params["data"].get("datalake")
                                 and len(params["data"]["datalake"]) > 0
                             ):
                                 data[mode] = params["data"]["datalake"]
                             elif (
-                                workflow.stores[sid]["type"] == "DataStore"
+                                workflow["stores"][sid]["type"] == "DataStore"
                                 and params["data"].get("trino")
                                 and len(params["data"]["trino"]) > 0
                             ):
