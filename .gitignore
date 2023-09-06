@@ -295,3 +295,7 @@ dist
 
 # SQL Non-sample files
 *.sql
+
+# Versioning files
+**/version.py
+ntua/

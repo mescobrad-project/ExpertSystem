@@ -11,14 +11,17 @@ from .WorkflowEngineController import WorkflowEngineController
 
 
 class _RunController(BaseController):
-    def initialize(self, db: Session, *, workflow_id: UUID) -> ModelType:
+    def initialize(
+        self, db: Session, *, workflow_id: UUID, name: str = "", settings: dict = {}
+    ) -> ModelType:
         workflow = WorkflowController.read(db=db, resource_id=workflow_id)
 
         run = super().create(
             db=db,
             obj_in=RunCreate(
+                name=name,
                 workflow_id=workflow_id,
-                state={"completed": False, "success": False, "step": 0},
+                state={},
                 steps=[],
                 queue=[],
             ),
@@ -28,6 +31,8 @@ class _RunController(BaseController):
             state, steps, queue = WorkflowEngineController.initialize(workflow.tasks)
         except Exception as error:
             raise InternalServerErrorException(details=jsonable_encoder(error))
+
+        state["settings"] = settings
 
         return super().update(
             db=db,
@@ -63,6 +68,9 @@ class _RunController(BaseController):
 
             if error_if_existed != "":
                 raise Exception(error_if_existed)
+
+            response["state"] = run_in["state"]
+            response["steps"] = run_in["steps"]
 
             return response
         except Exception as error:

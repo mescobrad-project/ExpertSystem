@@ -8,6 +8,7 @@ class WorkflowBase(FormBase):
     description: str | None = None
     tasks: dict | None = None
     stores: dict | None = None
+    settings: dict | None = None
     raw_diagram_data: dict | None = None
     is_template: bool = False
 
