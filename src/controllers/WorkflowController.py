@@ -9,6 +9,20 @@ from src.utils.workflow import get_workflow_entity_types, parse_xml
 from ._base import BaseController
 
 
+def _handle_additional_task_settings(tasks, settings):
+    for task in settings:
+        if task in tasks.keys():
+            tasks[task]["default"] = settings[task].get("default")
+        else:
+            for t in tasks:
+                if (
+                    tasks[t].get("class")
+                    and settings[task].get("class")
+                    and settings[task]["class"][0] == tasks[t]["class"][0]
+                ):
+                    tasks[task]["default"] = settings[task].get("default")
+
+
 class _WorkflowController(BaseController):
     def read_multi(
         self,
@@ -53,11 +67,17 @@ class _WorkflowController(BaseController):
         return get_workflow_entity_types()
 
     def create(self, db: Session, *, obj_in: WorkflowCreate):
+        settings = obj_in.settings
+        del obj_in.settings
+
         workflow = super().create(db, obj_in=obj_in)
 
         [tasks, stores] = parse_xml(workflow.raw_diagram_data["xml_original"])
         workflow_upd = WorkflowUpdate()
+
+        _handle_additional_task_settings(tasks, settings)
         workflow_upd.tasks = tasks
+
         workflow_upd.stores = stores
 
         return super().update(db=db, resource_id=workflow.id, resource_in=workflow_upd)
@@ -69,6 +89,9 @@ class _WorkflowController(BaseController):
         resource_in: WorkflowUpdate,
         criteria: any = {"deleted_at": None},
     ):
+        settings = resource_in.settings
+        resource_in.settings = None
+
         if resource_in.raw_diagram_data and resource_in.raw_diagram_data.get(
             "xml_original"
         ):
@@ -78,6 +101,8 @@ class _WorkflowController(BaseController):
             raw_diagram = workflow.raw_diagram_data["xml_original"]
 
         [tasks, stores] = parse_xml(raw_diagram)
+
+        _handle_additional_task_settings(tasks, settings)
         resource_in.tasks = tasks
         resource_in.stores = stores
 

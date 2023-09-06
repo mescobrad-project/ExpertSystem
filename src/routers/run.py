@@ -20,11 +20,21 @@ router = APIRouter(
 
 
 @router.post("/workflow/{workflow_id}", response_model=Run)
-def run_workflow(*, db: Session = Depends(get_db), workflow_id: UUID):
+def run_workflow(
+    *,
+    db: Session = Depends(get_db),
+    workflow_id: UUID,
+    data: dict = {},
+):
     """
     Initiate a workflow process
     """
-    return RunController.initialize(db=db, workflow_id=workflow_id)
+    return RunController.initialize(
+        db=db,
+        workflow_id=workflow_id,
+        name=data.get("name", ""),
+        settings=data.get("settings", {}),
+    )
 
 
 @router.get("/{run_id}", response_model=Run)

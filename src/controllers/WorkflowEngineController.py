@@ -453,6 +453,12 @@ class BaseEngineController:
                         }
                     }
 
+            if details["type"] == USER_TASK and metadata.variables:
+                engine.state["variables"] = {
+                    "input": metadata.variables["input"],
+                    "output": metadata.variables["output"],
+                }
+
             engine.set_step_completed(active)
 
             # if "task" in rules.keys():
