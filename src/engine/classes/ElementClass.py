@@ -62,7 +62,8 @@ class ExclusiveGateway(Element):
 class ParallelGateway(Element):
     def pre(self):
         return {
-            "complete": False,
+            "complete": True,
+            "check_converging_pending_tasks": True,
             "next_steps": True,
             "rules": {"choice": "wait_all"},
         }
