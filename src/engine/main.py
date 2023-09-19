@@ -1,5 +1,5 @@
+from copy import deepcopy
 from uuid import UUID
-
 from .classes.ElementClass import get_class_from_task_name
 from .config import (
     START_EVENT,
@@ -39,33 +39,33 @@ class WorkflowEngine:
         self.queue = queue
 
     def get_next_steps_of(self, sid: str) -> list[dict]:
-        listOfTasks = list(
-            map(
-                lambda x: stepTemplate(None, x, self.graph.tasks[x]["name"]),
-                self.graph.BFS(sid),
-            )
-        )
+        # Create a list of task dictionaries
+        listOfTasks = [
+            stepTemplate(None, x, self.graph.tasks[x]["name"])
+            for x in self.graph.BFS(sid)
+        ]
+
+        # Fetch the current task details
         current_task = self.graph.find_task_by_id(sid)
 
+        # Conditions based on task type
         if current_task["type"] == EXCLUSIVE_GATEWAY:
             for task in listOfTasks:
-                task["default"] = (
-                    True
-                    if current_task.get("default_task_spec") == task["sid"]
-                    else False
-                )
+                task["default"] = current_task.get("default_task_spec") == task["sid"]
             return [{"or": listOfTasks}]
         elif current_task["type"] == PARALLEL_GATEWAY:
-            return [{"and": listOfTasks}]
+            return listOfTasks
         else:
             return listOfTasks
 
     def add_to_queue(self, sid: str):
-        self.queue.extend(self.get_next_steps_of(sid))
+        queue = self.get_next_steps_of(sid)
+        self.queue.extend(queue)
 
     def add_current_to_queue(self, sid: str):
-        task = self.graph.find_task_by_id(sid)
-        self.queue.extend([stepTemplate(None, sid, task["name"])])
+        if sid not in [q.get("sid", "") for q in self.queue]:
+            task = self.graph.find_task_by_id(sid)
+            self.queue.extend([stepTemplate(None, sid, task["name"])])
 
     def set_step_completed(self, step: dict):
         step["completed"] = True
@@ -223,17 +223,40 @@ class WorkflowEngine:
             return len(bucket)
         return 0
 
-    def get_not_completed_converging_tasks(self):
-        response = []
-        for step in reversed(self.steps[:-1]):
-            details = self.graph.find_task_by_id(step["sid"])
-            if details["type"] == PARALLEL_GATEWAY:
-                break
+    def get_incomplete_converging_tasks(self, sid):
+        converging_tasks = self.graph.find_converging_tasks(sid)
+        steps = deepcopy(self.steps)
+        queue = deepcopy(self.queue)
 
-            if "completed" not in step.keys() or not step["completed"]:
-                response.append(step)
+        # Store the tasks that are not completed
+        incomplete_tasks = []
 
-        return response
+        # Check if the sid exists in the steps list (indicating a circle)
+        try:
+            sid_index = next(i for i, task in enumerate(steps) if task["sid"] == sid)
+        except StopIteration:
+            sid_index = None
+
+        # Check the steps list for incomplete converging tasks
+        for task in steps[sid_index + 1 :] if sid_index is not None else steps:
+            if task["sid"] in converging_tasks:
+                # Check if the task is not completed
+                if not task.get("completed", False):
+                    incomplete_tasks.append(task["sid"])
+                converging_tasks.remove(task["sid"])
+
+        # Check the queue for converging tasks
+        for task in queue:
+            if task["sid"] in converging_tasks:
+                incomplete_tasks.append(task["sid"])
+                converging_tasks.remove(task["sid"])
+
+        # If there are still converging tasks not found in either list, append them to the steps list
+        for task_sid in converging_tasks:
+            steps.append({"sid": task_sid, "completed": False})
+            incomplete_tasks.append(task_sid)
+
+        return incomplete_tasks
 
     def get_workflow_status(self) -> tuple[dict]:
         return self.state, self.steps, self.queue

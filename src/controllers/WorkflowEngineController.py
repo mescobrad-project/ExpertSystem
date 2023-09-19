@@ -58,12 +58,20 @@ class BaseEngineController:
         actions = element.pre()
 
         if actions["complete"]:
-            engine.set_step_completed(active)
+            if not actions.get("check_converging_pending_tasks"):
+                engine.set_step_completed(active)
 
         if actions["next_steps"]:
-            engine.add_to_queue(active["sid"])
-            engine.set_task_as_active_step(active)
-            engine.remove_from_bucket(engine.queue, index)
+            waiting = []
+
+            if actions.get("check_converging_pending_tasks"):
+                waiting = engine.get_incomplete_converging_tasks(active["sid"])
+
+            if len(waiting) == 0:
+                engine.add_to_queue(active["sid"])
+                engine.set_task_as_active_step(active)
+                engine.set_step_completed(active)
+                engine.remove_from_bucket(engine.queue, index)
 
         if actions.get("end_event") is not None and actions.get("end_event"):
             engine.set_task_as_active_step(active)
@@ -122,12 +130,12 @@ class BaseEngineController:
                 self._set_parallelqueue_task_to_queue(engine, active, next_step_id)
             elif rules["choice"] == "wait_all":
                 # check for previous steps completion
-                waiting = engine.get_not_completed_converging_tasks()
+                waiting = engine.get_incomplete_converging_tasks()
 
                 if len(waiting) > 0:
                     return {
                         "display": "Please complete the following tasks first",
-                        "queue": waiting,
+                        "pending": active,
                     }
 
                 self._set_parallelqueue_task_to_queue(engine, active, next_step_id)
