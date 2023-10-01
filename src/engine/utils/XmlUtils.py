@@ -10,6 +10,7 @@ from src.engine.config import (
     USER_TASK,
     DATA_STORE,
     DATA_OBJECT,
+    CALL_ACTIVITY,
     XML_RECEIVE_TASK,
     XML_SEND_TASK,
     XML_START_EVENT,
@@ -24,6 +25,7 @@ from src.engine.config import (
     XML_PARSER_INPUTS,
     XML_PARSER_OUTPUTS,
     XML_USER_TASK,
+    XML_CALL_ACTIVITY,
     XML_DATA_INPUT_ASSOCIATION,
     XML_DATA_OUTPUT_ASSOCIATION,
     XML_DATA_STORE_REFERENCE,
@@ -52,6 +54,8 @@ def get_task_type(tag):
         return SEND_TASK
     elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_RECEIVE_TASK}':
         return RECEIVE_TASK
+    elif tag == f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_CALL_ACTIVITY}':
+        return CALL_ACTIVITY
     else:
         return END_EVENT
 

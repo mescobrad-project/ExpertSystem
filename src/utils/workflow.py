@@ -9,6 +9,7 @@ from src.engine.config import (
     MANUAL_TASK,
     SCRIPT_TASK,
     USER_TASK,
+    CALL_ACTIVITY,
     DATA_STORE,
     DATA_OBJECT,
     XML_EXCLUSIVE_GATEWAY,
@@ -23,6 +24,7 @@ from src.engine.config import (
     XML_ASSOCIATION,
     XML_SEND_TASK,
     XML_USER_TASK,
+    XML_CALL_ACTIVITY,
     XML_DATA_INPUT_ASSOCIATION,
     XML_DATA_STORE_REFERENCE,
     XML_DATA_OBJECT_REFERENCE,
@@ -46,7 +48,7 @@ def get_workflow_entity_types():
     return {
         "event": [START_EVENT, END_EVENT],
         "gateway": [EXCLUSIVE_GATEWAY, PARALLEL_GATEWAY],
-        "task": [MANUAL_TASK, SCRIPT_TASK, USER_TASK, SEND_TASK, RECEIVE_TASK],
+        "task": [MANUAL_TASK, SCRIPT_TASK, USER_TASK, SEND_TASK, RECEIVE_TASK, CALL_ACTIVITY],
         "store": [DATA_STORE, DATA_OBJECT],
     }
 
@@ -140,6 +142,7 @@ def parse_xml(xml_str):
             if child.tag in [
                 f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SCRIPT_TASK}',
                 f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_SEND_TASK}',
+                f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_CALL_ACTIVITY}',
             ]:
                 tasks[task_id]["class"] = text_annotations[associations[task_id]]
 
