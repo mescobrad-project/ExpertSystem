@@ -167,7 +167,7 @@ class BaseEngineController:
                         "run_id": engine.run_id,
                         "base_save_path": {
                             "bucket_name": base_save_path.get("bucket_name"),
-                            "object_name": f"{base_save_path.get('object_name')}/{engine.workflow_id}",
+                            "object_name": f"{base_save_path.get('object_name')}/{engine.workflow_id}/{engine.run_id}/{step_id}",
                         },
                         "data_use": {
                             "datalake": data.get("data_input").get("datalake"),
