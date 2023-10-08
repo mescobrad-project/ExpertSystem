@@ -106,6 +106,21 @@ def read_deleted_workflow(
     )
 
 
+@router.get("/search", response_model=Workflow)
+def read_deleted_workflows(
+    db: Session = Depends(get_db),
+    name: str = None,
+) -> Any:
+    """
+    Retrieve a workflow using search params.
+    """
+    return WorkflowController.search(
+        db,
+        params={"name": name},
+        criteria={"deleted_at": None, "is_template": False},
+    )
+
+
 @router.get("/{workflow_id}", response_model=Workflow)
 def read_workflow(
     *,

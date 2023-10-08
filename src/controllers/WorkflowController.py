@@ -63,6 +63,22 @@ class _WorkflowController(BaseController):
 
         return response
 
+    def search(
+        self,
+        db: Session,
+        params: dict = {},
+        criteria: dict = {},
+    ):
+        if params.get("name"):
+            criteria["name"] = params.get("name")
+
+        data = self.repository.get_one(db=db, criteria=criteria)
+
+        if not data:
+            raise NotFoundException(details="Resource not found")
+
+        return data
+
     def read_entity_types(self):
         return get_workflow_entity_types()
 

@@ -98,3 +98,6 @@ class BaseController:
             resource_in=resource_in,
             criteria={"deleted_at__not": None},
         )
+
+    def delete(self, db: Session, resource_id: UUID):
+        return self.repository.remove(db=db, id=resource_id)
