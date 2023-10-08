@@ -7,7 +7,7 @@ from src.controllers.RunController import RunController
 from src.dependencies.authentication import validate_user
 from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
-    ScriptTaskCompleteParams,
+    CallActivityParams,
 )
 from src.schemas.RunSchema import Run, RunNameUpdate
 
@@ -134,6 +134,20 @@ def exec_script_task(
     return RunController.exec_script_task(db, run_id, step_id, data)
 
 
+@router.patch("/{run_id}/step/{step_id}/activity/call")
+def exec_call_activity(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+    step_id: UUID,
+    data: CallActivityParams,
+) -> Any:
+    """
+    Execute a nested workflow.
+    """
+    return RunController.exec_call_activity(db, run_id, step_id, data)
+
+
 @router.patch("/{run_id}/step/{step_id}/task/send")
 def send_task(
     *,
@@ -208,6 +222,14 @@ def complete_script_task(
     }
     """
     return RunController.complete_script_task(db, run_id, step_id, data)
+
+
+@router.patch("/{run_id}/activity/call/complete")
+def call_activity_is_completed(*, db: Session = Depends(get_db), run_id: UUID) -> Any:
+    """
+    Complete a nested workflow task.
+    """
+    return RunController.call_activity_is_completed(db, run_id)
 
 
 @router.patch("/{run_id}/step/{step_id}/event")

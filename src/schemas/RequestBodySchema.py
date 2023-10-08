@@ -25,3 +25,11 @@ class TaskMetadataBodyParameter(BaseModel):
 class ScriptTaskCompleteParams(BaseModel):
     data: dict[str, list[BpmnDataObject] | list[BpmnDataStore]] = {}
     error: str | None = None
+
+
+class CallActivityParams(BaseModel):
+    parent_workflow_id: str
+    workflow_id: str
+    run_id: str = ""
+    name: str = ""
+    settings: dict = {}

@@ -1,9 +1,11 @@
 from uuid import UUID
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
+from src.config import ES_UI_BASE_URL
 from src.errors.ApiRequestException import InternalServerErrorException
 from src.repositories._base import ModelType
 from src.repositories.RunRepository import RunRepository
+from src.schemas.RequestBodySchema import CallActivityParams
 from src.schemas.RunSchema import RunCreate, RunUpdate
 from ._base import BaseController
 from .WorkflowController import WorkflowController
@@ -85,7 +87,27 @@ class _RunController(BaseController):
         run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
 
         try:
-            return WorkflowEngineController.get_dataobject_refs(run)
+            response = []
+            response.extend(
+                WorkflowEngineController.get_dataobject_refs(
+                    jsonable_encoder(run.workflow), jsonable_encoder(run)
+                )
+            )
+
+            if run.state.get("settings", {}).get("parent"):
+                parent_run = super().read(
+                    db=db,
+                    resource_id=run.state["settings"]["parent"]["run_id"],
+                    criteria={"deleted_at": None},
+                )
+                response.extend(
+                    WorkflowEngineController.get_dataobject_refs(
+                        jsonable_encoder(parent_run.workflow),
+                        jsonable_encoder(parent_run),
+                    )
+                )
+
+            return response
         except Exception as error:
             raise InternalServerErrorException(details=str(error))
 
@@ -93,7 +115,27 @@ class _RunController(BaseController):
         run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
 
         try:
-            return WorkflowEngineController.get_datastore_refs(run)
+            response = []
+            response.extend(
+                WorkflowEngineController.get_datastore_refs(
+                    jsonable_encoder(run.workflow), jsonable_encoder(run)
+                )
+            )
+
+            if run.state.get("settings", {}).get("parent"):
+                parent_run = super().read(
+                    db=db,
+                    resource_id=run.state["settings"]["parent"]["run_id"],
+                    criteria={"deleted_at": None},
+                )
+                response.extend(
+                    WorkflowEngineController.get_datastore_refs(
+                        jsonable_encoder(parent_run.workflow),
+                        jsonable_encoder(parent_run),
+                    )
+                )
+
+            return response
         except Exception as error:
             raise InternalServerErrorException(details=str(error))
 
@@ -136,6 +178,39 @@ class _RunController(BaseController):
             data,
         )
 
+    def exec_call_activity(
+        self, db: Session, run_id: UUID, step_id: UUID, data: CallActivityParams
+    ):
+        data.settings["parent"] = {
+            "url": f"{ES_UI_BASE_URL}/workflow/{str(data.parent_workflow_id)}/run/{str(run_id)}",
+            "workflow_id": str(data.parent_workflow_id),
+            "run_id": str(run_id),
+            "step_id": str(step_id),
+            "complete": False,
+        }
+
+        new_run = self.initialize(
+            db, workflow_id=data.workflow_id, name=data.name, settings=data.settings
+        )
+        data.run_id = new_run.id
+
+        try:
+            response = self._run_execution_wrapper(
+                WorkflowEngineController.call_activity,
+                db,
+                run_id,
+                step_id,
+                data,
+            )
+
+            if not response["created"]:
+                super().delete(db, new_run.id)
+
+            return response
+        except InternalServerErrorException as error:
+            super().delete(db, new_run.id)
+            raise error
+
     def send_task(self, db: Session, run_id: UUID, step_id: UUID, data: any):
         return self._run_execution_wrapper(
             WorkflowEngineController.task_send,
@@ -171,6 +246,18 @@ class _RunController(BaseController):
             step_id,
             data,
         )
+
+    def call_activity_is_completed(self, db: Session, run_id: UUID):
+        run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
+
+        run_in = jsonable_encoder(run)
+        try:
+            if run_in["state"].get("settings", {}).get("parent"):
+                run_in["state"]["settings"]["parent"]["complete"] = True
+
+            return super().update(db=db, resource_id=run_id, resource_in=run_in)
+        except Exception as error:
+            raise InternalServerErrorException(details=str(error))
 
     def exec_event_task_actions(self, db: Session, run_id: UUID, step_id: UUID):
         return self._run_execution_wrapper(

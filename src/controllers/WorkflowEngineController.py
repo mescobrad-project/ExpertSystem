@@ -1,11 +1,12 @@
 from uuid import UUID
-from src.config import QB_API_BASE_URL
+from src.config import QB_API_BASE_URL, ES_UI_BASE_URL
 from src.engine.config import (
     RECEIVE_TASK,
     SEND_TASK,
     MANUAL_TASK,
     SCRIPT_TASK,
     USER_TASK,
+    CALL_ACTIVITY,
 )
 from src.engine.main import WorkflowEngine
 from src.engine.classes.ElementClass import get_class_from_task_name
@@ -13,6 +14,7 @@ from src.engine.utils.Generators import getId
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
 from src.errors.ApiRequestException import InternalServerErrorException
 from src.schemas.RequestBodySchema import (
+    CallActivityParams,
     TaskMetadataBodyParameter,
     ScriptTaskCompleteParams,
 )
@@ -70,7 +72,8 @@ class BaseEngineController:
             if len(waiting) == 0:
                 engine.add_to_queue(active["sid"])
                 engine.set_task_as_active_step(active)
-                engine.set_step_completed(active)
+                if actions["complete"]:
+                    engine.set_step_completed(active)
                 engine.remove_from_bucket(engine.queue, index)
 
         if actions.get("end_event") is not None and actions.get("end_event"):
@@ -317,6 +320,43 @@ class BaseEngineController:
 
         return {"pending": active}
 
+    def call_activity(
+        self,
+        workflow,
+        run,
+        step_id: UUID,
+        data: CallActivityParams,
+    ):
+        (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
+
+        if details["type"] not in [
+            CALL_ACTIVITY,
+        ]:
+            raise Exception("Action forbidden.")
+
+        if "metadata" in active.keys():
+            return {"pending": active, "created": False}
+
+        active["metadata"] = {
+            "url": f"{ES_UI_BASE_URL}/workflow/{str(data.workflow_id)}/run/{str(data.run_id)}",
+            "parent": {
+                "workflow_id": str(engine.workflow_id),
+                "run_id": str(engine.run_id),
+                "step_id": str(step_id),
+            },
+            "child": {"workflow_id": str(data.workflow_id), "run_id": str(data.run_id)},
+        }
+
+        return {
+            "pending": active,
+            "data": {
+                "DataObject": self._get_data_refs(workflow, run, "DataObject"),
+                "DataStore": self._get_data_refs(workflow, run, "DataStore"),
+            },
+            "variables": engine.state.get("variables"),
+            "created": True,
+        }
+
     def task_send(
         self,
         workflow,
@@ -406,6 +446,7 @@ class BaseEngineController:
                 MANUAL_TASK,
                 USER_TASK,
                 RECEIVE_TASK,
+                CALL_ACTIVITY,
             ]:
                 raise Exception("Action forbidden.")
 
@@ -518,13 +559,13 @@ class BaseEngineController:
 
         return {"step": active, "completed": active["completed"]}
 
-    def _get_data_refs(self, run: RunModel, data_type: str):
+    def _get_data_refs(self, workflow: dict, run: dict, data_type: str):
         file_refs = []
 
-        for activity in run.state["data"]:
+        for activity in run["state"]["data"]:
             for sid, data in activity["data"].items():
-                if sid in run.workflow.stores.keys():
-                    if run.workflow.stores[sid]["type"] == data_type:
+                if sid in workflow["stores"].keys():
+                    if workflow["stores"][sid]["type"] == data_type:
                         if "get" in data.keys():
                             file_refs.extend(data["get"])
                         if "set" in data.keys():
@@ -532,11 +573,11 @@ class BaseEngineController:
 
         return file_refs
 
-    def get_dataobject_refs(self, run: RunModel):
-        return self._get_data_refs(run, "DataObject")
+    def get_dataobject_refs(self, workflow: dict, run: dict):
+        return self._get_data_refs(workflow, run, "DataObject")
 
-    def get_datastore_refs(self, run: RunModel):
-        return self._get_data_refs(run, "DataStore")
+    def get_datastore_refs(self, workflow: dict, run: dict):
+        return self._get_data_refs(workflow, run, "DataStore")
 
     def get_previously_completed_steps(self, workflow, run, criteria: dict = {}):
         _steps = []

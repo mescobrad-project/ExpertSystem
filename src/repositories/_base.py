@@ -69,6 +69,17 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
+    def get_one(
+        self,
+        db: Session,
+        criteria={},
+    ) -> ModelType | None:
+        return (
+            db.query(self.model)
+            .filter(*_parse_criteria(self.model, criteria=criteria))
+            .one()
+        )
+
     def get(
         self,
         db: Session,
@@ -77,11 +88,7 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     ) -> ModelType | None:
         criteria["id"] = id
 
-        return (
-            db.query(self.model)
-            .filter(*_parse_criteria(self.model, criteria=criteria))
-            .one()
-        )
+        return self.get_one(db, criteria)
 
     def count(self, db: Session, criteria={}) -> int:
         criteria["deleted_at"] = None
