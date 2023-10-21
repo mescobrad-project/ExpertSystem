@@ -178,10 +178,13 @@ class BaseEngineController:
                         },
                     }
                 else:
-                    func_name = data.get("module").split("/")[-1]
+                    func_name = data.get("module", "/").split("/")[-1]
 
-                    if not da_client.check_if_function_exists(func_name):
-                        return {"error": "Function name does not exist!"}
+                    try:
+                        if not da_client.check_if_function_exists(func_name):
+                            return {"error": "Function name does not exist!"}
+                    except:
+                        raise Exception("Cannot reach DataAnalytics")
 
                     metadata_to_send = {}
 
@@ -210,7 +213,12 @@ class BaseEngineController:
                         "metadata": metadata_to_send,
                     }
 
-                    response = da_client.put(request_body)
+                    response = {}
+
+                    try:
+                        response = da_client.put(request_body)
+                    except:
+                        raise Exception("Cannot reach DataAnalytics")
 
                     if not response.get("is_success"):
                         return response
