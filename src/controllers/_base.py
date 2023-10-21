@@ -78,7 +78,7 @@ class BaseController:
         criteria={"deleted_at": None},
     ):
         resource = self.read(db=db, resource_id=resource_id, criteria=criteria)
-        
+
         if isinstance(resource_in, dict):
             resource_in["updated_at"] = datetime.now(tz=timezone.utc)
         else:

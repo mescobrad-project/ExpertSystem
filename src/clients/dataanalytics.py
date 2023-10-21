@@ -29,7 +29,7 @@ class Api(BaseApi):
         if not response["is_success"]:
             return False
 
-        return func_name in response["analytics-functions"]
+        return func_name in response.get("analytics-functions", [])
 
 
 client = Api(Router, DA_API_BASE_URL)

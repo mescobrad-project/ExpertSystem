@@ -58,6 +58,9 @@ class _RunController(BaseController):
                     run_in,
                     *args,
                 )
+
+                if response.get("error"):
+                    raise Exception(response.get("error"))
             except Exception as error:
                 error_if_existed = str(error)
                 response = WorkflowEngineController.task_revert(
