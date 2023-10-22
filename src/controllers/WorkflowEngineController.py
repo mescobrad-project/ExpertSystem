@@ -567,6 +567,28 @@ class BaseEngineController:
 
         return {"step": active, "completed": active["completed"]}
 
+    def get_task_metadata(self, workflow, run, step_id: UUID):
+        (_, active, _, rules) = self._prepare_step(workflow, run, step_id)
+
+        if "task" in rules.keys():
+            if active.get("metadata"):
+                file_refs = []
+                if active["metadata"].get("store"):
+                    for sid, data in run["state"]["data"][
+                        active["metadata"]["store"]["state_data_number"]
+                    ]["data"].items():
+                        if sid in workflow["stores"].keys():
+                            if workflow["stores"][sid]["type"] == "DataObject":
+                                if "get" in data.keys():
+                                    file_refs.extend(data["get"])
+                                if "set" in data.keys():
+                                    file_refs.extend(data["set"])
+
+                active["metadata"]["datasets"] = file_refs
+                return {"data": active}
+
+        return {"data": active}
+
     def _get_data_refs(self, workflow: dict, run: dict, data_type: str):
         file_refs = []
 
