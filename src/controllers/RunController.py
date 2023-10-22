@@ -264,19 +264,24 @@ class _RunController(BaseController):
 
     def exec_event_task_actions(self, db: Session, run_id: UUID, step_id: UUID):
         return self._run_execution_wrapper(
-            WorkflowEngineController.event_actions,
-            db,
-            run_id,
-            step_id,
+            WorkflowEngineController.event_actions, db, run_id, step_id
         )
 
     def ping_task_status(self, db: Session, run_id: UUID, step_id: UUID):
         return self._run_execution_wrapper(
-            WorkflowEngineController.ping_step_status,
-            db,
-            run_id,
-            step_id,
+            WorkflowEngineController.ping_step_status, db, run_id, step_id
         )
+
+    def get_task_metadata(self, db: Session, run_id: UUID, step_id: UUID):
+        run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
+
+        run_in = jsonable_encoder(run)
+        workflow = jsonable_encoder(run.workflow)
+
+        try:
+            return WorkflowEngineController.get_task_metadata(workflow, run_in, step_id)
+        except Exception as error:
+            raise InternalServerErrorException(details=str(error))
 
     def get_completed_script_tasks(
         self,

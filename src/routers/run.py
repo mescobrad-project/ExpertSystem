@@ -247,9 +247,19 @@ def ping_task_status(
     *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID
 ) -> Any:
     """
-    Get the status of specific task.
+    Get the status of s specific task.
     """
     return RunController.ping_task_status(db, run_id, step_id)
+
+
+@router.get("/{run_id}/step/{step_id}/metadata")
+def get_task_metadata(
+    *, db: Session = Depends(get_db), run_id: UUID, step_id: UUID
+) -> Any:
+    """
+    Get the metadata of a specific task.
+    """
+    return RunController.get_task_metadata(db, run_id, step_id)
 
 
 @router.get("/{run_id}/completed/tasks")
