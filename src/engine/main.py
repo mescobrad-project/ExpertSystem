@@ -13,6 +13,27 @@ from .utils.Generators import getDateTimeNow
 from .utils.TemplateUtils import pending_and_waiting_template, stepTemplate
 
 
+def steps_mapper(step_id, step, *args, **kwargs) -> dict | None:
+    steps = []
+
+    if "or" in step.keys():
+        steps.extend(step["or"])
+    elif "and" in step.keys():
+        steps.extend(step["and"])
+    else:
+        steps.append(step)
+
+    if step_id:
+        for _, new_step in enumerate(steps):
+            if str(step_id) == new_step["id"]:
+                return new_step
+    else:
+        for _, step in enumerate(steps):
+            return step
+
+    return None
+
+
 class WorkflowEngine:
     def __init__(self, tasks: dict) -> None:
         self.graph = WorkflowRun(tasks)
@@ -103,7 +124,7 @@ class WorkflowEngine:
     ) -> int | dict | None | tuple:
         for index, step in enumerate(bucket):
             if mode == "map":
-                found = func(step_id=step_id, step=step)
+                found = func(step_id, step)
                 if found:
                     return index, found
             else:
@@ -120,32 +141,17 @@ class WorkflowEngine:
     def find_active_step(self, bucket: list[dict], step_id: UUID = None) -> tuple:
         active = None
 
-        def func(step_id, step, *args, **kwargs) -> dict | None:
-            steps = []
+        try:
+            index, active = self.loop_through_bucket(
+                bucket, step_id, "map", steps_mapper
+            )
 
-            if "or" in step.keys():
-                steps.extend(step["or"])
-            elif "and" in step.keys():
-                steps.extend(step["and"])
-            else:
-                steps.append(step)
+            if not active:
+                raise Exception("Step not found")
 
-            if step_id:
-                for _, new_step in enumerate(steps):
-                    if str(step_id) == new_step["id"]:
-                        return new_step
-            else:
-                for _, step in enumerate(steps):
-                    return step
-
-            return None
-
-        index, active = self.loop_through_bucket(bucket, step_id, "map", func)
-
-        if not active:
+            return index, active
+        except:
             raise Exception("Step not found")
-
-        return index, active
 
     def get_step_position_index(self, bucket: list[dict], step_id):
         return self.loop_through_bucket(bucket, step_id, "index")
