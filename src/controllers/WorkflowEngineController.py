@@ -1,5 +1,6 @@
 from uuid import UUID
 from src.config import QB_API_BASE_URL, ES_UI_BASE_URL
+from src.controllers.ObjectStorageController import ObjectStorageController
 from src.engine.config import (
     RECEIVE_TASK,
     SEND_TASK,
@@ -568,7 +569,10 @@ class BaseEngineController:
         return {"step": active, "completed": active["completed"]}
 
     def get_task_metadata(self, workflow, run, step_id: UUID):
-        (_, active, _, rules) = self._prepare_step(workflow, run, step_id)
+        (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
+
+        if details["type"] not in [SCRIPT_TASK, CALL_ACTIVITY]:
+            raise Exception("Action forbidden.")
 
         if "task" in rules.keys():
             if active.get("metadata"):
@@ -583,8 +587,27 @@ class BaseEngineController:
                                     file_refs.extend(data["get"])
                                 if "set" in data.keys():
                                     file_refs.extend(data["set"])
-
                 active["metadata"]["datasets"] = file_refs
+
+                for module_name in details["class"]:
+                    if module_name.startswith("dataanalytics"):
+                        base_save_path = ai_client.get_base_save_path()
+                        if not base_save_path.get("is_success"):
+                            raise Exception(base_save_path)
+
+                        try:
+                            bucket_name = base_save_path.get("bucket_name")
+                            object_name = f"{base_save_path.get('object_name')}/{engine.workflow_id}/{engine.run_id}/{step_id}/info.json"
+
+                            active["metadata"][
+                                "info"
+                            ] = ObjectStorageController.get_object(
+                                bucket_name, object_name
+                            )
+                        except:
+                            pass
+                            # raise Exception("Cannot get info json")
+
                 return {"data": active}
 
         return {"data": active}
