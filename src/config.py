@@ -15,6 +15,7 @@ CORS_HEADERS = (getenv("CORS_HEADERS", "*")).split(",")
 
 DB_CONNECTION = getenv("DB_CONNECTION", "postgresql")
 DB_SCHEMA = getenv("DB_SCHEMA", "public")
+DB_PLATFORM_SCHEMA = getenv("DB_PLATFORM_SCHEMA", "public")
 DB_HOST = getenv("DB_HOST", "localhost")
 DB_PORT = getenv("DB_PORT", 5432)
 DB_DATABASE = getenv("DB_DATABASE", "test_db")

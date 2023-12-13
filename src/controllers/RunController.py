@@ -14,14 +14,25 @@ from .WorkflowEngineController import WorkflowEngineController
 
 class _RunController(BaseController):
     def initialize(
-        self, db: Session, *, workflow_id: UUID, name: str = "", settings: dict = {}
+        self,
+        db: Session,
+        *,
+        ws_id: int,
+        workflow_id: UUID,
+        name: str = "",
+        settings: dict = {},
     ) -> ModelType:
-        workflow = WorkflowController.read(db=db, resource_id=workflow_id)
+        workflow = WorkflowController.read(
+            db=db,
+            resource_id=workflow_id,
+            criteria={"deleted_at": None, "ws_id": ws_id},
+        )
 
         run = super().create(
             db=db,
             obj_in=RunCreate(
                 name=name,
+                ws_id=ws_id,
                 workflow_id=workflow_id,
                 state={},
                 steps=[],
@@ -45,8 +56,19 @@ class _RunController(BaseController):
     def update_name(self, db: Session, resource_id: UUID, name: str):
         return super().update(db, resource_id, RunUpdate(name=name))
 
-    def _run_execution_wrapper(self, func: any, db: Session, run_id: UUID, *args):
-        run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
+    def _run_execution_wrapper(
+        self,
+        func: any,
+        db: Session,
+        ws_id: int | None,
+        run_id: UUID,
+        *args,
+    ):
+        criteria = {"deleted_at": None}
+        if ws_id:
+            criteria["ws_id"] = ws_id
+
+        run = super().read(db=db, resource_id=run_id, criteria=criteria)
 
         run_in = jsonable_encoder(run)
         workflow = jsonable_encoder(run.workflow)
@@ -81,13 +103,15 @@ class _RunController(BaseController):
         except Exception as error:
             raise InternalServerErrorException(details=str(error))
 
-    def get_next_task(self, db: Session, run_id: UUID):
+    def get_next_task(self, db: Session, ws_id: int, run_id: UUID):
         return self._run_execution_wrapper(
-            WorkflowEngineController.get_waiting_steps, db, run_id
+            WorkflowEngineController.get_waiting_steps, db, ws_id, run_id
         )
 
-    def get_dataobjects_from_stored_data(self, db: Session, run_id: UUID):
-        run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
+    def get_dataobjects_from_stored_data(self, db: Session, ws_id: int, run_id: UUID):
+        run = super().read(
+            db=db, resource_id=run_id, criteria={"deleted_at": None, "ws_id": ws_id}
+        )
 
         try:
             response = []
@@ -101,7 +125,7 @@ class _RunController(BaseController):
                 parent_run = super().read(
                     db=db,
                     resource_id=run.state["settings"]["parent"]["run_id"],
-                    criteria={"deleted_at": None},
+                    criteria={"deleted_at": None, "ws_id": ws_id},
                 )
                 response.extend(
                     WorkflowEngineController.get_dataobject_refs(
@@ -114,8 +138,10 @@ class _RunController(BaseController):
         except Exception as error:
             raise InternalServerErrorException(details=str(error))
 
-    def get_datastores_from_stored_data(self, db: Session, run_id: UUID):
-        run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
+    def get_datastores_from_stored_data(self, db: Session, ws_id: int, run_id: UUID):
+        run = super().read(
+            db=db, resource_id=run_id, criteria={"deleted_at": None, "ws_id": ws_id}
+        )
 
         try:
             response = []
@@ -129,7 +155,7 @@ class _RunController(BaseController):
                 parent_run = super().read(
                     db=db,
                     resource_id=run.state["settings"]["parent"]["run_id"],
-                    criteria={"deleted_at": None},
+                    criteria={"deleted_at": None, "ws_id": ws_id},
                 )
                 response.extend(
                     WorkflowEngineController.get_datastore_refs(
@@ -142,50 +168,63 @@ class _RunController(BaseController):
         except Exception as error:
             raise InternalServerErrorException(details=str(error))
 
-    def run_specific_task(self, db: Session, run_id: UUID, step_id: UUID):
+    def run_specific_task(self, db: Session, ws_id: int, run_id: UUID, step_id: UUID):
         return self._run_execution_wrapper(
             WorkflowEngineController.run_pending_step,
             db,
+            ws_id,
             run_id,
             step_id,
         )
 
     def select_next_task(
-        self, db: Session, run_id: UUID, step_id: UUID, next_step_id: UUID
+        self, db: Session, ws_id: int, run_id: UUID, step_id: UUID, next_step_id: UUID
     ):
         return self._run_execution_wrapper(
             WorkflowEngineController.gateway_exclusive_choice,
             db,
+            ws_id,
             run_id,
             step_id,
             next_step_id,
         )
 
     def init_parallel_gateway(
-        self, db: Session, run_id: UUID, step_id: UUID, next_step_id: UUID
+        self, db: Session, ws_id: int, run_id: UUID, step_id: UUID, next_step_id: UUID
     ):
         return self._run_execution_wrapper(
             WorkflowEngineController.gateway_parallel_choice,
             db,
+            ws_id,
             run_id,
             step_id,
             next_step_id,
         )
 
-    def exec_script_task(self, db: Session, run_id: UUID, step_id: UUID, data: any):
+    def exec_script_task(
+        self, db: Session, ws_id: int, run_id: UUID, step_id: UUID, data: any
+    ):
         return self._run_execution_wrapper(
             WorkflowEngineController.task_exec,
             db,
+            ws_id,
             run_id,
+            ws_id,
             step_id,
             data,
         )
 
     def exec_call_activity(
-        self, db: Session, run_id: UUID, step_id: UUID, data: CallActivityParams
+        self,
+        db: Session,
+        ws_id: int,
+        run_id: UUID,
+        step_id: UUID,
+        data: CallActivityParams,
     ):
         data.settings["parent"] = {
             "url": f"{ES_UI_BASE_URL}/workflow/{str(data.parent_workflow_id)}/run/{str(run_id)}",
+            "ws_id": int(ws_id),
             "workflow_id": str(data.parent_workflow_id),
             "run_id": str(run_id),
             "step_id": str(step_id),
@@ -193,7 +232,11 @@ class _RunController(BaseController):
         }
 
         new_run = self.initialize(
-            db, workflow_id=data.workflow_id, name=data.name, settings=data.settings
+            db,
+            ws_id=ws_id,
+            workflow_id=data.workflow_id,
+            name=data.name,
+            settings=data.settings,
         )
         data.run_id = new_run.id
 
@@ -201,6 +244,7 @@ class _RunController(BaseController):
             response = self._run_execution_wrapper(
                 WorkflowEngineController.call_activity,
                 db,
+                ws_id,
                 run_id,
                 step_id,
                 data,
@@ -214,28 +258,37 @@ class _RunController(BaseController):
             super().delete(db, new_run.id)
             raise error
 
-    def send_task(self, db: Session, run_id: UUID, step_id: UUID, data: any):
+    def send_task(
+        self, db: Session, ws_id: int, run_id: UUID, step_id: UUID, data: any
+    ):
         return self._run_execution_wrapper(
             WorkflowEngineController.task_send,
             db,
+            ws_id,
             run_id,
             step_id,
             data,
         )
 
-    def receive_task(self, db: Session, run_id: UUID, step_id: UUID, data: any):
+    def receive_task(
+        self, db: Session, ws_id: int, run_id: UUID, step_id: UUID, data: any
+    ):
         return self._run_execution_wrapper(
             WorkflowEngineController.task_receive,
             db,
+            ws_id,
             run_id,
             step_id,
             data,
         )
 
-    def complete_task(self, db: Session, run_id: UUID, step_id: UUID, data: any):
+    def complete_task(
+        self, db: Session, ws_id: int, run_id: UUID, step_id: UUID, data: any
+    ):
         return self._run_execution_wrapper(
             WorkflowEngineController.task_complete,
             db,
+            ws_id,
             run_id,
             step_id,
             data,
@@ -245,13 +298,16 @@ class _RunController(BaseController):
         return self._run_execution_wrapper(
             WorkflowEngineController.task_script_complete,
             db,
+            None,
             run_id,
             step_id,
             data,
         )
 
-    def call_activity_is_completed(self, db: Session, run_id: UUID):
-        run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
+    def call_activity_is_completed(self, db: Session, ws_id: int, run_id: UUID):
+        run = super().read(
+            db=db, resource_id=run_id, criteria={"deleted_at": None, "ws_id": ws_id}
+        )
 
         run_in = jsonable_encoder(run)
         try:
@@ -262,14 +318,16 @@ class _RunController(BaseController):
         except Exception as error:
             raise InternalServerErrorException(details=str(error))
 
-    def exec_event_task_actions(self, db: Session, run_id: UUID, step_id: UUID):
+    def exec_event_task_actions(
+        self, db: Session, ws_id: int, run_id: UUID, step_id: UUID
+    ):
         return self._run_execution_wrapper(
-            WorkflowEngineController.event_actions, db, run_id, step_id
+            WorkflowEngineController.event_actions, db, ws_id, run_id, step_id
         )
 
     def ping_task_status(self, db: Session, run_id: UUID, step_id: UUID):
         return self._run_execution_wrapper(
-            WorkflowEngineController.ping_step_status, db, run_id, step_id
+            WorkflowEngineController.ping_step_status, db, None, run_id, step_id
         )
 
     def get_task_metadata(self, db: Session, run_id: UUID, step_id: UUID):
@@ -286,11 +344,14 @@ class _RunController(BaseController):
     def get_completed_script_tasks(
         self,
         db: Session,
+        ws_id: int,
         run_id: UUID,
         class_name: str | None = None,
         not_in_type: str | None = None,
     ):
-        run = super().read(db=db, resource_id=run_id, criteria={"deleted_at": None})
+        run = super().read(
+            db=db, resource_id=run_id, criteria={"deleted_at": None, "ws_id": ws_id}
+        )
 
         criteria = {}
         if class_name and class_name != "":

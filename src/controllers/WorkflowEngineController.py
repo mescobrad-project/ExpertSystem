@@ -1,5 +1,6 @@
 from uuid import UUID
 from src.config import QB_API_BASE_URL, ES_UI_BASE_URL
+from src.controllers.FileController import FileController
 from src.controllers.ObjectStorageController import ObjectStorageController
 from src.engine.config import (
     RECEIVE_TASK,
@@ -150,6 +151,7 @@ class BaseEngineController:
         self,
         workflow,
         run,
+        ws_id: int,
         step_id: UUID,
         data: dict,
     ):
@@ -169,6 +171,7 @@ class BaseEngineController:
                         "url": f"{QB_API_BASE_URL}/{engine.run_id}/{step_id}",
                         "workflow_id": engine.workflow_id,
                         "run_id": engine.run_id,
+                        "ws_id": int(ws_id),
                         "base_save_path": {
                             "bucket_name": base_save_path.get("bucket_name"),
                             "object_name": f"{base_save_path.get('object_name')}/{engine.workflow_id}/{engine.run_id}/{step_id}",
@@ -205,6 +208,7 @@ class BaseEngineController:
                     request_body = {
                         "workflow_id": str(engine.workflow_id),
                         "run_id": str(engine.run_id),
+                        "ws_id": int(ws_id),
                         "step_id": str(step_id),
                         "datalake": {
                             "bucket_name": base_save_path.get("bucket_name"),
@@ -282,10 +286,12 @@ class BaseEngineController:
                             # deserialize data because of python's/pydantic's poor handling
                             deserialized = []
                             for raw_data in data[mode]:
+                                tmp = None
                                 try:
-                                    deserialized.append(raw_data.dict())
+                                    tmp = raw_data.dict()
                                 except:
-                                    deserialized.append(raw_data)
+                                    tmp = raw_data
+                                deserialized.append(tmp)
 
                             if len(deserialized) > 0:
                                 to_store[sid] = {}
@@ -589,7 +595,7 @@ class BaseEngineController:
                                     file_refs.extend(data["set"])
                 active["metadata"]["datasets"] = file_refs
 
-                for module_name in details["class"]:
+                for module_name in details.get("class", []):
                     if module_name.startswith("dataanalytics"):
                         base_save_path = ai_client.get_base_save_path()
                         if not base_save_path.get("is_success"):
@@ -598,6 +604,8 @@ class BaseEngineController:
                         try:
                             bucket_name = base_save_path.get("bucket_name")
                             object_name = f"{base_save_path.get('object_name')}/{engine.workflow_id}/{engine.run_id}/{step_id}/info.json"
+                            bucket_name = "demo"
+                            object_name = "expertsystem/workflow/2b28ad6a-5f6c-49fc-af50-a58d0c43cb4b/3a21be76-2ea6-4e97-a04e-21544698f484/9419be1d-67db-4669-8197-20fd99088ab1/analysis_output/info.json"
 
                             active["metadata"][
                                 "info"
@@ -606,6 +614,7 @@ class BaseEngineController:
                             )
                         except:
                             pass
+                            # S3 operation failed; code: AccessDenied, message: Access Denied., resource: /demo, request_id: 17906EB26AE2C91D, host_id: 36a147e7-9844-456b-b2fa-5aaae991d8ab, bucket_name: demo
                             # raise Exception("Cannot get info json")
 
                 return {"data": active}

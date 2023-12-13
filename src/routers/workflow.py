@@ -8,6 +8,7 @@ from src.controllers.WorkflowController import WorkflowController
 from src.schemas.WorkflowSchema import Workflow, WorkflowCreate, WorkflowUpdate
 from src.controllers.RunController import RunController
 from src.dependencies.authentication import validate_user
+from src.dependencies.workspace import validate_workspace
 from src.schemas.RunSchema import Run
 
 router = APIRouter(
@@ -21,6 +22,7 @@ router = APIRouter(
 @router.get("", response_model=dict[str, Any | list[Workflow]])
 def read_workflows(
     db: Session = Depends(get_db),
+    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
@@ -42,17 +44,22 @@ def read_workflows(
         direction,
         is_template,
         category,
-        criteria={"deleted_at": None},
+        criteria={"deleted_at": None, "ws_id": ws_id},
     )
 
 
 @router.post("")
 def create_workflow(
-    *, db: Session = Depends(get_db), workflow_in: WorkflowCreate
+    *,
+    db: Session = Depends(get_db),
+    ws_id: int = Depends(validate_workspace),
+    workflow_in: WorkflowCreate,
 ) -> Any:
     """
     Create new workflow.
     """
+    workflow_in.ws_id = ws_id
+
     return WorkflowController.create(db=db, obj_in=workflow_in)
 
 
@@ -67,6 +74,7 @@ def read_entity_types() -> Any:
 @router.get("/deleted", response_model=dict[str, Any | list[Workflow]])
 def read_deleted_workflows(
     db: Session = Depends(get_db),
+    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
@@ -88,7 +96,7 @@ def read_deleted_workflows(
         direction,
         is_template,
         category,
-        criteria={"deleted_at__not": None},
+        criteria={"deleted_at__not": None, "ws_id": ws_id},
     )
 
 
@@ -96,19 +104,23 @@ def read_deleted_workflows(
 def read_deleted_workflow(
     *,
     db: Session = Depends(get_db),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
 ) -> Any:
     """
     Get deleted workflow by ID.
     """
     return WorkflowController.read(
-        db=db, resource_id=workflow_id, criteria={"deleted_at__not": None}
+        db=db,
+        resource_id=workflow_id,
+        criteria={"deleted_at__not": None, "ws_id": ws_id},
     )
 
 
 @router.get("/search", response_model=Workflow)
-def read_deleted_workflows(
+def search_workflows(
     db: Session = Depends(get_db),
+    ws_id: int = Depends(validate_workspace),
     name: str = None,
 ) -> Any:
     """
@@ -117,7 +129,7 @@ def read_deleted_workflows(
     return WorkflowController.search(
         db,
         params={"name": name},
-        criteria={"deleted_at": None, "is_template": False},
+        criteria={"deleted_at": None, "is_template": False, "ws_id": ws_id},
     )
 
 
@@ -125,13 +137,14 @@ def read_deleted_workflows(
 def read_workflow(
     *,
     db: Session = Depends(get_db),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
 ) -> Any:
     """
     Get workflow by ID.
     """
     return WorkflowController.read(
-        db=db, resource_id=workflow_id, criteria={"deleted_at": None}
+        db=db, resource_id=workflow_id, criteria={"deleted_at": None, "ws_id": ws_id}
     )
 
 
@@ -139,12 +152,15 @@ def read_workflow(
 def update_workflow(
     *,
     db: Session = Depends(get_db),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
     workflow_in: WorkflowUpdate,
 ) -> Any:
     """
     Update a workflow.
     """
+    workflow_in.ws_id = ws_id
+
     return WorkflowController.update(
         db=db, resource_id=workflow_id, resource_in=workflow_in
     )
@@ -194,6 +210,7 @@ def read_task_details(
 def read_workflow_runs(
     *,
     db: Session = Depends(get_db),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
     skip: int = 0,
     limit: int = 100,
@@ -211,6 +228,10 @@ def read_workflow_runs(
         direction,
         {
             "workflow_id": workflow_id,
-            "workflow": {"model": WorkflowModel, "criteria": {"deleted_at": None}},
+            "workflow": {
+                "model": WorkflowModel,
+                "criteria": {"deleted_at": None, "ws_id": ws_id},
+            },
+            "ws_id": ws_id,
         },
     )

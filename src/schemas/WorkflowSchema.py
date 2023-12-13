@@ -11,6 +11,7 @@ class WorkflowBase(FormBase):
     settings: dict | None = None
     raw_diagram_data: dict | None = None
     is_template: bool = False
+    ws_id: int | None = None
 
 
 # Properties to receive on obj creation
@@ -34,6 +35,7 @@ class WorkflowInDBBase(Base):
     stores: dict | None = None
     raw_diagram_data: dict | None = None
     is_template: bool = False
+    ws_id: int = None
 
     class Config:
         orm_mode = True

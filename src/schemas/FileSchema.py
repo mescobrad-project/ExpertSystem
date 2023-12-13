@@ -6,6 +6,7 @@ from src.schemas._base import Base, FormBase
 # Shared properties
 class FileBase(FormBase):
     name: str | None = None
+    ws_id: int | None = None
 
 
 # Properties to receive on obj creation
@@ -29,6 +30,7 @@ class FileInDBBase(Base):
     name: str | None = None
     bucket_name: str
     object_name: str
+    ws_id: int = None
 
     class Config:
         orm_mode = True

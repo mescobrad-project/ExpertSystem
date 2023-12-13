@@ -8,9 +8,10 @@ class _FileController(BaseController):
     def search(
         self,
         db: Session,
+        ws_id: int,
         term: str = "",
     ):
-        data = self.repository.search(db=db, term=term)
+        data = self.repository.search(db=db, ws_id=ws_id, term=term)
 
         if not data:
             raise NotFoundException(details="Resource not found")
