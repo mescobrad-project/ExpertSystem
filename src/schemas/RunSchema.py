@@ -6,6 +6,7 @@ from src.schemas._base import BaseModel, Base, FormBase
 # Shared properties
 class RunBase(FormBase):
     name: str | None = None
+    ws_id: int | None = None
 
 
 # Properties to receive on obj creation
@@ -36,6 +37,7 @@ class RunInDBBase(Base):
     state: dict
     steps: list
     queue: list
+    ws_id: int = None
 
     class Config:
         orm_mode = True

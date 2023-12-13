@@ -29,9 +29,7 @@ class ForbiddenException(BaseFastApiException):
     def __init__(
         self, message: str = responses[status.HTTP_403_FORBIDDEN], details: any = None
     ) -> None:
-        super().__init__(
-            status.HTTP_403_FORBIDDEND, message, details, error_id=error_id
-        )
+        super().__init__(status.HTTP_403_FORBIDDEN, message, details, error_id=error_id)
 
 
 class NotFoundException(BaseFastApiException):

@@ -10,6 +10,8 @@ from ._association import (
     FileModel,
     ModuleCategoryModel,
     ModuleModel,
+    PlatformUserDefaultWorkspaceModel,
+    PlatformWorkspaceModel,
     WorkflowCategoryModel,
     WorkflowModel,
     RunModel,
