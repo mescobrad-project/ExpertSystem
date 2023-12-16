@@ -11,25 +11,22 @@ class FileBase(FormBase):
 
 # Properties to receive on obj creation
 class FileCreate(FileBase):
-    user_id: UUID
-    bucket_name: str
-    object_name: str
+    search: str
+    info: dict
 
 
 # Properties to receive on obj update
 class FileUpdate(FileBase):
-    user_id: UUID = None
-    bucket_name: str | None = None
-    object_name: str | None = None
+    search: str | None = None
+    info: dict | None = None
 
 
 # Properties shared by models stored in DB
 class FileInDBBase(Base):
     id: UUID = Field(default_factory=lambda: uuid4().hex)
-    user_id: UUID
     name: str | None = None
-    bucket_name: str
-    object_name: str
+    search: str
+    info: dict
     ws_id: int = None
 
     class Config:
@@ -44,8 +41,7 @@ class File(FileInDBBase):
 # Properties to return to client
 class FileSearch(Base):
     name: str | None = None
-    bucket_name: str
-    object_name: str
+    info: dict
 
     class Config:
         orm_mode = True

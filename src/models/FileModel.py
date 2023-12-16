@@ -1,20 +1,16 @@
-from sqlalchemy import ForeignKey, String, Index, Text
+from sqlalchemy import String, Index, JSON, Text
 from sqlalchemy.orm import Mapped, mapped_column
-from src.config import DB_SCHEMA
-from ._base import Base, GUID, to_tsvector_ix
+from ._base import Base, to_tsvector_ix
 
 
 class BaseFileModel(Base):
     __tablename__ = "files"
 
-    user_id: Mapped[GUID] = mapped_column(
-        GUID(), ForeignKey(f"{DB_SCHEMA}.users.id"), index=True
-    )
     name: Mapped[String] = mapped_column(String, nullable=True)
-    bucket_name: Mapped[String] = mapped_column(String, nullable=True)
-    object_name: Mapped[String] = mapped_column(String, nullable=True)
+    search: Mapped[Text] = mapped_column(Text, nullable=True)
+    info: Mapped[any] = mapped_column(JSON, nullable=True)
 
-    __ts_vector__ = to_tsvector_ix("name", "bucket_name", "object_name")
+    __ts_vector__ = to_tsvector_ix("name", "search")
 
     def __repr__(self):
         return f"file({self.name})"
