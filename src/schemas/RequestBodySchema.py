@@ -24,6 +24,7 @@ class TaskMetadataBodyParameter(BaseModel):
 # Used to model the request body params of task complete route
 class ScriptTaskCompleteParams(BaseModel):
     data: dict[str, list[BpmnDataObject] | list[BpmnDataStore]] = {}
+    ws_id: int
     error: str | None = None
 
 

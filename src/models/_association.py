@@ -2,7 +2,7 @@ from typing import List
 from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 from src.config import DB_SCHEMA
-from ._base import Base
+from ._base import Base, GUID
 from .ModuleModel import BaseModuleModel
 from .ModuleCategoryModel import BaseModuleCategoryModel
 from .PlatformUserDefaultWorkspaceModel import BasePlatformUserDefaultWorkspaceModel
@@ -57,11 +57,10 @@ class VariableModel(BaseVariableModel):
 
 
 class UserModel(BaseUserModel):
-    files: Mapped[list["FileModel"]] = relationship(back_populates="user")
+    pass
 
 
 class FileModel(BaseFileModel):
-    user: Mapped["UserModel"] = relationship(back_populates="files")
     ws_id: Mapped[int] = mapped_column(
         ForeignKey(
             f"{BasePlatformUserDefaultWorkspaceModel.__table_args__['schema']}.{PlatformWorkspaceModel.__tablename__}.ws_id"
