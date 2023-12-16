@@ -1,6 +1,5 @@
 from uuid import UUID
 from src.config import QB_API_BASE_URL, ES_UI_BASE_URL
-from src.controllers.FileController import FileController
 from src.controllers.ObjectStorageController import ObjectStorageController
 from src.engine.config import (
     RECEIVE_TASK,
@@ -15,6 +14,7 @@ from src.engine.classes.ElementClass import get_class_from_task_name
 from src.engine.utils.Generators import getId
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
 from src.errors.ApiRequestException import InternalServerErrorException
+from src.schemas.FileSchema import FileCreate
 from src.schemas.RequestBodySchema import (
     CallActivityParams,
     TaskMetadataBodyParameter,
@@ -241,6 +241,9 @@ class BaseEngineController:
         workflow,
         run,
         step_id: UUID,
+        FileCreateFn,
+        db,
+        FileCreateSchema: FileCreate,
         params: ScriptTaskCompleteParams | None = None,
     ):
         (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
@@ -276,6 +279,36 @@ class BaseEngineController:
                                 and len(params["data"]["datalake"]) > 0
                             ):
                                 data[mode] = params["data"]["datalake"]
+
+                                for datalake_object in params["data"]["datalake"]:
+                                    if datalake_object.get(
+                                        "bucket_name"
+                                    ) and datalake_object.get("object_name"):
+                                        name = datalake_object.get(
+                                            "object_name", ""
+                                        ).split("/")[-1]
+
+                                        bucket_name = datalake_object.get(
+                                            "bucket_name", ""
+                                        )
+                                        object_name = (
+                                            datalake_object.get("object_name", "")
+                                            .replace("/", " ")
+                                            .replace("-", " ")
+                                            .replace("_", " ")
+                                            .replace(".", " ")
+                                        )
+                                        search = f"{bucket_name} {object_name}"
+
+                                        FileCreateFn(
+                                            db=db,
+                                            obj_in=FileCreateSchema(
+                                                name=name,
+                                                ws_id=run.get("ws_id"),
+                                                search=search,
+                                                info=datalake_object,
+                                            ),
+                                        )
                             elif (
                                 workflow["stores"][sid]["type"] == "DataStore"
                                 and params["data"].get("trino")
