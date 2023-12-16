@@ -2,9 +2,11 @@ from uuid import UUID
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 from src.config import ES_UI_BASE_URL
+from src.controllers.FileController import FileController
 from src.errors.ApiRequestException import InternalServerErrorException
 from src.repositories._base import ModelType
 from src.repositories.RunRepository import RunRepository
+from src.schemas.FileSchema import FileCreate
 from src.schemas.RequestBodySchema import CallActivityParams
 from src.schemas.RunSchema import RunCreate, RunUpdate
 from ._base import BaseController
@@ -301,6 +303,9 @@ class _RunController(BaseController):
             None,
             run_id,
             step_id,
+            FileController.create,
+            db,
+            FileCreate,
             data,
         )
 
