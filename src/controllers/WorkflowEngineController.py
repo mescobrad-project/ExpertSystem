@@ -637,8 +637,8 @@ class BaseEngineController:
                         try:
                             bucket_name = base_save_path.get("bucket_name")
                             object_name = f"{base_save_path.get('object_name')}/{engine.workflow_id}/{engine.run_id}/{step_id}/info.json"
-                            bucket_name = "demo"
-                            object_name = "expertsystem/workflow/2b28ad6a-5f6c-49fc-af50-a58d0c43cb4b/3a21be76-2ea6-4e97-a04e-21544698f484/9419be1d-67db-4669-8197-20fd99088ab1/analysis_output/info.json"
+                            # bucket_name = "demo"
+                            # object_name = "expertsystem/workflow/2b28ad6a-5f6c-49fc-af50-a58d0c43cb4b/3a21be76-2ea6-4e97-a04e-21544698f484/9419be1d-67db-4669-8197-20fd99088ab1/analysis_output/info.json"
 
                             active["metadata"][
                                 "info"
