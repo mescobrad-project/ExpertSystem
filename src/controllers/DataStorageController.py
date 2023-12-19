@@ -1,4 +1,3 @@
-from sqlalchemy.sql.expression import text
 from trino.dbapi import Connection
 from src.clients.trino import client
 
@@ -35,13 +34,20 @@ class BaseController:
         }
 
     def list_catalog_table_sources(self, catalog: str, schema: str, table: str):
+        data = []
+
+        try:
+            data = self.__exec(
+                f"SELECT DISTINCT source FROM {catalog}.{schema}.{table}"
+            )
+        except:
+            data = []
+
         return {
             "catalog": catalog,
             "schema": schema,
             "table": table,
-            "data": self.__exec(
-                f"SELECT DISTINCT source FROM {catalog}.{schema}.{table}"
-            ),
+            "data": data,
         }
 
 
