@@ -34,5 +34,15 @@ class BaseController:
             "data": self.__exec(f"DESCRIBE {catalog}.{schema}.{table}"),
         }
 
+    def list_catalog_table_sources(self, catalog: str, schema: str, table: str):
+        return {
+            "catalog": catalog,
+            "schema": schema,
+            "table": table,
+            "data": self.__exec(
+                f"SELECT DISTINCT source FROM {catalog}.{schema}.{table}"
+            ),
+        }
+
 
 DataStorageController = BaseController(client)
