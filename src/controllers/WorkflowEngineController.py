@@ -1,3 +1,4 @@
+from json import loads
 from uuid import UUID
 from src.config import QB_API_BASE_URL, ES_UI_BASE_URL
 from src.controllers.ObjectStorageController import ObjectStorageController
@@ -14,7 +15,6 @@ from src.engine.classes.ElementClass import get_class_from_task_name
 from src.engine.utils.Generators import getId
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
 from src.errors.ApiRequestException import InternalServerErrorException
-from src.schemas.FileSchema import FileCreate
 from src.schemas.RequestBodySchema import (
     CallActivityParams,
     TaskMetadataBodyParameter,
@@ -22,7 +22,7 @@ from src.schemas.RequestBodySchema import (
 )
 from src.clients.artificialintelligence import client as ai_client
 from src.clients.dataanalytics import client as da_client
-from src.models._all import RunModel
+from src.utils.file import save_object_storage_to_files
 
 
 class BaseEngineController:
@@ -241,9 +241,7 @@ class BaseEngineController:
         workflow,
         run,
         step_id: UUID,
-        FileCreateFn,
         db,
-        FileCreateSchema: FileCreate,
         params: ScriptTaskCompleteParams | None = None,
     ):
         (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
@@ -253,6 +251,36 @@ class BaseEngineController:
                 SCRIPT_TASK,
             ]:
                 raise Exception("Action forbidden.")
+
+            for module_name in details.get("class", []):
+                if module_name.startswith("dataanalytics"):
+                    base_save_path = ai_client.get_base_save_path()
+                    if not base_save_path.get("is_success"):
+                        raise Exception(base_save_path)
+
+                    bucket_name = base_save_path.get("bucket_name")
+                    object_name = f"{base_save_path.get('object_name')}/{engine.workflow_id}/{engine.run_id}/{step_id}/info.json"
+
+                    raw_info_json = ObjectStorageController.get_object(
+                        bucket_name, object_name
+                    )
+
+                    if raw_info_json:
+                        info_json = loads(raw_info_json)
+
+                        if info_json:
+                            for dataset in info_json.get("Output_datasets", []):
+                                save_object_storage_to_files(
+                                    db,
+                                    run.get("ws_id"),
+                                    bucket_name,
+                                    dataset.get("file", ""),
+                                    {
+                                        "bucket_name": bucket_name,
+                                        "object_name": dataset.get("file", ""),
+                                        "ws_id": run.get("ws_id"),
+                                    },
+                                )
 
             if params["data"].get("datalake") or params["data"].get("trino"):
                 task_stores = workflow["tasks"][active["sid"]].get("stores")
@@ -284,30 +312,12 @@ class BaseEngineController:
                                     if datalake_object.get(
                                         "bucket_name"
                                     ) and datalake_object.get("object_name"):
-                                        name = datalake_object.get(
-                                            "object_name", ""
-                                        ).split("/")[-1]
-
-                                        bucket_name = datalake_object.get(
-                                            "bucket_name", ""
-                                        )
-                                        object_name = (
-                                            datalake_object.get("object_name", "")
-                                            .replace("/", " ")
-                                            .replace("-", " ")
-                                            .replace("_", " ")
-                                            .replace(".", " ")
-                                        )
-                                        search = f"{bucket_name} {object_name}"
-
-                                        FileCreateFn(
-                                            db=db,
-                                            obj_in=FileCreateSchema(
-                                                name=name,
-                                                ws_id=run.get("ws_id"),
-                                                search=search,
-                                                info=datalake_object,
-                                            ),
+                                        save_object_storage_to_files(
+                                            db,
+                                            run.get("ws_id"),
+                                            datalake_object.get("bucket_name", ""),
+                                            datalake_object.get("object_name", ""),
+                                            datalake_object,
                                         )
                             elif (
                                 workflow["stores"][sid]["type"] == "DataStore"
