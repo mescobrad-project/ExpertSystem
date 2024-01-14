@@ -15,6 +15,7 @@ from src.routers import (
     variable,
     workflow_category,
     oauth,
+    workspace,
 )
 from src.routers.datalake import objectstorage, datastorage
 from src.config import (
@@ -46,6 +47,7 @@ def include_router(app):
     app.include_router(variable.router)
     app.include_router(workflow_category.router)
     app.include_router(workflow.router)
+    app.include_router(workspace.router)
     app.include_router(module_category.router)
     app.include_router(module.router)
     app.include_router(objectstorage.router)
