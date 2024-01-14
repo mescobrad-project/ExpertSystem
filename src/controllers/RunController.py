@@ -2,11 +2,18 @@ from uuid import UUID
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 from src.config import ES_UI_BASE_URL
-from src.errors.ApiRequestException import InternalServerErrorException
+from src.controllers.PlatformUserDefaultWorkspaceController import (
+    PlatformUserDefaultWorkspaceController,
+)
+from src.errors.ApiRequestException import (
+    BadRequestException,
+    InternalServerErrorException,
+)
 from src.repositories._base import ModelType
 from src.repositories.RunRepository import RunRepository
 from src.schemas.RequestBodySchema import CallActivityParams
 from src.schemas.RunSchema import RunCreate, RunUpdate
+from src.schemas.WorkflowSchema import WorkflowUpdate
 from ._base import BaseController
 from .WorkflowController import WorkflowController
 from .WorkflowEngineController import WorkflowEngineController
@@ -367,6 +374,35 @@ class _RunController(BaseController):
             )
         except Exception as error:
             raise InternalServerErrorException(details=str(error))
+
+    def change_workspace(
+        self,
+        db: Session,
+        resource_id: UUID,
+        user_name: str,
+        ws_id: str,
+    ):
+        try:
+            PlatformUserDefaultWorkspaceController.read_by_ws_id(
+                db, ws_id, {"user_name": user_name}
+            )
+        except:
+            raise BadRequestException(
+                details="Error! Either the workspace does not exist, or the user has no access."
+            )
+
+        # update workflow
+        WorkflowController.update(
+            db=db,
+            resource_id=resource_id,
+            resource_in=WorkflowUpdate(ws_id=ws_id),
+        )
+
+        return super().update_multi(
+            db,
+            resource_in=RunUpdate(ws_id=ws_id),
+            criteria={"workflow_id": resource_id},
+        )
 
 
 RunController = _RunController(RunRepository)

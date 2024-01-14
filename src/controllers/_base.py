@@ -89,6 +89,24 @@ class BaseController:
         except Exception as error:
             raise InternalServerErrorException(details=jsonable_encoder(error))
 
+    def update_multi(
+        self,
+        db: Session,
+        resource_in: UpdateSchemaType,
+        criteria={"deleted_at": None},
+    ):
+        if isinstance(resource_in, dict):
+            resource_in["updated_at"] = datetime.now(tz=timezone.utc)
+        else:
+            resource_in.updated_at = datetime.now(tz=timezone.utc)
+
+        try:
+            return self.repository.update_multi(
+                db=db, obj_in=resource_in, criteria=criteria
+            )
+        except Exception as error:
+            raise InternalServerErrorException(details=jsonable_encoder(error))
+
     def destroy(self, db: Session, resource_id: UUID, resource_in: UpdateSchemaType):
         resource_in.deleted_at = datetime.now(tz=timezone.utc)
 
