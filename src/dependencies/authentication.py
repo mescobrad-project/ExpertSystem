@@ -68,6 +68,12 @@ def _parse_mode(date_now, token):
         return "expired"
 
 
+async def get_user_only(x_es_token: str = Header(), db: Session = Depends(get_db)):
+    user, _, _ = get_user(x_es_token, db)
+
+    return user
+
+
 async def validate_user(x_es_token: str = Header(), db: Session = Depends(get_db)):
     user, token, token_id = get_user(x_es_token, db)
 
