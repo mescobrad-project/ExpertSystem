@@ -5,9 +5,14 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.models._all import WorkflowModel
 from src.controllers.WorkflowController import WorkflowController
-from src.schemas.WorkflowSchema import Workflow, WorkflowCreate, WorkflowUpdate
+from src.schemas.WorkflowSchema import (
+    Workflow,
+    WorkflowCreate,
+    WorkflowUpdate,
+    WorkflowWorkspaceChange,
+)
 from src.controllers.RunController import RunController
-from src.dependencies.authentication import validate_user
+from src.dependencies.authentication import validate_user, get_user_only
 from src.dependencies.workspace import validate_workspace
 from src.schemas.RunSchema import Run
 
@@ -163,6 +168,26 @@ def update_workflow(
 
     return WorkflowController.update(
         db=db, resource_id=workflow_id, resource_in=workflow_in
+    )
+
+
+@router.put("/{workflow_id}/workspace", response_model=int)
+def change_workspace(
+    *,
+    db: Session = Depends(get_db),
+    ws_id: int = Depends(validate_workspace),
+    user: int = Depends(get_user_only),
+    workflow_id: UUID,
+    workflow_in: WorkflowWorkspaceChange,
+) -> Any:
+    """
+    Change the workspace of a workflow.
+    """
+    return RunController.change_workspace(
+        db=db,
+        resource_id=workflow_id,
+        user_name=user.info["preferred_username"],
+        ws_id=workflow_in.ws_id,
     )
 
 

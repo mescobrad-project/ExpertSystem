@@ -25,6 +25,10 @@ class WorkflowUpdate(WorkflowBase):
     category_id: UUID | None = None
 
 
+class WorkflowWorkspaceChange(FormBase):
+    ws_id: int
+
+
 # Properties shared by models stored in DB
 class WorkflowInDBBase(Base):
     id: UUID = Field(default_factory=lambda: uuid4().hex)
