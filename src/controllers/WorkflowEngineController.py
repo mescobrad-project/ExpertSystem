@@ -270,16 +270,15 @@ class BaseEngineController:
 
                         if info_json:
                             for dataset in info_json.get("Output_datasets", []):
-                                save_object_storage_to_files(
-                                    db,
-                                    run.get("ws_id"),
-                                    bucket_name,
-                                    dataset.get("file", ""),
+                                if not params["data"].get("datalake"):
+                                    params["data"]["datalake"] = []
+
+                                params["data"]["datalake"].append(
                                     {
                                         "bucket_name": bucket_name,
                                         "object_name": dataset.get("file", ""),
                                         "ws_id": run.get("ws_id"),
-                                    },
+                                    }
                                 )
 
             if params["data"].get("datalake") or params["data"].get("trino"):
