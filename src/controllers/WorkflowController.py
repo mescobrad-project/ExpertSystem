@@ -106,27 +106,38 @@ class _WorkflowController(BaseController):
         criteria: any = {"deleted_at": None},
     ):
         settings = resource_in.settings
-        if settings:
-            resource_in.settings = None
+        resource_in.settings = None
 
-            if resource_in.raw_diagram_data and resource_in.raw_diagram_data.get(
-                "xml_original"
-            ):
-                raw_diagram = resource_in.raw_diagram_data.get("xml_original")
-            else:
-                workflow = super().read(
-                    db=db, resource_id=resource_id, criteria=criteria
-                )
-                raw_diagram = workflow.raw_diagram_data["xml_original"]
+        if resource_in.raw_diagram_data and resource_in.raw_diagram_data.get(
+            "xml_original"
+        ):
+            raw_diagram = resource_in.raw_diagram_data.get("xml_original")
+        else:
+            workflow = super().read(db=db, resource_id=resource_id, criteria=criteria)
+            raw_diagram = workflow.raw_diagram_data["xml_original"]
 
-            [tasks, stores] = parse_xml(raw_diagram)
+        [tasks, stores] = parse_xml(raw_diagram)
 
-            _handle_additional_task_settings(tasks, settings)
-            resource_in.tasks = tasks
-            resource_in.stores = stores
+        _handle_additional_task_settings(tasks, settings)
+        resource_in.tasks = tasks
+        resource_in.stores = stores
 
         return super().update(
             db=db, resource_id=resource_id, resource_in=resource_in, criteria=criteria
+        )
+
+    def update_workspace(
+        self,
+        db: Session,
+        resource_id: UUID,
+        ws_id: int,
+        criteria: any = {"deleted_at": None},
+    ):
+        return super().update(
+            db=db,
+            resource_id=resource_id,
+            resource_in=WorkflowUpdate(ws_id=ws_id),
+            criteria=criteria,
         )
 
     def read_task_details(self, db: Session, resource_id: UUID, task_sid: str):

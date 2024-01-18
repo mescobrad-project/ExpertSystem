@@ -392,11 +392,7 @@ class _RunController(BaseController):
             )
 
         # update workflow
-        WorkflowController.update(
-            db=db,
-            resource_id=resource_id,
-            resource_in=WorkflowUpdate(ws_id=ws_id),
-        )
+        WorkflowController.update_workspace(db=db, resource_id=resource_id, ws_id=ws_id)
 
         return super().update_multi(
             db,
