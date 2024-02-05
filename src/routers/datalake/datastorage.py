@@ -36,9 +36,17 @@ def list_catalog_tables(catalog: str, schema: str) -> Any:
     return DataStorageController.list_catalog_tables(catalog, schema)
 
 
-@router.get("/{catalog}/{schema}/{table}")
-def list_catalogs(catalog: str, schema: str, table: str) -> Any:
+@router.get("/{catalog}/{schema}/{table}/describe")
+def describe_catalogs(catalog: str, schema: str, table: str) -> Any:
     """
     Get table columns given a catalog schema.
     """
     return DataStorageController.describe_catalog_tables(catalog, schema, table)
+
+
+@router.get("/{catalog}/{schema}/{table}/sources")
+def list_catalog_table_sources(catalog: str, schema: str, table: str) -> Any:
+    """
+    Get table sources given a catalog schema.
+    """
+    return DataStorageController.list_catalog_table_sources(catalog, schema, table)

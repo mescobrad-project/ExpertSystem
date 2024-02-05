@@ -62,7 +62,8 @@ class ExclusiveGateway(Element):
 class ParallelGateway(Element):
     def pre(self):
         return {
-            "complete": False,
+            "complete": True,
+            "check_converging_pending_tasks": True,
             "next_steps": True,
             "rules": {"choice": "wait_all"},
         }
@@ -119,6 +120,19 @@ class UserTask(ManualTask):
     pass
 
 
+class CallActivity(Element):
+    def pre(self):
+        return {
+            "complete": False,
+            "next_steps": True,
+        }
+
+    def post(self):
+        return {
+            "rules": {"complete": True, "task": True},
+        }
+
+
 class SendTask(ManualTask):
     def post(self):
         return {
@@ -150,6 +164,7 @@ def get_class_from_task_name(elementName: str) -> Element:
     elements[MANUAL_TASK] = ManualTask
     elements[SCRIPT_TASK] = ScriptTask
     elements[USER_TASK] = UserTask
+    elements[CALL_ACTIVITY] = CallActivity
     elements[SEND_TASK] = SendTask
     elements[RECEIVE_TASK] = ReceiveTask
 

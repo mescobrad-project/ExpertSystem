@@ -69,6 +69,17 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
+    def get_one(
+        self,
+        db: Session,
+        criteria={},
+    ) -> ModelType | None:
+        return (
+            db.query(self.model)
+            .filter(*_parse_criteria(self.model, criteria=criteria))
+            .one()
+        )
+
     def get(
         self,
         db: Session,
@@ -77,11 +88,7 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     ) -> ModelType | None:
         criteria["id"] = id
 
-        return (
-            db.query(self.model)
-            .filter(*_parse_criteria(self.model, criteria=criteria))
-            .one()
-        )
+        return self.get_one(db, criteria)
 
     def count(self, db: Session, criteria={}) -> int:
         criteria["deleted_at"] = None
@@ -97,7 +104,7 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         limit: int = 100,
         criteria={},
         order: str = None,
-        direction: str = None
+        direction: str = None,
     ) -> list[ModelType]:
         return (
             db.query(self.model)
@@ -113,7 +120,7 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db: Session,
         *,
         obj_in: CreateSchemaType,
-        fields_to_exclude: list | None = []
+        fields_to_exclude: list | None = [],
     ) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in, exclude=fields_to_exclude)
         if fields_to_exclude:
@@ -131,7 +138,7 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         *,
         db_obj: ModelType,
         obj_in: UpdateSchemaType | dict[str, Any],
-        fields_to_exclude: list | None = []
+        fields_to_exclude: list | None = [],
     ) -> ModelType:
         """
         fields_to_exclude is a list for fields to not be parsed as JSON. This is an error
@@ -150,6 +157,29 @@ class BaseCRUD(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db.commit()
         db.refresh(db_obj)
         return db_obj
+
+    def update_multi(
+        self,
+        db: Session,
+        *,
+        obj_in: UpdateSchemaType | dict[str, Any],
+        criteria={},
+    ) -> int:
+        """
+        Update multiple rows based on the given criteria.
+        """
+        # Parse the update data
+        if isinstance(obj_in, dict):
+            values = obj_in
+        else:
+            values = obj_in.dict(exclude_unset=True)
+
+        # Perform the bulk update
+        query = db.query(self.model).filter(*_parse_criteria(self.model, criteria))
+        result = query.update(values, synchronize_session=False)
+
+        db.commit()
+        return result
 
     def remove(self, db: Session, *, id: int) -> ModelType:
         obj = db.query(self.model).get(id)

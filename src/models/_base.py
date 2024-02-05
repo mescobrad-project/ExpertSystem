@@ -4,7 +4,7 @@ from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID as SAUUID
 from uuid import uuid4, UUID
-from src.config import DB_SCHEMA
+from src.config import DB_PLATFORM_SCHEMA, DB_SCHEMA
 from src.database import Base as ModelBase
 
 
@@ -50,7 +50,6 @@ class GUID(TypeDecorator):
 
 
 class Base(ModelBase):
-
     __abstract__ = True
     __table_args__ = {"schema": DB_SCHEMA}
 
@@ -64,3 +63,8 @@ class Base(ModelBase):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     deleted_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PlatformBase(ModelBase):
+    __abstract__ = True
+    __table_args__ = {"schema": DB_PLATFORM_SCHEMA}

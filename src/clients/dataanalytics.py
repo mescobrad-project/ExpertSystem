@@ -18,9 +18,9 @@ class Router(BaseRouter):
 
 
 class Api(BaseApi):
-    def post(self, data: DataAnalyticsInput) -> dict:
+    def put(self, data: DataAnalyticsInput) -> dict:
         return self._response_wrapper(
-            self.session.post(self.router.navigation(), json=data)
+            self.session.put(self.router.navigation(), json=data)
         )
 
     def check_if_function_exists(self, func_name: str) -> bool:
@@ -29,7 +29,7 @@ class Api(BaseApi):
         if not response["is_success"]:
             return False
 
-        return func_name in response["analytics-functions"]
+        return func_name in response.get("analytics-functions", [])
 
 
 client = Api(Router, DA_API_BASE_URL)

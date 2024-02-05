@@ -8,8 +8,10 @@ class WorkflowBase(FormBase):
     description: str | None = None
     tasks: dict | None = None
     stores: dict | None = None
+    settings: dict | None = None
     raw_diagram_data: dict | None = None
     is_template: bool = False
+    ws_id: int | None = None
 
 
 # Properties to receive on obj creation
@@ -23,6 +25,10 @@ class WorkflowUpdate(WorkflowBase):
     category_id: UUID | None = None
 
 
+class WorkflowWorkspaceChange(FormBase):
+    ws_id: int
+
+
 # Properties shared by models stored in DB
 class WorkflowInDBBase(Base):
     id: UUID = Field(default_factory=lambda: uuid4().hex)
@@ -33,6 +39,7 @@ class WorkflowInDBBase(Base):
     stores: dict | None = None
     raw_diagram_data: dict | None = None
     is_template: bool = False
+    ws_id: int = None
 
     class Config:
         orm_mode = True

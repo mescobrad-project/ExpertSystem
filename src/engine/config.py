@@ -11,6 +11,7 @@ SEND_TASK = getenv("WFE_SEND_TASK", "SendTask")
 RECEIVE_TASK = getenv("WFE_RECEIVE_TASK", "ReceiveTask")
 DATA_STORE = getenv("WFE_DATA_STORE", "DataStore")
 DATA_OBJECT = getenv("WFE_DATA_OBJECT", "DataObject")
+CALL_ACTIVITY = getenv("WFE_CALL_ACTIVITY", "CallActivity")
 
 XML_START_EVENT = "startEvent"
 XML_END_EVENT = "endEvent"
@@ -31,6 +32,7 @@ XML_DATA_OUTPUT_ASSOCIATION = "dataOutputAssociation"
 XML_DATA_STORE_REFERENCE = "dataStoreReference"
 XML_DATA_OBJECT_REFERENCE = "dataObjectReference"
 XML_DATA_OBJECT = "dataObject"
+XML_CALL_ACTIVITY = "callActivity"
 XML_NAMESPACES = {
     "xsi": "http://www.w3.org/2001/XMLSchema-instance",
     "bpmn2": "http://www.omg.org/spec/BPMN/20100524/MODEL",

@@ -11,7 +11,7 @@ from src.errors.ApiRequestException import BadRequestException, UnauthorizedExce
 from src.schemas.UserSchema import UserUpdate
 
 
-def _prepare_token(x_es_token, db, raise_a_raise=True):
+def get_user(x_es_token, db, raise_a_raise=True):
     if x_es_token == None or x_es_token == "null":
         return (None, None, None)
 
@@ -68,8 +68,14 @@ def _parse_mode(date_now, token):
         return "expired"
 
 
+async def get_user_only(x_es_token: str = Header(), db: Session = Depends(get_db)):
+    user, _, _ = get_user(x_es_token, db)
+
+    return user
+
+
 async def validate_user(x_es_token: str = Header(), db: Session = Depends(get_db)):
-    user, token, token_id = _prepare_token(x_es_token, db)
+    user, token, token_id = get_user(x_es_token, db)
 
     if not token:
         raise UnauthorizedException(message="Invalid Access Token")
@@ -119,7 +125,7 @@ async def clean_before_login(
     x_es_token: str = Header(default=""), db: Session = Depends(get_db)
 ):
     if x_es_token:
-        user, _, token_id = _prepare_token(x_es_token, db, False)
+        user, _, token_id = get_user(x_es_token, db, False)
 
         if user and token_id:
             _remove_session(db, user, token_id, raise_a_raise=False)

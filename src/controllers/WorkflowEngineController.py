@@ -1,24 +1,28 @@
+from json import loads
 from uuid import UUID
+from src.config import QB_API_BASE_URL, ES_UI_BASE_URL
+from src.controllers.ObjectStorageController import ObjectStorageController
 from src.engine.config import (
     RECEIVE_TASK,
     SEND_TASK,
     MANUAL_TASK,
     SCRIPT_TASK,
     USER_TASK,
+    CALL_ACTIVITY,
 )
 from src.engine.main import WorkflowEngine
 from src.engine.classes.ElementClass import get_class_from_task_name
 from src.engine.utils.Generators import getId
 from src.engine.utils.TemplateUtils import pending_and_waiting_template
+from src.errors.ApiRequestException import InternalServerErrorException
 from src.schemas.RequestBodySchema import (
+    CallActivityParams,
     TaskMetadataBodyParameter,
     ScriptTaskCompleteParams,
 )
-from src.schemas.ExternalApiSchema import DataAnalyticsInput
 from src.clients.artificialintelligence import client as ai_client
-from src.clients.querybuilder import client as qb_client
 from src.clients.dataanalytics import client as da_client
-from src.models._all import RunModel
+from src.utils.file import save_object_storage_to_files
 
 
 class BaseEngineController:
@@ -58,12 +62,21 @@ class BaseEngineController:
         actions = element.pre()
 
         if actions["complete"]:
-            engine.set_step_completed(active)
+            if not actions.get("check_converging_pending_tasks"):
+                engine.set_step_completed(active)
 
         if actions["next_steps"]:
-            engine.add_to_queue(active["sid"])
-            engine.set_task_as_active_step(active)
-            engine.remove_from_bucket(engine.queue, index)
+            waiting = []
+
+            if actions.get("check_converging_pending_tasks"):
+                waiting = engine.get_incomplete_converging_tasks(active["sid"])
+
+            if len(waiting) == 0:
+                engine.add_to_queue(active["sid"])
+                engine.set_task_as_active_step(active)
+                if actions["complete"]:
+                    engine.set_step_completed(active)
+                engine.remove_from_bucket(engine.queue, index)
 
         if actions.get("end_event") is not None and actions.get("end_event"):
             engine.set_task_as_active_step(active)
@@ -122,12 +135,12 @@ class BaseEngineController:
                 self._set_parallelqueue_task_to_queue(engine, active, next_step_id)
             elif rules["choice"] == "wait_all":
                 # check for previous steps completion
-                waiting = engine.get_not_completed_converging_tasks()
+                waiting = engine.get_incomplete_converging_tasks()
 
                 if len(waiting) > 0:
                     return {
                         "display": "Please complete the following tasks first",
-                        "queue": waiting,
+                        "pending": active,
                     }
 
                 self._set_parallelqueue_task_to_queue(engine, active, next_step_id)
@@ -138,6 +151,7 @@ class BaseEngineController:
         self,
         workflow,
         run,
+        ws_id: int,
         step_id: UUID,
         data: dict,
     ):
@@ -147,43 +161,78 @@ class BaseEngineController:
             if "metadata" in active.keys():
                 return {"pending": active}
 
+            base_save_path = ai_client.get_base_save_path()
+            if not base_save_path.get("is_success"):
+                raise Exception(base_save_path)
+
             for module_name in details["class"]:
-                if module_name.startswith("dataanalytics"):
-                    [_, func_name] = module_name.split("/")
+                if module_name.startswith("querybuilder"):
+                    active["metadata"] = {
+                        "url": f"{QB_API_BASE_URL}/{engine.run_id}/{step_id}",
+                        "workflow_id": engine.workflow_id,
+                        "run_id": engine.run_id,
+                        "ws_id": int(ws_id),
+                        "base_save_path": {
+                            "bucket_name": base_save_path.get("bucket_name"),
+                            "object_name": f"{base_save_path.get('object_name')}/{engine.workflow_id}/{engine.run_id}/{step_id}",
+                        },
+                        "data_use": {
+                            "datalake": data.get("data_input").get("datalake"),
+                            "trino": data.get("data_input").get("trino"),
+                        },
+                    }
+                else:
+                    func_name = data.get("module", "/").split("/")[-1]
 
-                    if not da_client.check_if_function_exists(func_name):
-                        return {"error": "Function name does not exist!"}
+                    try:
+                        if not da_client.check_if_function_exists(func_name):
+                            return {"error": "Function name does not exist!"}
+                    except:
+                        raise Exception("Cannot reach DataAnalytics")
 
-                    da_input = DataAnalyticsInput(
-                        run_id=str(engine.run_id),
-                        step_id=step_id,
-                        save_loc_bucket=data.get("save_bucket"),
-                        save_loc_folder=data.get("save_folder"),
-                        function=func_name,
-                        metadata={"files": data.get("files")},
-                    )
+                    metadata_to_send = {}
 
-                    response = da_client.post(da_input)
+                    if data.get("data_input"):
+                        metadata_to_send["files"] = []
+                        if "datalake" in data.get("data_input"):
+                            for obj in data["data_input"]["datalake"]:
+                                metadata_to_send["files"].append(
+                                    {
+                                        "bucket": obj["bucket_name"],
+                                        "file": obj["object_name"],
+                                    }
+                                )
+                    if data.get("ref_completed_task"):
+                        metadata_to_send["reference"] = data.get("ref_completed_task")
+
+                    request_body = {
+                        "workflow_id": str(engine.workflow_id),
+                        "run_id": str(engine.run_id),
+                        "ws_id": int(ws_id),
+                        "step_id": str(step_id),
+                        "datalake": {
+                            "bucket_name": base_save_path.get("bucket_name"),
+                            "object_name": f"{base_save_path.get('object_name')}/{engine.workflow_id}",
+                        },
+                        "function": func_name,
+                        "metadata": metadata_to_send,
+                    }
+
+                    response = {}
+
+                    try:
+                        response = da_client.put(request_body)
+                    except:
+                        raise Exception("Cannot reach DataAnalytics")
 
                     if not response.get("is_success"):
                         return response
 
-                    active["metadata"] = response
-                elif module_name.startswith("querybuilder"):
-                    base_save_path = ai_client.get_base_save_path()
-                    if not base_save_path.get("is_success"):
-                        return base_save_path
+                    response["class"] = data.get("module")
+                    response["initial_request"] = request_body
+                    # response.update(request_body)
 
-                    active["metadata"] = {
-                        "url": f"query_builder/{engine.run_id}/{step_id}",
-                        "base_save_path": {
-                            "bucket_name": base_save_path.get("bucket_name"),
-                            "object_name": f"{base_save_path.get('object_name')}/{engine.workflow_id}",
-                        },
-                        "data_use": data.get("data_input_multiple"),
-                    }
-                else:
-                    return {"error": "Please provide a valid module!"}
+                    active["metadata"] = response
 
         return {"pending": active}
 
@@ -192,6 +241,7 @@ class BaseEngineController:
         workflow,
         run,
         step_id: UUID,
+        db,
         params: ScriptTaskCompleteParams | None = None,
     ):
         (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
@@ -202,57 +252,118 @@ class BaseEngineController:
             ]:
                 raise Exception("Action forbidden.")
 
-            task_stores = workflow["tasks"][active["sid"]].get("stores")
+            for module_name in details.get("class", []):
+                if module_name.startswith("dataanalytics"):
+                    base_save_path = ai_client.get_base_save_path()
+                    if not base_save_path.get("is_success"):
+                        raise Exception(base_save_path)
 
-            if task_stores and len(task_stores) > 0:
-                ### Start Bad Code
-                for store in task_stores:
+                    bucket_name = base_save_path.get("bucket_name")
+                    object_name = f"{base_save_path.get('object_name')}/{engine.workflow_id}/{engine.run_id}/{step_id}/info.json"
+
+                    raw_info_json = ObjectStorageController.get_object(
+                        bucket_name, object_name
+                    )
+
+                    if raw_info_json:
+                        info_json = loads(raw_info_json)
+
+                        if info_json:
+                            for dataset in info_json.get("Output_datasets", []):
+                                if not params["data"].get("datalake"):
+                                    params["data"]["datalake"] = []
+
+                                params["data"]["datalake"].append(
+                                    {
+                                        "bucket_name": bucket_name,
+                                        "object_name": dataset.get("file", ""),
+                                        "ws_id": run.get("ws_id"),
+                                    }
+                                )
+
+            if params["data"].get("datalake") or params["data"].get("trino"):
+                task_stores = workflow["tasks"][active["sid"]].get("stores")
+
+                if task_stores and len(task_stores) > 0:
+                    ### Start Bad Code
                     to_store = {}
 
-                    sid = list(store.keys())[0]
-                    mode = store[sid].get("mode")
+                    for store in task_stores:
+                        sid = list(store.keys())[0]
 
-                    if params.error:
-                        to_store["error"] = params.error
-                    else:
-                        if mode not in ["set", "get"]:
-                            continue
+                        mode = store[sid].get("mode")
 
-                        data = {}
-                        data[mode] = params.data
+                        if params.get("error") and params.error:
+                            raise InternalServerErrorException(details=params.error)
+                        else:
+                            if mode not in ["set", "get"]:
+                                continue
 
-                        # deserialize data because of python's/pydantic's poor handling
-                        deserialized = []
-                        for raw_data in data[mode]:
-                            deserialized.append(raw_data.dict())
+                            data = {mode: []}
+                            if (
+                                workflow["stores"][sid]["type"] == "DataObject"
+                                and params["data"].get("datalake")
+                                and len(params["data"]["datalake"]) > 0
+                            ):
+                                data[mode] = params["data"]["datalake"]
 
-                        to_store[sid] = {}
-                        to_store[sid][mode] = deserialized
-                ### End Bad Code
+                                for datalake_object in params["data"]["datalake"]:
+                                    if datalake_object.get(
+                                        "bucket_name"
+                                    ) and datalake_object.get("object_name"):
+                                        save_object_storage_to_files(
+                                            db,
+                                            run.get("ws_id"),
+                                            datalake_object.get("bucket_name", ""),
+                                            datalake_object.get("object_name", ""),
+                                            datalake_object,
+                                        )
+                            elif (
+                                workflow["stores"][sid]["type"] == "DataStore"
+                                and params["data"].get("trino")
+                                and len(params["data"]["trino"]) > 0
+                            ):
+                                data[mode] = params["data"]["trino"]
 
-                state_id = getId()
+                            # deserialize data because of python's/pydantic's poor handling
+                            deserialized = []
+                            for raw_data in data[mode]:
+                                tmp = None
+                                try:
+                                    tmp = raw_data.dict()
+                                except:
+                                    tmp = raw_data
+                                deserialized.append(tmp)
 
-                engine.append_workflow_state_data(
-                    {
-                        "id": state_id,
-                        "sid": active["sid"],
-                        "step_number": active["number"],
-                        "data": to_store,
-                    }
-                )
+                            if len(deserialized) > 0:
+                                to_store[sid] = {}
+                                to_store[sid][mode] = deserialized
+                    ### End Bad Code
 
-                if active.get("metadata"):
-                    active["metadata"]["store"] = {
-                        "state_data_id": state_id,
-                        "state_data_number": len(engine.state["data"]) - 1,
-                    }
-                else:
-                    active["metadata"] = {
-                        "store": {
-                            "state_data_id": state_id,
-                            "state_data_number": len(engine.state["data"]) - 1,
-                        }
-                    }
+                    if to_store:
+                        state_id = getId()
+
+                        engine.append_workflow_state_data(
+                            {
+                                "id": state_id,
+                                "sid": active["sid"],
+                                "step_number": active["number"],
+                                "data": to_store,
+                            }
+                        )
+
+                        if active.get("metadata"):
+                            active["metadata"]["store"] = {
+                                "state_data_id": state_id,
+                                "state_data_number": len(engine.state["data"]) - 1,
+                            }
+                        else:
+                            active["metadata"] = {
+                                "store": {
+                                    "state_data_id": state_id,
+                                    "state_data_number": len(engine.state["data"]) - 1,
+                                }
+                            }
 
             engine.set_step_completed(active)
 
@@ -265,6 +376,43 @@ class BaseEngineController:
             #     )
 
         return {"pending": active}
+
+    def call_activity(
+        self,
+        workflow,
+        run,
+        step_id: UUID,
+        data: CallActivityParams,
+    ):
+        (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
+
+        if details["type"] not in [
+            CALL_ACTIVITY,
+        ]:
+            raise Exception("Action forbidden.")
+
+        if "metadata" in active.keys():
+            return {"pending": active, "created": False}
+
+        active["metadata"] = {
+            "url": f"{ES_UI_BASE_URL}/workflow/{str(data.workflow_id)}/run/{str(data.run_id)}",
+            "parent": {
+                "workflow_id": str(engine.workflow_id),
+                "run_id": str(engine.run_id),
+                "step_id": str(step_id),
+            },
+            "child": {"workflow_id": str(data.workflow_id), "run_id": str(data.run_id)},
+        }
+
+        return {
+            "pending": active,
+            "data": {
+                "DataObject": self._get_data_refs(workflow, run, "DataObject"),
+                "DataStore": self._get_data_refs(workflow, run, "DataStore"),
+            },
+            "variables": engine.state.get("variables"),
+            "created": True,
+        }
 
     def task_send(
         self,
@@ -355,6 +503,7 @@ class BaseEngineController:
                 MANUAL_TASK,
                 USER_TASK,
                 RECEIVE_TASK,
+                CALL_ACTIVITY,
             ]:
                 raise Exception("Action forbidden.")
 
@@ -410,6 +559,12 @@ class BaseEngineController:
                         }
                     }
 
+            if details["type"] == USER_TASK and metadata.variables:
+                engine.state["variables"] = {
+                    "input": metadata.variables["input"],
+                    "output": metadata.variables["output"],
+                }
+
             engine.set_step_completed(active)
 
             # if "task" in rules.keys():
@@ -461,19 +616,106 @@ class BaseEngineController:
 
         return {"step": active, "completed": active["completed"]}
 
-    def get_dataobject_refs(self, run: RunModel):
+    def get_task_metadata(self, workflow, run, step_id: UUID):
+        (engine, active, details, rules) = self._prepare_step(workflow, run, step_id)
+
+        if details["type"] not in [SCRIPT_TASK, CALL_ACTIVITY]:
+            raise Exception("Action forbidden.")
+
+        if "task" in rules.keys():
+            if active.get("metadata"):
+                file_refs = []
+                if active["metadata"].get("store"):
+                    for sid, data in run["state"]["data"][
+                        active["metadata"]["store"]["state_data_number"]
+                    ]["data"].items():
+                        if sid in workflow["stores"].keys():
+                            if workflow["stores"][sid]["type"] == "DataObject":
+                                if "get" in data.keys():
+                                    file_refs.extend(data["get"])
+                                if "set" in data.keys():
+                                    file_refs.extend(data["set"])
+                active["metadata"]["datasets"] = file_refs
+
+                for module_name in details.get("class", []):
+                    if module_name.startswith("dataanalytics"):
+                        base_save_path = ai_client.get_base_save_path()
+                        if not base_save_path.get("is_success"):
+                            raise Exception(base_save_path)
+
+                        try:
+                            bucket_name = base_save_path.get("bucket_name")
+                            object_name = f"{base_save_path.get('object_name')}/{engine.workflow_id}/{engine.run_id}/{step_id}/info.json"
+                            # bucket_name = "demo"
+                            # object_name = "expertsystem/workflow/2b28ad6a-5f6c-49fc-af50-a58d0c43cb4b/3a21be76-2ea6-4e97-a04e-21544698f484/9419be1d-67db-4669-8197-20fd99088ab1/analysis_output/info.json"
+
+                            active["metadata"][
+                                "info"
+                            ] = ObjectStorageController.get_object(
+                                bucket_name, object_name
+                            )
+                        except:
+                            pass
+                            # S3 operation failed; code: AccessDenied, message: Access Denied., resource: /demo, request_id: 17906EB26AE2C91D, host_id: 36a147e7-9844-456b-b2fa-5aaae991d8ab, bucket_name: demo
+                            # raise Exception("Cannot get info json")
+
+                return {"data": active}
+
+        return {"data": active}
+
+    def _get_data_refs(self, workflow: dict, run: dict, data_type: str):
         file_refs = []
 
-        for activity in run.state["data"]:
+        for activity in run["state"]["data"]:
             for sid, data in activity["data"].items():
-                if sid in run.workflow.stores.keys():
-                    if run.workflow.stores[sid]["type"] == "DataObject":
+                if sid in workflow["stores"].keys():
+                    if workflow["stores"][sid]["type"] == data_type:
                         if "get" in data.keys():
                             file_refs.extend(data["get"])
                         if "set" in data.keys():
                             file_refs.extend(data["set"])
 
         return file_refs
+
+    def get_dataobject_refs(self, workflow: dict, run: dict):
+        return self._get_data_refs(workflow, run, "DataObject")
+
+    def get_datastore_refs(self, workflow: dict, run: dict):
+        return self._get_data_refs(workflow, run, "DataStore")
+
+    def get_previously_completed_steps(self, workflow, run, criteria: dict = {}):
+        _steps = []
+
+        for step in run.steps:
+            if step["completed"]:
+                task_type = workflow.tasks[step["sid"]]["type"]
+
+                if criteria.get("exclude"):
+                    if criteria["exclude"].get("not_in_type"):
+                        if criteria["exclude"]["not_in_type"] != task_type:
+                            continue
+
+                data = {
+                    "id": step["id"],
+                    "sid": step["sid"],
+                    "name": step["name"],
+                    "type": task_type,
+                    "metadata": step.get("metadata"),
+                }
+
+                if criteria.get("include"):
+                    if criteria["include"].get("class"):
+                        if step.get("metadata"):
+                            if step["metadata"].get("class"):
+                                if (
+                                    criteria["include"]["class"]
+                                    == step["metadata"]["class"]
+                                ):
+                                    _steps.append(data)
+                else:
+                    _steps.append(data)
+
+        return _steps
 
 
 WorkflowEngineController = BaseEngineController()

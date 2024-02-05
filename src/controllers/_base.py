@@ -79,8 +79,31 @@ class BaseController:
     ):
         resource = self.read(db=db, resource_id=resource_id, criteria=criteria)
 
+        if isinstance(resource_in, dict):
+            resource_in["updated_at"] = datetime.now(tz=timezone.utc)
+        else:
+            resource_in.updated_at = datetime.now(tz=timezone.utc)
+
         try:
             return self.repository.update(db=db, db_obj=resource, obj_in=resource_in)
+        except Exception as error:
+            raise InternalServerErrorException(details=jsonable_encoder(error))
+
+    def update_multi(
+        self,
+        db: Session,
+        resource_in: UpdateSchemaType,
+        criteria={"deleted_at": None},
+    ):
+        if isinstance(resource_in, dict):
+            resource_in["updated_at"] = datetime.now(tz=timezone.utc)
+        else:
+            resource_in.updated_at = datetime.now(tz=timezone.utc)
+
+        try:
+            return self.repository.update_multi(
+                db=db, obj_in=resource_in, criteria=criteria
+            )
         except Exception as error:
             raise InternalServerErrorException(details=jsonable_encoder(error))
 
@@ -98,3 +121,6 @@ class BaseController:
             resource_in=resource_in,
             criteria={"deleted_at__not": None},
         )
+
+    def delete(self, db: Session, resource_id: UUID):
+        return self.repository.remove(db=db, id=resource_id)

@@ -11,16 +11,10 @@ from src.config import (
 
 timezone = pytz.timezone("UTC")
 
-# client = connect(
-#     host=TRINO_HOST,
-#     port=TRINO_PORT,
-#     http_scheme=TRINO_SCHEME,
-#     auth=BasicAuthentication(TRINO_USERNAME, TRINO_PASSWORD),
-# )
 client = connect(
-    host="trino.mescobrad.digital-enabler.eng.it",
-    port=443,
-    http_scheme="https",
-    auth=BasicAuthentication("mescobrad-dwh-user", "dwhouse"),
+    host=TRINO_HOST,
+    port=TRINO_PORT,
+    http_scheme=TRINO_SCHEME,
+    auth=BasicAuthentication(TRINO_USERNAME, TRINO_PASSWORD),
     timezone=str(timezone),
 )

@@ -1,9 +1,12 @@
+from typing import List
 from sqlalchemy import Column, ForeignKey, Table
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, relationship, mapped_column
 from src.config import DB_SCHEMA
-from ._base import Base
+from ._base import Base, GUID
 from .ModuleModel import BaseModuleModel
 from .ModuleCategoryModel import BaseModuleCategoryModel
+from .PlatformUserDefaultWorkspaceModel import BasePlatformUserDefaultWorkspaceModel
+from .PlatformWorkspaceModel import BasePlatformWorkspaceModel
 from .FeatureModel import BaseFeatureModel
 from .VariableModel import BaseVariableModel
 from .UserModel import BaseUserModel
@@ -22,6 +25,25 @@ variables_features = Table(
 )
 
 
+class PlatformWorkspaceModel(BasePlatformWorkspaceModel):
+    user_workspaces: Mapped[List["PlatformUserDefaultWorkspaceModel"]] = relationship(
+        back_populates="workspace"
+    )
+
+
+class PlatformUserDefaultWorkspaceModel(BasePlatformUserDefaultWorkspaceModel):
+    workspace: Mapped["PlatformWorkspaceModel"] = relationship(
+        back_populates="user_workspaces"
+    )
+    ws_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            f"{BasePlatformUserDefaultWorkspaceModel.__table_args__['schema']}.{PlatformWorkspaceModel.__tablename__}.ws_id"
+        ),
+        index=True,
+        nullable=True,
+    )
+
+
 class FeatureModel(BaseFeatureModel):
     variables: Mapped[list["VariableModel"]] = relationship(
         secondary=variables_features, back_populates="features", cascade="all"
@@ -35,11 +57,17 @@ class VariableModel(BaseVariableModel):
 
 
 class UserModel(BaseUserModel):
-    files: Mapped[list["FileModel"]] = relationship(back_populates="user")
+    pass
 
 
 class FileModel(BaseFileModel):
-    user: Mapped["UserModel"] = relationship(back_populates="files")
+    ws_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            f"{BasePlatformUserDefaultWorkspaceModel.__table_args__['schema']}.{PlatformWorkspaceModel.__tablename__}.ws_id"
+        ),
+        index=True,
+        nullable=True,
+    )
 
 
 class ModuleCategoryModel(BaseModuleCategoryModel):
@@ -57,7 +85,21 @@ class WorkflowCategoryModel(BaseWorkflowCategoryModel):
 class WorkflowModel(BaseWorkflowModel):
     runs: Mapped["RunModel"] = relationship(back_populates="workflow")
     category: Mapped["WorkflowCategoryModel"] = relationship(back_populates="workflows")
+    ws_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            f"{BasePlatformUserDefaultWorkspaceModel.__table_args__['schema']}.{PlatformWorkspaceModel.__tablename__}.ws_id"
+        ),
+        index=True,
+        nullable=True,
+    )
 
 
 class RunModel(BaseRunModel):
     workflow: Mapped["WorkflowModel"] = relationship(back_populates="runs")
+    ws_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            f"{BasePlatformUserDefaultWorkspaceModel.__table_args__['schema']}.{PlatformWorkspaceModel.__tablename__}.ws_id"
+        ),
+        index=True,
+        nullable=True,
+    )
