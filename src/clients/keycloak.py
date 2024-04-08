@@ -19,11 +19,12 @@ class BaseOAuthClient:
         return self.__client.well_known()
 
     def get_auth_code(self):
-        return self.__client.auth_url(
+        authUrl = self.__client.auth_url(
             redirect_uri=OAUTH_CALLBACK_URL,
             scope=OAUTH_LOGIN_SCOPE,
             # state="your_state_info",
         )
+        return authUrl
 
     def get_access_token(self, code: str):
         return self.__client.token(

@@ -8,7 +8,7 @@ from src.database import get_db
 from src.dependencies.authentication import clean_before_login, validate_user
 
 router = APIRouter(
-    prefix="/oauth",
+    prefix="/auth",
     tags=["Authentication"],
     responses={404: {"message": "Not found"}},
 )
