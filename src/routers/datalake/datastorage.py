@@ -53,7 +53,7 @@ def list_catalog_table_sources(catalog: str, schema: str, table: str) -> Any:
 
 
 @router.get("/{catalog}/{schema}/{table}/{filename}/download")
-def douwnload_catalog_table_sources(
+def download_catalog_table_sources(
     catalog: str, schema: str, table: str, filename: str
 ) -> Any:
     """
