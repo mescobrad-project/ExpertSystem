@@ -50,5 +50,22 @@ class BaseController:
             "data": data,
         }
 
+    def list_catalog_table_sources(self, catalog: str, schema: str, table: str):
+        data = []
+
+        try:
+            data = self.__exec(
+                f"SELECT DISTINCT source FROM {catalog}.{schema}.{table}"
+            )
+        except:
+            data = []
+
+        return {
+            "catalog": catalog,
+            "schema": schema,
+            "table": table,
+            "data": data,
+        }
+
 
 DataStorageController = BaseController(client)
