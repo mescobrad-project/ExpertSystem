@@ -18,7 +18,8 @@ class BaseController:
         self.__client = client
 
     def login(self):
-        return self.__client.get_auth_code()
+        code = self.__client.get_auth_code()
+        return code
 
     def token(self, code: str):
         return self.__client.get_access_token(code)

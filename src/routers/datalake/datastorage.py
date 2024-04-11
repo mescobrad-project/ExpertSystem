@@ -50,3 +50,15 @@ def list_catalog_table_sources(catalog: str, schema: str, table: str) -> Any:
     Get table sources given a catalog schema.
     """
     return DataStorageController.list_catalog_table_sources(catalog, schema, table)
+
+
+@router.get("/{catalog}/{schema}/{table}/{filename}/download")
+def download_catalog_table_sources(
+    catalog: str, schema: str, table: str, filename: str
+) -> Any:
+    """
+    Download source given a catalog schema, table and source name.
+    """
+    return DataStorageController.download_catalog_table_sources(
+        catalog, schema, table, filename
+    )

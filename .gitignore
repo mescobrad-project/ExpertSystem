@@ -299,3 +299,5 @@ dist
 # Versioning files
 **/version.py
 ntua/
+
+venv
