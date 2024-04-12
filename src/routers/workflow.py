@@ -27,7 +27,7 @@ router = APIRouter(
 @router.get("", response_model=dict[str, Any | list[Workflow]])
 def read_workflows(
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
@@ -57,7 +57,7 @@ def read_workflows(
 def create_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_in: WorkflowCreate,
 ) -> Any:
     """
@@ -79,7 +79,7 @@ def read_entity_types() -> Any:
 @router.get("/deleted", response_model=dict[str, Any | list[Workflow]])
 def read_deleted_workflows(
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
@@ -109,7 +109,7 @@ def read_deleted_workflows(
 def read_deleted_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
 ) -> Any:
     """
@@ -125,7 +125,7 @@ def read_deleted_workflow(
 @router.get("/search", response_model=Workflow)
 def search_workflows(
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     name: str = None,
 ) -> Any:
     """
@@ -142,7 +142,7 @@ def search_workflows(
 def read_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
 ) -> Any:
     """
@@ -157,7 +157,7 @@ def read_workflow(
 def update_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
     workflow_in: WorkflowUpdate,
 ) -> Any:
@@ -175,7 +175,7 @@ def update_workflow(
 def change_workspace(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     user: int = Depends(get_user_only),
     workflow_id: UUID,
     workflow_in: WorkflowWorkspaceChange,
@@ -235,7 +235,7 @@ def read_task_details(
 def read_workflow_runs(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
     skip: int = 0,
     limit: int = 100,
