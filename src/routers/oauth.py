@@ -1,5 +1,6 @@
 from typing import Any
 from fastapi import APIRouter, Depends, Response
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from sqlalchemy.orm import Session
 from src.controllers.OAuthController import OAuthController
@@ -37,9 +38,7 @@ def oauth_callback(
     Route used to retrieve auth token.
     """
     token, user = OAuthController.oauth_callback(db, code)
-    return Response(
-        f"<html><body><script defer>window.location.assign('{ES_UI_BASE_URL}/auth/callback/{user}/{token}')</script></body></html>"
-    )
+    return RedirectResponse(url=f"{ES_UI_BASE_URL}/auth/callback/{user}/{token}")
 
 
 @router.get("/logout")
