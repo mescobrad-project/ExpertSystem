@@ -24,7 +24,7 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=dict[str, Any | list[Workflow]])
+@router.get("/", response_model=dict[str, Any | list[Workflow]])
 def read_workflows(
     db: Session = Depends(get_db),
     ws_id: int = Depends(validate_workspace),
@@ -53,7 +53,7 @@ def read_workflows(
     )
 
 
-@router.post("")
+@router.post("/")
 def create_workflow(
     *,
     db: Session = Depends(get_db),
