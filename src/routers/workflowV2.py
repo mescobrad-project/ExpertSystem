@@ -16,6 +16,8 @@ from src.dependencies.authentication import validate_user, get_user_only
 from src.dependencies.workspace import validate_workspace
 from src.schemas.RunSchema import Run
 
+from src.models._all import NewWorkflowModel
+
 router = APIRouter(
     prefix="/v2/workflow",
     tags=["workflow"],
@@ -41,16 +43,10 @@ def read_workflows(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    return WorkflowController.read_multi(
-        db,
-        skip,
-        limit,
-        order,
-        direction,
-        is_template,
-        category,
-        criteria={"deleted_at": None, "ws_id": ws_id},
-    )
+    return {'data': db.query(NewWorkflowModel).filter(NewWorkflowModel.ws_id == ws_id and NewWorkflowModel.is_template == is_template).slice(skip, limit).all(), 
+                'paging': {'previous_link': f'/v2/workflow?skip={skip - limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}',
+                'next_link': f'/v2/workflow?skip={skip + limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}'}
+    }
 
 
 @router.post("/")
@@ -58,7 +54,7 @@ def create_workflow(
     *,
     db: Session = Depends(get_db),
     ws_id: int = 1, #Depends(validate_workspace),
-    workflow_in: WorkflowCreate,
+    workflow_in: Any,
 ) -> Any:
     """
     Create new workflow.
