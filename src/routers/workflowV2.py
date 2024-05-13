@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body, Request
 from sqlalchemy.orm import Session
 from src.database import get_db
 from src.models._all import WorkflowModel
@@ -61,16 +61,16 @@ def read_workflows(
 
 
 @router.post("/")
-def create_workflow(
+async def create_workflow(
     *,
     db: Session = Depends(get_db),
     ws_id: int = 1, #Depends(validate_workspace),
-    workflow_in: Any,
+    workflow_in: Annotated[Any, Body(embed=True)],
 ) -> Any:
     """
     Create new workflow.
     """
-    
+    win = workflow_in
     workflow = {
         "name": workflow_in.name,
         "description": workflow_in.description,
@@ -81,8 +81,12 @@ def create_workflow(
         "ws_id": ws_id,
     }
     db.begin()
-    workflow = db.execute(NewWorkflowModel.__table__.insert().values(workflow))
-    print(workflow.id)
+    try:
+        workflow = db.execute(NewWorkflowModel.__table__.insert().values(workflow))
+        print(workflow.id)
+    except Exception as e:
+        db.rollback()
+        raise e
     steps = workflow_in.steps
     for step_in in steps:
         step_in['workflow_id'] = workflow.id
