@@ -88,39 +88,43 @@ async def create_workflow(
         raise e
     steps = workflow_in.steps
     for step_in in steps:
-        step_in['workflow_id'] = workflow.id
+        step_in.workflow_id = workflow['id']
         step = {
+            "id": uuid.uuid4(),
             "name": step_in.name,
             "description": step_in.description,
-            "workflow_id": workflow.id,
+            "workflow_id": workflow["id"],
             "order": step_in.order,
             "ws_id": ws_id
         }
-        step = db.execute(NewWorkflowStepModel.__table__.insert().values(step))
+        db.execute(NewWorkflowStepModel.__table__.insert().values(step))
         for action_in in step_in.actions:
-            action_in['step_id'] = step.id
+            action_in.step_id = step['id']
             action = {
+                "id": uuid.uuid4(),
                 "name": action_in.name,
                 "description": action_in.description,
-                "step_id": step.id,
+                "workflow_step_id": step["id"],
                 "ws_id": ws_id,
                 "order": action_in.order,
-                "action_type": action_in.action_type,
+                "action": action_in.action_type,
                 "is_conditional": action_in.is_conditional,
                 "weight_to_true": action_in.weight_to_true
             }
-            action = db.execute(NewWorkflowActionModel.__table__.insert().values(action))
-            if action_in.conditional:
-                conditional = {
-                    "action_id": action.id,
-                    "ws_id": ws_id,
-                    "variable": action_in.conditional['variable'],
-                    "value": action_in.conditional['value'],
-                    "weight": action_in.conditional['weight'],
-                    "metadata": action_in.conditional['metadata'],
-                    "order": action_in.conditional['order']
-                }
-                db.execute(NewWorkflowActionConditionalModel.__table__.insert().values(conditional))
+            db.execute(NewWorkflowActionModel.__table__.insert().values(action))
+            if action_in.is_conditional:
+                for conditional_in in action_in.conditions:
+                    conditional = {
+                        "id": uuid.uuid4(),
+                        "workflow_action_id": action["id"],
+                        "ws_id": ws_id,
+                        "variable": conditional_in.variable,
+                        "value": conditional_in.value,
+                        "weight": conditional_in.weight,
+                        "metadata_value": conditional_in.metadata_value,
+                        "order": conditional_in.order
+                    }
+                    db.execute(NewWorkflowActionConditionalModel.__table__.insert().values(conditional))
     db.commit()
         
 

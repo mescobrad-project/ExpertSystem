@@ -10,7 +10,7 @@ class WorkflowActionConditionalBase(FormBase):
     variable: str | None = None
     value: str | None = None
     weight: float | None = None
-    metadata: dict | None = None
+    metadata_value: str | None = None
     order: int | None = None
     
 class WorkflowActionBase(FormBase):
@@ -26,6 +26,7 @@ class WorkflowActionBase(FormBase):
 class WorkflowStepBase(FormBase):
     name: str | None = None
     description: str | None = None
+    workflow_id: UUID | None = None
     order: int | None = None
     actions: list[WorkflowActionBase] | None = None
     ws_id: int | None = None

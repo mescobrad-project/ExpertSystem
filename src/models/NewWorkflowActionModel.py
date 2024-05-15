@@ -14,3 +14,4 @@ class BaseNewWorkflowActionModel(Base):
     is_conditional: Mapped[bool] = mapped_column(Boolean, nullable=True, index = False)
     action: Mapped[str] = mapped_column(String, nullable=False, index=False)
     weight_to_true: Mapped[int] = mapped_column(Integer, nullable=True, index = False)
+    ws_id: Mapped[int] = mapped_column(Integer, nullable=True, index=True)
