@@ -13,6 +13,7 @@ from src.dependencies.authentication import validate_user, get_user_only
 from src.dependencies.workspace import validate_workspace
 from src.schemas.RunSchema import Run
 import uuid
+from src.services.NewWorkflowsService import createWorkflow, getWorkflows
 
 from src.models._all import NewWorkflowModel, NewWorkflowStepModel, NewWorkflowActionModel, NewWorkflowActionConditionalModel
 
@@ -41,21 +42,8 @@ def read_workflows(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
+    return getWorkflows(db, ws_id, skip, limit, category, is_template, order, direction)
     
-    workflows = db.query(NewWorkflowModel).filter(NewWorkflowModel.ws_id == ws_id and NewWorkflowModel.is_template == is_template).slice(skip, limit).all()
-    for w in workflows:
-        steps = db.query(NewWorkflowStepModel).filter(NewWorkflowStepModel.workflow_id == w.id).all()
-        for s in steps:
-            actions = db.query(NewWorkflowActionModel).filter(NewWorkflowActionModel.step_id == s.id).all()
-            for a in actions:
-                conditionals = db.query(NewWorkflowActionConditionalModel).filter(NewWorkflowActionConditionalModel.action_id == a.id).all()
-                a.conditional = conditionals
-            s.actions = actions
-        w.steps = steps
-    return {'data': workflows, 
-                'paging': {'previous_link': f'/v2/workflow?skip={skip - limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}',
-                'next_link': f'/v2/workflow?skip={skip + limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}'}
-    }
 
 
 @router.post("/")
@@ -68,64 +56,7 @@ async def create_workflow(
     """
     Create new workflow.
     """
-    win = workflow_in
-    workflow = {
-        "id": uuid.uuid4(),
-        "name": workflow_in.name,
-        "description": workflow_in.description,
-        "category_id": workflow_in.category_id,
-        "is_template": workflow_in.is_template,
-        "is_part_of_other": workflow_in.is_part_of_other,
-        "json_representation": workflow_in.json_representation,
-        "ws_id": ws_id,
-    }
-    db.begin()
-    try:
-        db.execute(NewWorkflowModel.__table__.insert().values(workflow))
-        print(workflow['id'])
-    except Exception as e:
-        db.rollback()
-        raise e
-    steps = workflow_in.steps
-    for step_in in steps:
-        step_in.workflow_id = workflow['id']
-        step = {
-            "id": uuid.uuid4(),
-            "name": step_in.name,
-            "description": step_in.description,
-            "workflow_id": workflow["id"],
-            "order": step_in.order,
-            "ws_id": ws_id
-        }
-        db.execute(NewWorkflowStepModel.__table__.insert().values(step))
-        for action_in in step_in.actions:
-            action_in.step_id = step['id']
-            action = {
-                "id": uuid.uuid4(),
-                "name": action_in.name,
-                "description": action_in.description,
-                "workflow_step_id": step["id"],
-                "ws_id": ws_id,
-                "order": action_in.order,
-                "action": action_in.action_type,
-                "is_conditional": action_in.is_conditional,
-                "weight_to_true": action_in.weight_to_true
-            }
-            db.execute(NewWorkflowActionModel.__table__.insert().values(action))
-            if action_in.is_conditional:
-                for conditional_in in action_in.conditions:
-                    conditional = {
-                        "id": uuid.uuid4(),
-                        "workflow_action_id": action["id"],
-                        "ws_id": ws_id,
-                        "variable": conditional_in.variable,
-                        "value": conditional_in.value,
-                        "weight": conditional_in.weight,
-                        "metadata_value": conditional_in.metadata_value,
-                        "order": conditional_in.order
-                    }
-                    db.execute(NewWorkflowActionConditionalModel.__table__.insert().values(conditional))
-    db.commit()
+    return createWorkflow(db, workflow_in, ws_id)
         
 
 @router.get("/deleted", response_model=dict[str, Any | list[WorkflowBase]])

@@ -36,7 +36,7 @@ class WorkflowBase(FormBase):
     description: str | None = None
     steps: list[WorkflowStepBase] | None = None
     settings: dict | None = None
-    json_representation: dict | None = None
+    json_representation: str | None = None
     is_template: bool = False
     ws_id: int | None = None
     category_id: int | None = None
