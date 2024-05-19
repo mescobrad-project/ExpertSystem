@@ -1,7 +1,8 @@
 from typing import Any
 from sqlalchemy.orm import Session
 from src.schemas.NewWorkflowSchema import (
-    WorkflowBase
+    WorkflowBase,
+    WorkflowStepBase
 )
 import uuid
 from src.models._all import NewWorkflowModel, NewWorkflowStepModel, NewWorkflowActionModel, NewWorkflowActionConditionalModel
@@ -97,3 +98,65 @@ def getWorkflows(db: Session,
                 'next_link': f'/v2/workflow?skip={skip + limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}'
             }
     }
+
+def getWorkflow(db: Session, ws_id: int, workflow_id: uuid.UUID) -> WorkflowBase:
+    """
+    Retrieve a workflow with its metadata.
+    """
+    workflow = db.query(NewWorkflowModel).filter(NewWorkflowModel.id == workflow_id and NewWorkflowModel.ws_id == ws_id).first()
+    steps = db.query(NewWorkflowStepModel).filter(NewWorkflowStepModel.workflow_id == workflow_id).all()
+    for s in steps:
+        actions = db.query(NewWorkflowActionModel).filter(NewWorkflowActionModel.step_id == s.id).all()
+        for a in actions:
+            conditionals = db.query(NewWorkflowActionConditionalModel).filter(NewWorkflowActionConditionalModel.action_id == a.id).all()
+            a.conditional = conditionals
+        s.actions = actions
+    workflow.steps = steps
+    return workflow
+
+def addStep(db: Session, step_in: WorkflowStepBase, ws_id: int) -> WorkflowStepBase:
+    """
+    Add a step to a workflow.
+    """
+    step = {
+        "id": uuid.uuid4(),
+        "name": step_in.name,
+        "description": step_in.description,
+        "workflow_id": step_in.workflow_id,
+        "order": step_in.order,
+        "ws_id": ws_id
+    }
+    db.execute(NewWorkflowStepModel.__table__.insert().values(step))
+    return step
+
+def addAction(db: Session, action_in: NewWorkflowActionModel, ws_id: int) -> NewWorkflowActionModel:
+    """
+    Add an action to a step.
+    """
+    action = {
+        "id": uuid.uuid4(),
+        "name": action_in.name,
+        "description": action_in.description,
+        "workflow_step_id": action_in.step_id,
+        "ws_id": ws_id,
+        "order": action_in.order,
+        "action": action_in.action_type,
+        "is_conditional": action_in.is_conditional,
+        "weight_to_true": action_in.weight_to_true
+    }
+    db.execute(NewWorkflowActionModel.__table__.insert().values(action))
+    if action_in.is_conditional:
+        for conditional_in in action_in.conditions:
+            conditional = {
+                "id": uuid.uuid4(),
+                "workflow_action_id": action["id"],
+                "ws_id": ws_id,
+                "variable": conditional_in.variable,
+                "value": conditional_in.value,
+                "weight": conditional_in.weight,
+                "metadata_value": conditional_in.metadata_value,
+                "order": conditional_in.order
+            }
+            db.execute(NewWorkflowActionConditionalModel.__table__.insert().values(conditional))
+    return action
+
