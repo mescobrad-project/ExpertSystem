@@ -18,5 +18,5 @@ from ._association import (
     NewWorkflowModel,
     NewWorkflowStepModel,
     NewWorkflowActionModel,
-    NewWorkflowActionConditionalModel
+    NewWorkflowActionConditionalModel,
 )

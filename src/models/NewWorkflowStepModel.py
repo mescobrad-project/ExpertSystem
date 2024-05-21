@@ -12,4 +12,3 @@ class BaseNewWorkflowStepModel(Base):
     type: Mapped[str] = mapped_column(String, nullable=True, index=True)
     order: Mapped[int] = mapped_column(Integer, nullable=True, index=True)
     ws_id: Mapped[int] = mapped_column(Integer, nullable=True, index=True)
-    

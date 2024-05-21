@@ -85,7 +85,7 @@ def parse_xml(xml_str):
             process.findall(f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_ASSOCIATION}')
         )
 
-        stores.update( 
+        stores.update(
             parse_data_store_refs(
                 process.findall(
                     f'{{{XML_NAMESPACES["bpmn2"]}}}{XML_DATA_STORE_REFERENCE}'

@@ -108,6 +108,7 @@ class RunModel(BaseRunModel):
         nullable=True,
     )
 
+
 class NewWorkflowModel(BaseNewWorkflowModel):
     ws_id: Mapped[int] = mapped_column(
         ForeignKey(
@@ -117,11 +118,14 @@ class NewWorkflowModel(BaseNewWorkflowModel):
         nullable=True,
     )
 
+
 class NewWorkflowStepModel(BaseNewWorkflowStepModel):
     pass
 
+
 class NewWorkflowActionModel(BaseNewWorkflowActionModel):
     pass
+
 
 class NewWorkflowActionConditionalModel(BaseNewWorkflowActionConditionalModel):
     pass

@@ -5,6 +5,7 @@ from src.schemas._base import Base, FormBase
 
 # Shared properties
 
+
 class WorkflowActionConditionalBase(FormBase):
     action_id: UUID | None = None
     variable: str | None = None
@@ -12,7 +13,8 @@ class WorkflowActionConditionalBase(FormBase):
     weight: float | None = None
     metadata_value: str | None = None
     order: int | None = None
-    
+
+
 class WorkflowActionBase(FormBase):
     name: str | None = None
     description: str | None = None
@@ -22,7 +24,8 @@ class WorkflowActionBase(FormBase):
     is_conditional: bool | None = None
     weight_to_true: float | None = None
     conditions: list[WorkflowActionConditionalBase] | None = None
-    
+
+
 class WorkflowStepBase(FormBase):
     name: str | None = None
     description: str | None = None
@@ -30,6 +33,7 @@ class WorkflowStepBase(FormBase):
     order: int | None = None
     actions: list[WorkflowActionBase] | None = None
     ws_id: int | None = None
+
 
 class WorkflowBase(FormBase):
     name: str | None = None

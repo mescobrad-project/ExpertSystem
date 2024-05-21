@@ -1,11 +1,14 @@
 from typing import Any
 from sqlalchemy.orm import Session
-from src.schemas.NewWorkflowSchema import (
-    WorkflowBase,
-    WorkflowStepBase
-)
+from src.schemas.NewWorkflowSchema import WorkflowBase, WorkflowStepBase
 import uuid
-from src.models._all import NewWorkflowModel, NewWorkflowStepModel, NewWorkflowActionModel, NewWorkflowActionConditionalModel
+from src.models._all import (
+    NewWorkflowModel,
+    NewWorkflowStepModel,
+    NewWorkflowActionModel,
+    NewWorkflowActionConditionalModel,
+)
+
 
 def createWorkflow(db: Session, workflow_in: WorkflowBase, ws_id: int) -> WorkflowBase:
     """
@@ -24,24 +27,24 @@ def createWorkflow(db: Session, workflow_in: WorkflowBase, ws_id: int) -> Workfl
     db.begin()
     try:
         db.execute(NewWorkflowModel.__table__.insert().values(workflow))
-        print(workflow['id'])
+        print(workflow["id"])
     except Exception as e:
         db.rollback()
         raise e
     steps = workflow_in.steps
     for step_in in steps:
-        step_in.workflow_id = workflow['id']
+        step_in.workflow_id = workflow["id"]
         step = {
             "id": uuid.uuid4(),
             "name": step_in.name,
             "description": step_in.description,
             "workflow_id": workflow["id"],
             "order": step_in.order,
-            "ws_id": ws_id
+            "ws_id": ws_id,
         }
         db.execute(NewWorkflowStepModel.__table__.insert().values(step))
         for action_in in step_in.actions:
-            action_in.step_id = step['id']
+            action_in.step_id = step["id"]
             action = {
                 "id": uuid.uuid4(),
                 "name": action_in.name,
@@ -51,7 +54,7 @@ def createWorkflow(db: Session, workflow_in: WorkflowBase, ws_id: int) -> Workfl
                 "order": action_in.order,
                 "action": action_in.action_type,
                 "is_conditional": action_in.is_conditional,
-                "weight_to_true": action_in.weight_to_true
+                "weight_to_true": action_in.weight_to_true,
             }
             db.execute(NewWorkflowActionModel.__table__.insert().values(action))
             if action_in.is_conditional:
@@ -64,56 +67,111 @@ def createWorkflow(db: Session, workflow_in: WorkflowBase, ws_id: int) -> Workfl
                         "value": conditional_in.value,
                         "weight": conditional_in.weight,
                         "metadata_value": conditional_in.metadata_value,
-                        "order": conditional_in.order
+                        "order": conditional_in.order,
                     }
-                    db.execute(NewWorkflowActionConditionalModel.__table__.insert().values(conditional))
+                    db.execute(
+                        NewWorkflowActionConditionalModel.__table__.insert().values(
+                            conditional
+                        )
+                    )
     db.commit()
 
-def getWorkflows(db: Session,
+
+def getWorkflows(
+    db: Session,
     ws_id: int,
     skip: int = 0,
     limit: int = 100,
     category: str = None,
     is_template: bool = False,
     order: str = None,
-    direction: str = None) -> Any:
+    direction: str = None,
+) -> Any:
     """
     Retrieve workflows with their metadata.
     Params explain:
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    workflows = db.query(NewWorkflowModel).filter(NewWorkflowModel.ws_id == ws_id and NewWorkflowModel.is_template == is_template).slice(skip, limit).all()
+    workflows = (
+        db.query(NewWorkflowModel)
+        .filter(
+            NewWorkflowModel.ws_id == ws_id
+            and NewWorkflowModel.is_template == is_template
+        )
+        .slice(skip, limit)
+        .all()
+    )
     for w in workflows:
-        steps = db.query(NewWorkflowStepModel).filter(NewWorkflowStepModel.workflow_id == str(w.id)).all()
+        steps = (
+            db.query(NewWorkflowStepModel)
+            .filter(NewWorkflowStepModel.workflow_id == str(w.id))
+            .all()
+        )
         for s in steps:
-            actions = db.query(NewWorkflowActionModel).filter(NewWorkflowActionModel.workflow_step_id == str(s.id)).all()
+            actions = (
+                db.query(NewWorkflowActionModel)
+                .filter(NewWorkflowActionModel.workflow_step_id == str(s.id))
+                .all()
+            )
             for a in actions:
-                conditionals = db.query(NewWorkflowActionConditionalModel).filter(NewWorkflowActionConditionalModel.workflow_action_id == str(a.id)).all()
+                conditionals = (
+                    db.query(NewWorkflowActionConditionalModel)
+                    .filter(
+                        NewWorkflowActionConditionalModel.workflow_action_id
+                        == str(a.id)
+                    )
+                    .all()
+                )
                 a.conditional = conditionals
             s.actions = actions
         w.steps = steps
-    return {'data': workflows, 
-            'paging': {'previous_link': f'/v2/workflow?skip={skip - limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}',
-                'next_link': f'/v2/workflow?skip={skip + limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}',
-                'count': db.query(NewWorkflowModel).filter(NewWorkflowModel.ws_id == ws_id and NewWorkflowModel.is_template == is_template).count()
-            }
+    return {
+        "data": workflows,
+        "paging": {
+            "previous_link": f"/v2/workflow?skip={skip - limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}",
+            "next_link": f"/v2/workflow?skip={skip + limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}",
+            "count": db.query(NewWorkflowModel)
+            .filter(
+                NewWorkflowModel.ws_id == ws_id
+                and NewWorkflowModel.is_template == is_template
+            )
+            .count(),
+        },
     }
+
 
 def getWorkflow(db: Session, ws_id: int, workflow_id: uuid.UUID) -> WorkflowBase:
     """
     Retrieve a workflow with its metadata.
     """
-    workflow = db.query(NewWorkflowModel).filter(NewWorkflowModel.id == workflow_id and NewWorkflowModel.ws_id == ws_id).first()
-    steps = db.query(NewWorkflowStepModel).filter(NewWorkflowStepModel.workflow_id == workflow_id).all()
+    workflow = (
+        db.query(NewWorkflowModel)
+        .filter(NewWorkflowModel.id == workflow_id and NewWorkflowModel.ws_id == ws_id)
+        .first()
+    )
+    steps = (
+        db.query(NewWorkflowStepModel)
+        .filter(NewWorkflowStepModel.workflow_id == workflow_id)
+        .all()
+    )
     for s in steps:
-        actions = db.query(NewWorkflowActionModel).filter(NewWorkflowActionModel.step_id == s.id).all()
+        actions = (
+            db.query(NewWorkflowActionModel)
+            .filter(NewWorkflowActionModel.step_id == s.id)
+            .all()
+        )
         for a in actions:
-            conditionals = db.query(NewWorkflowActionConditionalModel).filter(NewWorkflowActionConditionalModel.action_id == a.id).all()
+            conditionals = (
+                db.query(NewWorkflowActionConditionalModel)
+                .filter(NewWorkflowActionConditionalModel.action_id == a.id)
+                .all()
+            )
             a.conditional = conditionals
         s.actions = actions
     workflow.steps = steps
     return workflow
+
 
 def addStep(db: Session, step_in: WorkflowStepBase, ws_id: int) -> WorkflowStepBase:
     """
@@ -125,12 +183,15 @@ def addStep(db: Session, step_in: WorkflowStepBase, ws_id: int) -> WorkflowStepB
         "description": step_in.description,
         "workflow_id": step_in.workflow_id,
         "order": step_in.order,
-        "ws_id": ws_id
+        "ws_id": ws_id,
     }
     db.execute(NewWorkflowStepModel.__table__.insert().values(step))
     return step
 
-def addAction(db: Session, action_in: NewWorkflowActionModel, ws_id: int) -> NewWorkflowActionModel:
+
+def addAction(
+    db: Session, action_in: NewWorkflowActionModel, ws_id: int
+) -> NewWorkflowActionModel:
     """
     Add an action to a step.
     """
@@ -143,7 +204,7 @@ def addAction(db: Session, action_in: NewWorkflowActionModel, ws_id: int) -> New
         "order": action_in.order,
         "action": action_in.action_type,
         "is_conditional": action_in.is_conditional,
-        "weight_to_true": action_in.weight_to_true
+        "weight_to_true": action_in.weight_to_true,
     }
     db.execute(NewWorkflowActionModel.__table__.insert().values(action))
     if action_in.is_conditional:
@@ -156,8 +217,9 @@ def addAction(db: Session, action_in: NewWorkflowActionModel, ws_id: int) -> New
                 "value": conditional_in.value,
                 "weight": conditional_in.weight,
                 "metadata_value": conditional_in.metadata_value,
-                "order": conditional_in.order
+                "order": conditional_in.order,
             }
-            db.execute(NewWorkflowActionConditionalModel.__table__.insert().values(conditional))
+            db.execute(
+                NewWorkflowActionConditionalModel.__table__.insert().values(conditional)
+            )
     return action
-
