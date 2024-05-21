@@ -14,6 +14,10 @@ from .FileModel import BaseFileModel
 from .WorkflowCategoryModel import BaseWorkflowCategoryModel
 from .WorkflowModel import BaseWorkflowModel
 from .RunModel import BaseRunModel
+from .NewWorkflowModel import BaseNewWorkflowModel
+from .NewWorkflowStepModel import BaseNewWorkflowStepModel
+from .NewWorkflowActionModel import BaseNewWorkflowActionModel
+from .NewWorkflowActionConditionalModel import BaseNewWorkflowActionConditionalModel
 
 Base.metadata.schema = DB_SCHEMA
 
@@ -103,3 +107,25 @@ class RunModel(BaseRunModel):
         index=True,
         nullable=True,
     )
+
+
+class NewWorkflowModel(BaseNewWorkflowModel):
+    ws_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            f"{BasePlatformUserDefaultWorkspaceModel.__table_args__['schema']}.{PlatformWorkspaceModel.__tablename__}.ws_id"
+        ),
+        index=True,
+        nullable=True,
+    )
+
+
+class NewWorkflowStepModel(BaseNewWorkflowStepModel):
+    pass
+
+
+class NewWorkflowActionModel(BaseNewWorkflowActionModel):
+    pass
+
+
+class NewWorkflowActionConditionalModel(BaseNewWorkflowActionConditionalModel):
+    pass

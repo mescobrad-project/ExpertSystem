@@ -92,6 +92,7 @@ def parse_xml(xml_str):
                 )
             )
         )
+
         stores.update(
             parse_data_object_refs(
                 process.findall(

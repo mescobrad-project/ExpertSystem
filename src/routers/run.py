@@ -24,7 +24,7 @@ router = APIRouter(
 def run_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     workflow_id: UUID,
     data: dict = {},
 ):
@@ -44,7 +44,7 @@ def run_workflow(
 def read_run(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
 ) -> Any:
     """
@@ -72,7 +72,7 @@ def name_a_run(
 def show_next_task(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
 ) -> Any:
     """
@@ -85,7 +85,7 @@ def show_next_task(
 def get_dataobjects_from_stored_data(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
 ) -> Any:
     """
@@ -98,7 +98,7 @@ def get_dataobjects_from_stored_data(
 def get_datastores_from_stored_data(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
 ) -> Any:
     """
@@ -111,7 +111,7 @@ def get_datastores_from_stored_data(
 def run_specific_task(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
 ) -> Any:
@@ -125,7 +125,7 @@ def run_specific_task(
 def select_next_task(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
     next_step_id: UUID,
@@ -140,7 +140,7 @@ def select_next_task(
 def init_parallel_gateway(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
     next_step_id: UUID,
@@ -155,7 +155,7 @@ def init_parallel_gateway(
 def exec_script_task(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
     data: dict = {},
@@ -170,7 +170,7 @@ def exec_script_task(
 def exec_call_activity(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
     data: CallActivityParams,
@@ -185,7 +185,7 @@ def exec_call_activity(
 def send_task(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
     data: dict = {},
@@ -200,7 +200,7 @@ def send_task(
 def receive_task(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
     data: dict = {},
@@ -215,7 +215,7 @@ def receive_task(
 def complete_task(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
     metadata: TaskMetadataBodyParameter | None = None,
@@ -264,7 +264,7 @@ def complete_script_task(
 def call_activity_is_completed(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
 ) -> Any:
     """
@@ -277,7 +277,7 @@ def call_activity_is_completed(
 def exec_event_task_actions(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
 ) -> Any:
@@ -311,7 +311,7 @@ def get_task_metadata(
 def get_completed_tasks(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     class_name: str | None = None,
     not_in_type: str | None = None,

@@ -15,4 +15,8 @@ from ._association import (
     WorkflowCategoryModel,
     WorkflowModel,
     RunModel,
+    NewWorkflowModel,
+    NewWorkflowStepModel,
+    NewWorkflowActionModel,
+    NewWorkflowActionConditionalModel,
 )
