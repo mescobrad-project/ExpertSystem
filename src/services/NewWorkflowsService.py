@@ -85,17 +85,18 @@ def getWorkflows(db: Session,
     """
     workflows = db.query(NewWorkflowModel).filter(NewWorkflowModel.ws_id == ws_id and NewWorkflowModel.is_template == is_template).slice(skip, limit).all()
     for w in workflows:
-        steps = db.query(NewWorkflowStepModel).filter(NewWorkflowStepModel.workflow_id == w.id).all()
+        steps = db.query(NewWorkflowStepModel).filter(NewWorkflowStepModel.workflow_id == str(w.id)).all()
         for s in steps:
-            actions = db.query(NewWorkflowActionModel).filter(NewWorkflowActionModel.step_id == s.id).all()
+            actions = db.query(NewWorkflowActionModel).filter(NewWorkflowActionModel.workflow_step_id == str(s.id)).all()
             for a in actions:
-                conditionals = db.query(NewWorkflowActionConditionalModel).filter(NewWorkflowActionConditionalModel.action_id == a.id).all()
+                conditionals = db.query(NewWorkflowActionConditionalModel).filter(NewWorkflowActionConditionalModel.workflow_action_id == str(a.id)).all()
                 a.conditional = conditionals
             s.actions = actions
         w.steps = steps
     return {'data': workflows, 
             'paging': {'previous_link': f'/v2/workflow?skip={skip - limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}',
-                'next_link': f'/v2/workflow?skip={skip + limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}'
+                'next_link': f'/v2/workflow?skip={skip + limit}&limit={limit}&category={category}&is_template={is_template}&order={order}&direction={direction}',
+                'count': db.query(NewWorkflowModel).filter(NewWorkflowModel.ws_id == ws_id and NewWorkflowModel.is_template == is_template).count()
             }
     }
 
