@@ -15,3 +15,5 @@ class BaseNewWorkflowActionModel(Base):
     action: Mapped[str] = mapped_column(String, nullable=False, index=False)
     weight_to_true: Mapped[int] = mapped_column(Integer, nullable=True, index=False)
     ws_id: Mapped[int] = mapped_column(Integer, nullable=True, index=True)
+    gotostep: Mapped[str] = mapped_column(String, nullable=True, index=False)
+    gotoaction: Mapped[str] = mapped_column(String, nullable=True, index=False)

@@ -24,7 +24,6 @@ def createWorkflow(db: Session, workflow_in: WorkflowBase, ws_id: int) -> Workfl
         "json_representation": workflow_in.json_representation,
         "ws_id": ws_id,
     }
-    db.begin()
     try:
         db.execute(NewWorkflowModel.__table__.insert().values(workflow))
         print(workflow["id"])
@@ -75,6 +74,7 @@ def createWorkflow(db: Session, workflow_in: WorkflowBase, ws_id: int) -> Workfl
                         )
                     )
     db.commit()
+    return workflow["id"]
 
 
 def getWorkflows(
