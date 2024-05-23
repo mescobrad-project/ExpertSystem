@@ -43,7 +43,7 @@ class WorkflowBase(FormBase):
     json_representation: str | None = None
     is_template: bool = False
     ws_id: int | None = None
-    category_id: int | None = None
+    category_id: str | None = None
     is_part_of_other: bool | None = None
 
 

@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.models._all import WorkflowModel
 from src.controllers.WorkflowController import WorkflowController
-from src.schemas.NewWorkflowSchema import WorkflowBase
+from src.schemas.NewWorkflowSchema import (
+    WorkflowBase
+)
 from src.controllers.RunController import RunController
 from src.dependencies.authentication import validate_user, get_user_only
 from src.dependencies.workspace import validate_workspace
@@ -13,12 +15,7 @@ from src.schemas.RunSchema import Run
 import uuid
 from src.services.NewWorkflowsService import createWorkflow, getWorkflows
 
-from src.models._all import (
-    NewWorkflowModel,
-    NewWorkflowStepModel,
-    NewWorkflowActionModel,
-    NewWorkflowActionConditionalModel,
-)
+from src.models._all import NewWorkflowModel, NewWorkflowStepModel, NewWorkflowActionModel, NewWorkflowActionConditionalModel
 
 router = APIRouter(
     prefix="/v2/workflow",
@@ -29,9 +26,9 @@ router = APIRouter(
 
 
 @router.get("/", response_model=dict[str, Any | list[WorkflowBase]])
-def read_workflows(
+def get_workflows(
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
@@ -46,25 +43,26 @@ def read_workflows(
     direction: asc | desc
     """
     return getWorkflows(db, ws_id, skip, limit, category, is_template, order, direction)
+    
 
 
 @router.post("/")
 async def create_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_in: WorkflowBase,
 ) -> Any:
     """
     Create new workflow.
     """
     return createWorkflow(db, workflow_in, ws_id)
-
+        
 
 @router.get("/deleted", response_model=dict[str, Any | list[WorkflowBase]])
 def read_deleted_workflows(
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
@@ -94,7 +92,7 @@ def read_deleted_workflows(
 def read_deleted_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
 ) -> Any:
     """
@@ -110,7 +108,7 @@ def read_deleted_workflow(
 @router.get("/search", response_model=WorkflowBase)
 def search_workflows(
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     name: str = None,
 ) -> Any:
     """
@@ -127,7 +125,7 @@ def search_workflows(
 def read_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
 ) -> Any:
     """
@@ -136,6 +134,7 @@ def read_workflow(
     return WorkflowController.read(
         db=db, resource_id=workflow_id, criteria={"deleted_at": None, "ws_id": ws_id}
     )
+
 
 
 @router.delete("/{workflow_id}", response_model=WorkflowBase)
@@ -182,7 +181,7 @@ def read_task_details(
 def read_workflow_runs(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
     skip: int = 0,
     limit: int = 100,
