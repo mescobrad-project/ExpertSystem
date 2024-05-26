@@ -13,7 +13,7 @@ from src.schemas.RequestBodySchema import (
 from src.schemas.RunSchema import Run, RunNameUpdate
 
 router = APIRouter(
-    prefix="/run",
+    prefix="/v1/run",
     tags=["run"],
     responses={404: {"message": "Not found"}},
     # dependencies=[Depends(validate_user)],

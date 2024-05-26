@@ -2,6 +2,8 @@ from typing import List
 from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 from src.config import DB_SCHEMA
+from src.models.NewRunActionModel import BaseNewRunActionModel
+from src.models.NewRunModel import BaseNewRunModel
 from ._base import Base, GUID
 from .ModuleModel import BaseModuleModel
 from .ModuleCategoryModel import BaseModuleCategoryModel
@@ -128,4 +130,10 @@ class NewWorkflowActionModel(BaseNewWorkflowActionModel):
 
 
 class NewWorkflowActionConditionalModel(BaseNewWorkflowActionConditionalModel):
+    pass
+
+class NewRunModel(BaseNewRunModel):
+    pass
+
+class NewRunActionModel(BaseNewRunActionModel):
     pass

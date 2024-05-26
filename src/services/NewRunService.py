@@ -1,11 +1,14 @@
+import uuid
 from fastapi import Header
 from typing import Any
 from keycloak import KeycloakOpenID
 from minio import Minio
 import pytz, requests
+from sqlalchemy.orm import Session
 import xml.etree.ElementTree as ElementTree
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication, JWTAuthentication
+import json
 from src.config import (
     OAUTH_HOST,
     OAUTH_CLIENT_SECRET,
@@ -19,7 +22,10 @@ from src.config import (
     TRINO_HOST,
     TRINO_PORT,
     TRINO_SCHEME,
+    QB_API_BASE_URL
 )
+from src.schemas.NewRunSchema import Run, RunAction
+from src.models._all import NewRunModel, NewRunActionModel, NewWorkflowActionModel, NewWorkflowStepModel
 
 keycloak_openid = KeycloakOpenID(
         server_url=OAUTH_HOST,
@@ -30,24 +36,83 @@ keycloak_openid = KeycloakOpenID(
     )
 
 
-
-
-
-
-def execute_sql_on_trino(sql: str, schema: str, catalog: str, x_es_token: str = Header()) -> Any:
+def get_variables(table: str, token: str):
+    auth = JWTAuthentication(token)
     client = connect(
             host=TRINO_HOST,
             port=TRINO_PORT,
             http_scheme=TRINO_SCHEME,
-            auth=JWTAuthentication(x_es_token),
-            timezone=str(pytz.getTimezone("UTC")),
-            verify=False,
+            auth=auth,
+            timezone=str(pytz.timezone("UTC")),
+            #verify=False,
         )
     cursor = client.cursor()
-    cursor.execute(f"USE iceberg")
-    cursor.execute(f"USE {schema}") # name of the bucket // Initial is the name of the organization
-    cursor.execute(sql) # catalog.schema.table, no schemas in schemas tabls is a folder structure inside schema
-    return cursor.fetchall()
+    cursor.execute("SHOW SCHEMAS IN iceberg")
+    buckets = cursor.fetchall()
+    schema = buckets[0][0]
+    query = f"SELECT DISTINCT(variable_name) FROM iceberg.{schema}.{table}"
+    cursor.execute(query)
+    result = cursor.fetchall()
+    return result
+
+
+def query_trino_table(ttable: str, vname: str, vvalue: str, token: str = Header()) -> Any:
+    auth = JWTAuthentication(token)
+    client = connect(
+            host=TRINO_HOST,
+            port=TRINO_PORT,
+            http_scheme=TRINO_SCHEME,
+            auth=auth,
+            timezone=str(pytz.timezone("UTC")),
+            #verify=False,
+        )
+    cursor = client.cursor()
+    cursor.execute("SHOW SCHEMAS IN iceberg")
+    buckets = cursor.fetchall()
+    schema = buckets[0][0]
+    query = f"SELECT DISTINCT(source) FROM iceberg.{schema}.{ttable}"
+    if(vname != ''):
+        query += f" WHERE variable_name = '{vname}' "
+    if(vname != '' and vvalue != ''):
+        query += f" AND variable_value = '{vvalue}' "
+    cursor.execute(query)
+    result = cursor.fetchall()
+    return result
+
+def get_trino_schema(token: str) -> Any:
+    auth = JWTAuthentication(token)
+    client = connect(
+            host=TRINO_HOST,
+            port=TRINO_PORT,
+            http_scheme=TRINO_SCHEME,
+            auth=auth,
+            timezone=str(pytz.timezone("UTC")),
+            #verify=False,
+        )
+    cursor = client.cursor()
+    cursor.execute("SHOW SCHEMAS IN iceberg")
+    buckets = cursor.fetchall()
+    return buckets[0][0]
+
+
+def get_trino_tables(token: str) -> Any:
+    auth = JWTAuthentication(token)
+    client = connect(
+            host=TRINO_HOST,
+            port=TRINO_PORT,
+            http_scheme=TRINO_SCHEME,
+            auth=auth,
+            timezone=str(pytz.timezone("UTC")),
+            #verify=False,
+        )
+    cursor = client.cursor()
+    cursor.execute("SHOW SCHEMAS IN iceberg")
+    buckets = cursor.fetchall()
+    cursor.execute(f"SHOW TABLES IN iceberg.{buckets[0][0]}")
+    tables = cursor.fetchall()
+
+    return tables
+
 
 def get_buckets_from_minio(bucket_name: str, x_es_token: str = Header()) -> Any:
     minio_url = S3_ENDPOINT
@@ -127,3 +192,95 @@ def get_file_from_minio(bucket_name: str, file_name: str, x_es_token: str = Head
     file = client.get_object(bucket_name, file_name)
     
     return file
+
+def createRun(db: Session, data: Run) -> Any:
+    run = {
+        "id": uuid.uuid4(),
+        "workflow_id": data.workflow_id,
+        "title": data.title,
+        "notes": data.notes,
+        "ws_id": data.ws_id,
+        "is_part_of_other": data.is_part_of_other,
+        "json_representation": data.json_representation,
+        "step": data.step,
+        "action": data.action,
+        "status": data.status
+    }
+    db.execute(NewRunModel.__table__.insert().values(data.dict()))
+    db.commit()
+    return run
+
+def saveAction(db: Session, data: RunAction) -> Any:
+    action = {
+        "id": uuid.uuid4() if data.id is None else data.id,
+        "action_id": data.action_id,
+        "action_type": data.action_type,
+        "input": data.input,
+        "value": data.value,
+        "status": data.status,
+        "ws_id": data.ws_id
+    }
+    db.execute(NewRunActionModel.__table__.insert().values(data.dict()))
+    db.commit()
+    return action
+
+def getActions(db: Session, run_id: str) -> Any:
+    actions = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.run_id) == run_id)).fetchall()
+    return actions
+
+def getAction(db: Session, action_id: str) -> Any:
+    action = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.id) == action_id)).fetchone()
+    return action
+
+def completeAction(db: Session, action_id: str) -> Any:
+    action = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.id) == action_id)).fetchone()
+    db.execute(NewRunActionModel.__table__.update().where(str(NewRunActionModel.id) == action_id).values({"status": "completed"}))
+    db.commit()
+    return action
+
+def get_data_from_querybuilder(db: Session, run_id: str, action_id: str, data: dict):
+    action = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.id) == action_id)).fetchone()
+    db.execute(NewRunActionModel.__table__.update().where(str(NewRunActionModel.id) == action_id).values({"value": json.dumps(data)}))
+    db.commit()
+    return action
+
+
+def getActionInputForQueryBuilder(db: Session, action_id: str, workflow_id: str) -> Any:
+    run = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.id) == workflow_id)).fetchone()
+    action = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.id) == action_id)).fetchone()
+    waction = db.execute(NewWorkflowActionModel.__table__.select().where(str(NewWorkflowActionModel.id) == action['action_id'])).fetchone()
+    input = json.loads(action['input'])
+    trino_files = []
+    datalake_files = []
+    for key in input:
+        if key["file"].endswith(".csv"):
+            trino_files.append({
+                "catalog": "iceberg",
+                "schema_": key["schema"],
+                "table": key["table"],
+                "name": key["name"],
+                "selected": True,
+                "file": key["file"]
+            })
+            
+    return {
+        "step": {
+            "id": action["id"],
+            "number": waction["order"],
+            "start": action["created_at"],
+            "finish": "",
+            "sid": action["action_id"],
+            "name": waction["name"],
+            "metadata": {
+                "url": f"{QB_API_BASE_URL}/{action["run_id"]}/{action["id"]}",
+                "workflow_id": run["workflow_id"],
+                "run_id": action["run_id"],
+                "data_use": {
+                    "trino": trino_files
+                }
+            },
+            "completed": False
+        },
+        "completed": False
+    }
+    return action

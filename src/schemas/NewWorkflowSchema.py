@@ -21,6 +21,7 @@ class WorkflowActionBase(FormBase):
     step_id: UUID | None = None
     order: int | None = None
     action_type: str | None = None
+    action: str | None = None
     is_conditional: bool | None = None
     weight_to_true: float | None = None
     conditions: list[WorkflowActionConditionalBase] | None = None

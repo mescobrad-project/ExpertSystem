@@ -27,11 +27,12 @@ class BaseOAuthClient:
         return authUrl
 
     def get_access_token(self, code: str):
-        return self.__client.token(
+        token = self.__client.token(
             grant_type="authorization_code",
             code=code,
             redirect_uri=OAUTH_CALLBACK_URL,
         )
+        return token
 
     def refresh_token(self, refresh_token: str):
         return self.__client.refresh_token(refresh_token=refresh_token)

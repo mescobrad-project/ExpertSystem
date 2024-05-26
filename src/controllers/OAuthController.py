@@ -10,7 +10,6 @@ from src.errors.ApiRequestException import NotFoundException
 from src.schemas.UserSchema import UserCreate, UserUpdate
 from .UserController import UserController
 
-
 class BaseController:
     __client: BaseOAuthClient
 
@@ -47,7 +46,6 @@ class BaseController:
     def oauth_callback(self, db: Session, code: str):
         token = self.token(code)
         user_info = self.get_user_info(token)
-
         date_now = datetime.now(tz=timezone.utc)
 
         token_id = str(uuid4())
@@ -107,7 +105,7 @@ class BaseController:
             ),
             "user": user_db.info["email"],
         }
-        return (response["token"], response["user"])
+        return (response["token"], response["user"], token['access_token'], token['refresh_token'])
 
 
 OAuthController = BaseController(client)
