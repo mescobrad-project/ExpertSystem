@@ -13,4 +13,3 @@ class BaseNewRunActionModel(Base):
     status: Mapped[str] = mapped_column(String, nullable=True, index=True)
     ws_id: Mapped[int] = mapped_column(Integer, nullable=True, default=False)
     run_id: Mapped[str] = mapped_column(String, nullable=True, default=False)
-

@@ -22,30 +22,35 @@ from src.config import (
     TRINO_HOST,
     TRINO_PORT,
     TRINO_SCHEME,
-    QB_API_BASE_URL
+    QB_API_BASE_URL,
 )
 from src.schemas.NewRunSchema import Run, RunAction
-from src.models._all import NewRunModel, NewRunActionModel, NewWorkflowActionModel, NewWorkflowStepModel
+from src.models._all import (
+    NewRunModel,
+    NewRunActionModel,
+    NewWorkflowActionModel,
+    NewWorkflowStepModel,
+)
 
 keycloak_openid = KeycloakOpenID(
-        server_url=OAUTH_HOST,
-        client_id=OAUTH_CLIENT_ID,
-        realm_name=OAUTH_REALM,
-        client_secret_key=OAUTH_CLIENT_SECRET,
-        verify=True,
-    )
+    server_url=OAUTH_HOST,
+    client_id=OAUTH_CLIENT_ID,
+    realm_name=OAUTH_REALM,
+    client_secret_key=OAUTH_CLIENT_SECRET,
+    verify=True,
+)
 
 
 def get_variables(table: str, token: str):
     auth = JWTAuthentication(token)
     client = connect(
-            host=TRINO_HOST,
-            port=TRINO_PORT,
-            http_scheme=TRINO_SCHEME,
-            auth=auth,
-            timezone=str(pytz.timezone("UTC")),
-            #verify=False,
-        )
+        host=TRINO_HOST,
+        port=TRINO_PORT,
+        http_scheme=TRINO_SCHEME,
+        auth=auth,
+        timezone=str(pytz.timezone("UTC")),
+        # verify=False,
+    )
     cursor = client.cursor()
     cursor.execute("SHOW SCHEMAS IN iceberg")
     buckets = cursor.fetchall()
@@ -56,39 +61,42 @@ def get_variables(table: str, token: str):
     return result
 
 
-def query_trino_table(ttable: str, vname: str, vvalue: str, token: str = Header()) -> Any:
+def query_trino_table(
+    ttable: str, vname: str, vvalue: str, token: str = Header()
+) -> Any:
     auth = JWTAuthentication(token)
     client = connect(
-            host=TRINO_HOST,
-            port=TRINO_PORT,
-            http_scheme=TRINO_SCHEME,
-            auth=auth,
-            timezone=str(pytz.timezone("UTC")),
-            #verify=False,
-        )
+        host=TRINO_HOST,
+        port=TRINO_PORT,
+        http_scheme=TRINO_SCHEME,
+        auth=auth,
+        timezone=str(pytz.timezone("UTC")),
+        # verify=False,
+    )
     cursor = client.cursor()
     cursor.execute("SHOW SCHEMAS IN iceberg")
     buckets = cursor.fetchall()
     schema = buckets[0][0]
     query = f"SELECT DISTINCT(source) FROM iceberg.{schema}.{ttable}"
-    if(vname != ''):
+    if vname != "":
         query += f" WHERE variable_name = '{vname}' "
-    if(vname != '' and vvalue != ''):
+    if vname != "" and vvalue != "":
         query += f" AND variable_value = '{vvalue}' "
     cursor.execute(query)
     result = cursor.fetchall()
     return result
 
+
 def get_trino_schema(token: str) -> Any:
     auth = JWTAuthentication(token)
     client = connect(
-            host=TRINO_HOST,
-            port=TRINO_PORT,
-            http_scheme=TRINO_SCHEME,
-            auth=auth,
-            timezone=str(pytz.timezone("UTC")),
-            #verify=False,
-        )
+        host=TRINO_HOST,
+        port=TRINO_PORT,
+        http_scheme=TRINO_SCHEME,
+        auth=auth,
+        timezone=str(pytz.timezone("UTC")),
+        # verify=False,
+    )
     cursor = client.cursor()
     cursor.execute("SHOW SCHEMAS IN iceberg")
     buckets = cursor.fetchall()
@@ -98,13 +106,13 @@ def get_trino_schema(token: str) -> Any:
 def get_trino_tables(token: str) -> Any:
     auth = JWTAuthentication(token)
     client = connect(
-            host=TRINO_HOST,
-            port=TRINO_PORT,
-            http_scheme=TRINO_SCHEME,
-            auth=auth,
-            timezone=str(pytz.timezone("UTC")),
-            #verify=False,
-        )
+        host=TRINO_HOST,
+        port=TRINO_PORT,
+        http_scheme=TRINO_SCHEME,
+        auth=auth,
+        timezone=str(pytz.timezone("UTC")),
+        # verify=False,
+    )
     cursor = client.cursor()
     cursor.execute("SHOW SCHEMAS IN iceberg")
     buckets = cursor.fetchall()
@@ -119,17 +127,23 @@ def get_buckets_from_minio(bucket_name: str, x_es_token: str = Header()) -> Any:
     minio_data = {
         "Action": "AssumeRoleWithWebIdentity",
         "Version": "2011-06-15",
-        "WebIdentityToken": x_es_token
+        "WebIdentityToken": x_es_token,
     }
 
     response = requests.post(minio_url, data=minio_data)
     xml_data = ElementTree.fromstring(response.text)
 
     # Step 2: Parse the output to extract the credentials
-    access_key = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}AccessKeyId').text
-    secret_access_key = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}SecretAccessKey').text
-    session_token = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}SessionToken').text
-    
+    access_key = xml_data.find(
+        ".//{https://sts.amazonaws.com/doc/2011-06-15/}AccessKeyId"
+    ).text
+    secret_access_key = xml_data.find(
+        ".//{https://sts.amazonaws.com/doc/2011-06-15/}SecretAccessKey"
+    ).text
+    session_token = xml_data.find(
+        ".//{https://sts.amazonaws.com/doc/2011-06-15/}SessionToken"
+    ).text
+
     client = Minio(
         endpoint=S3_ENDPOINT,
         access_key=access_key,
@@ -140,22 +154,29 @@ def get_buckets_from_minio(bucket_name: str, x_es_token: str = Header()) -> Any:
     buckets = client.list_buckets(bucket_name)
     return buckets
 
+
 def get_files_from_minio(bucket_name: str, x_es_token: str = Header()) -> Any:
     minio_url = S3_ENDPOINT
     minio_data = {
         "Action": "AssumeRoleWithWebIdentity",
         "Version": "2011-06-15",
-        "WebIdentityToken": x_es_token
+        "WebIdentityToken": x_es_token,
     }
 
     response = requests.post(minio_url, data=minio_data)
     xml_data = ElementTree.fromstring(response.text)
 
     # Step 2: Parse the output to extract the credentials
-    access_key = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}AccessKeyId').text
-    secret_access_key = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}SecretAccessKey').text
-    session_token = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}SessionToken').text
-    
+    access_key = xml_data.find(
+        ".//{https://sts.amazonaws.com/doc/2011-06-15/}AccessKeyId"
+    ).text
+    secret_access_key = xml_data.find(
+        ".//{https://sts.amazonaws.com/doc/2011-06-15/}SecretAccessKey"
+    ).text
+    session_token = xml_data.find(
+        ".//{https://sts.amazonaws.com/doc/2011-06-15/}SessionToken"
+    ).text
+
     client = Minio(
         endpoint=S3_ENDPOINT,
         access_key=access_key,
@@ -165,23 +186,32 @@ def get_files_from_minio(bucket_name: str, x_es_token: str = Header()) -> Any:
     )
     files = client.list_objects(bucket_name)
     return files
-            
-def get_file_from_minio(bucket_name: str, file_name: str, x_es_token: str = Header()) -> Any:
+
+
+def get_file_from_minio(
+    bucket_name: str, file_name: str, x_es_token: str = Header()
+) -> Any:
     minio_url = S3_ENDPOINT
     minio_data = {
         "Action": "AssumeRoleWithWebIdentity",
         "Version": "2011-06-15",
-        "WebIdentityToken": x_es_token
+        "WebIdentityToken": x_es_token,
     }
 
     response = requests.post(minio_url, data=minio_data)
     xml_data = ElementTree.fromstring(response.text)
 
     # Step 2: Parse the output to extract the credentials
-    access_key = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}AccessKeyId').text
-    secret_access_key = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}SecretAccessKey').text
-    session_token = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}SessionToken').text
-    
+    access_key = xml_data.find(
+        ".//{https://sts.amazonaws.com/doc/2011-06-15/}AccessKeyId"
+    ).text
+    secret_access_key = xml_data.find(
+        ".//{https://sts.amazonaws.com/doc/2011-06-15/}SecretAccessKey"
+    ).text
+    session_token = xml_data.find(
+        ".//{https://sts.amazonaws.com/doc/2011-06-15/}SessionToken"
+    ).text
+
     client = Minio(
         endpoint=S3_ENDPOINT,
         access_key=access_key,
@@ -190,8 +220,9 @@ def get_file_from_minio(bucket_name: str, file_name: str, x_es_token: str = Head
         secure=False,
     )
     file = client.get_object(bucket_name, file_name)
-    
+
     return file
+
 
 def createRun(db: Session, data: Run) -> Any:
     run = {
@@ -204,11 +235,12 @@ def createRun(db: Session, data: Run) -> Any:
         "json_representation": data.json_representation,
         "step": data.step,
         "action": data.action,
-        "status": data.status
+        "status": data.status,
     }
     db.execute(NewRunModel.__table__.insert().values(run))
     db.commit()
     return run
+
 
 def saveAction(db: Session, data: RunAction, id: str = None) -> Any:
     action = {
@@ -218,64 +250,116 @@ def saveAction(db: Session, data: RunAction, id: str = None) -> Any:
         "input": data.input,
         "value": data.value,
         "status": data.status,
-        "ws_id": data.ws_id
+        "ws_id": data.ws_id,
     }
     db.execute(NewRunActionModel.__table__.insert().values(action))
     db.commit()
     return action
 
+
 def getActions(db: Session, run_id: str) -> Any:
-    actions = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.run_id) == run_id)).fetchall()
+    actions = db.execute(
+        NewRunActionModel.__table__.select().where(
+            str(NewRunActionModel.run_id) == run_id
+        )
+    ).fetchall()
     return actions
 
+
 def getAction(db: Session, action_id: str) -> Any:
-    action = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.id) == action_id)).fetchone()
+    action = db.execute(
+        NewRunActionModel.__table__.select().where(
+            str(NewRunActionModel.id) == action_id
+        )
+    ).fetchone()
     return action
+
 
 def completeAction(db: Session, action_id: str) -> Any:
-    action = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.id) == action_id)).fetchone()
-    db.execute(NewRunActionModel.__table__.update().where(str(NewRunActionModel.id) == action_id).values({"status": "completed"}))
+    action = db.execute(
+        NewRunActionModel.__table__.select().where(
+            str(NewRunActionModel.id) == action_id
+        )
+    ).fetchone()
+    db.execute(
+        NewRunActionModel.__table__.update()
+        .where(str(NewRunActionModel.id) == action_id)
+        .values({"status": "completed"})
+    )
     db.commit()
     return action
+
 
 def get_data_from_querybuilder(db: Session, run_id: str, action_id: str, data: dict):
-    action = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.id) == action_id)).fetchone()
-    db.execute(NewRunActionModel.__table__.update().where(str(NewRunActionModel.id) == action_id).values({"value": json.dumps(data)}))
+    action = db.execute(
+        NewRunActionModel.__table__.select().where(
+            str(NewRunActionModel.id) == action_id
+        )
+    ).fetchone()
+    db.execute(
+        NewRunActionModel.__table__.update()
+        .where(str(NewRunActionModel.id) == action_id)
+        .values({"value": json.dumps(data)})
+    )
     db.commit()
     return action
 
 
-def getActionInputForQueryBuilder(db: Session, action_id: str, workflow_id: str, token: str) -> Any:
-    run = db.execute(NewRunModel.__table__.select().where(NewRunModel.id == workflow_id)).fetchone()._mapping
-    action = db.execute(NewRunActionModel.__table__.select().where(NewRunActionModel.id == action_id)).fetchone()._mapping
-    waction = db.execute(NewWorkflowActionModel.__table__.select().where(NewWorkflowActionModel.id == action['action_id'])).fetchone()._mapping
+def getActionInputForQueryBuilder(
+    db: Session, action_id: str, workflow_id: str, token: str
+) -> Any:
+    run = (
+        db.execute(NewRunModel.__table__.select().where(NewRunModel.id == workflow_id))
+        .fetchone()
+        ._mapping
+    )
+    action = (
+        db.execute(
+            NewRunActionModel.__table__.select().where(
+                NewRunActionModel.id == action_id
+            )
+        )
+        .fetchone()
+        ._mapping
+    )
+    waction = (
+        db.execute(
+            NewWorkflowActionModel.__table__.select().where(
+                NewWorkflowActionModel.id == action["action_id"]
+            )
+        )
+        .fetchone()
+        ._mapping
+    )
     auth = JWTAuthentication(token)
     client = connect(
-            host=TRINO_HOST,
-            port=TRINO_PORT,
-            http_scheme=TRINO_SCHEME,
-            auth=auth,
-            timezone=str(pytz.timezone("UTC")),
-            #verify=False,
-        )
+        host=TRINO_HOST,
+        port=TRINO_PORT,
+        http_scheme=TRINO_SCHEME,
+        auth=auth,
+        timezone=str(pytz.timezone("UTC")),
+        # verify=False,
+    )
     cursor = client.cursor()
     cursor.execute("SHOW SCHEMAS IN iceberg")
     buckets = cursor.fetchall()
     schema = buckets[0][0]
-    input = json.loads(action['input'])
+    input = json.loads(action["input"])
     trino_files = []
     datalake_files = []
     for key in input:
         if key["file"].endswith(".csv"):
-            trino_files.append({
-                "catalog": "iceberg",
-                "schema_": schema,
-                "table": key["table"],
-                "name": key["name"],
-                "selected": True,
-                "file": key["file"]
-            })
-            
+            trino_files.append(
+                {
+                    "catalog": "iceberg",
+                    "schema_": schema,
+                    "table": key["table"],
+                    "name": key["name"],
+                    "selected": True,
+                    "file": key["file"],
+                }
+            )
+
     return {
         "step": {
             "id": action["id"],
@@ -288,12 +372,10 @@ def getActionInputForQueryBuilder(db: Session, action_id: str, workflow_id: str,
                 "url": f"{QB_API_BASE_URL}/{workflow_id}/{action_id}",
                 "workflow_id": run["workflow_id"],
                 "run_id": action["run_id"],
-                "data_use": {
-                    "trino": trino_files
-                }
+                "data_use": {"trino": trino_files},
             },
-            "completed": False
+            "completed": False,
         },
-        "completed": False
+        "completed": False,
     }
     return action

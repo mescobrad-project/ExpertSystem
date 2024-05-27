@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from src.models._all import WorkflowModel
 from src.controllers.WorkflowController import WorkflowController
-from src.schemas.NewWorkflowSchema import (
-    WorkflowBase
-)
+from src.schemas.NewWorkflowSchema import WorkflowBase
 from src.controllers.RunController import RunController
 from src.dependencies.authentication import validate_user, get_user_only
 from src.dependencies.workspace import validate_workspace
@@ -15,7 +13,12 @@ from src.schemas.RunSchema import Run
 import uuid
 from src.services.NewWorkflowsService import createWorkflow, getWorkflows
 
-from src.models._all import NewWorkflowModel, NewWorkflowStepModel, NewWorkflowActionModel, NewWorkflowActionConditionalModel
+from src.models._all import (
+    NewWorkflowModel,
+    NewWorkflowStepModel,
+    NewWorkflowActionModel,
+    NewWorkflowActionConditionalModel,
+)
 
 router = APIRouter(
     prefix="/v2/workflow",
@@ -43,7 +46,6 @@ def get_workflows(
     direction: asc | desc
     """
     return getWorkflows(db, ws_id, skip, limit, category, is_template, order, direction)
-    
 
 
 @router.post("/")
@@ -57,7 +59,7 @@ async def create_workflow(
     Create new workflow.
     """
     return createWorkflow(db, workflow_in, ws_id)
-        
+
 
 @router.get("/deleted", response_model=dict[str, Any | list[WorkflowBase]])
 def read_deleted_workflows(
@@ -134,7 +136,6 @@ def read_workflow(
     return WorkflowController.read(
         db=db, resource_id=workflow_id, criteria={"deleted_at": None, "ws_id": ws_id}
     )
-
 
 
 @router.delete("/{workflow_id}", response_model=WorkflowBase)

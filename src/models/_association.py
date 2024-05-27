@@ -132,8 +132,10 @@ class NewWorkflowActionModel(BaseNewWorkflowActionModel):
 class NewWorkflowActionConditionalModel(BaseNewWorkflowActionConditionalModel):
     pass
 
+
 class NewRunModel(BaseNewRunModel):
     pass
+
 
 class NewRunActionModel(BaseNewRunActionModel):
     pass

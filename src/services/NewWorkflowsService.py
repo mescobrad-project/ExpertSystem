@@ -50,7 +50,7 @@ def createWorkflow(db: Session, workflow_in: WorkflowBase, ws_id: int) -> Workfl
                 "description": action_in.description,
                 "workflow_step_id": step["id"],
                 "ws_id": ws_id,
-                'action_type': action_in.action_type,
+                "action_type": action_in.action_type,
                 "order": action_in.order,
                 "action": action_in.action,
                 "is_conditional": action_in.is_conditional,

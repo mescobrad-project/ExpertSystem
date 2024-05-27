@@ -6,7 +6,15 @@ from src.database import get_db
 from src.controllers.RunController import RunController
 from src.dependencies.authentication import validate_user
 from src.dependencies.workspace import validate_workspace
-from src.services.NewRunService import createRun, get_trino_tables, query_trino_table, get_variables, get_trino_schema, getActionInputForQueryBuilder, saveAction
+from src.services.NewRunService import (
+    createRun,
+    get_trino_tables,
+    query_trino_table,
+    get_variables,
+    get_trino_schema,
+    getActionInputForQueryBuilder,
+    saveAction,
+)
 from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
     CallActivityParams,
@@ -40,17 +48,15 @@ def run_workflow(
         settings=data.get("settings", {}),
     )
 
+
 @router.get("/tables", response_model=Any)
-def getTables(
-    *,
-    ws_id: int = Depends(validate_workspace),
-    request: Request
-) -> Any:
+def getTables(*, ws_id: int = Depends(validate_workspace), request: Request) -> Any:
     """
     Get all tables
     """
 
     return get_trino_tables(request.headers.get("x-jwt-token"))
+
 
 @router.get("/query", response_model=Any)
 def runQuery(
@@ -59,7 +65,7 @@ def runQuery(
     table: str = None,
     vname: str | None,
     vvalue: str | None,
-    request: Request
+    request: Request,
 ) -> Any:
     """
     Run query
@@ -67,25 +73,21 @@ def runQuery(
 
     return query_trino_table(table, vname, vvalue, request.headers.get("x-jwt-token"))
 
+
 @router.get("/files", response_model=Any)
 def getFiles(
-    *,
-    ws_id: int = Depends(validate_workspace),
-    table: str,
-    request: Request
+    *, ws_id: int = Depends(validate_workspace), table: str, request: Request
 ) -> Any:
     """
     Get all files
     """
 
-    return query_trino_table(table, '', '', request.headers.get("x-jwt-token"))
+    return query_trino_table(table, "", "", request.headers.get("x-jwt-token"))
+
 
 @router.get("/variable_names", response_model=Any)
 def getVariableNames(
-    *,
-    ws_id: int = Depends(validate_workspace),
-    table: str,
-    request: Request
+    *, ws_id: int = Depends(validate_workspace), table: str, request: Request
 ) -> Any:
     """
     Get variable names
@@ -93,18 +95,14 @@ def getVariableNames(
 
     return get_variables(table, request.headers.get("x-jwt-token"))
 
+
 @router.get("/schema", response_model=Any)
-def getSchema(
-    *,
-    ws_id: int = Depends(validate_workspace),
-    request: Request
-) -> Any:
+def getSchema(*, ws_id: int = Depends(validate_workspace), request: Request) -> Any:
     """
     Get schema
     """
 
     return get_trino_schema(request.headers.get("x-jwt-token"))
-
 
 
 @router.post("", response_model=Any)
@@ -119,6 +117,7 @@ def create_run(
     """
     return createRun(db, data)
 
+
 @router.post("/{run_id}/action", response_model=Any)
 def create_action(
     *,
@@ -132,18 +131,18 @@ def create_action(
     """
     return saveAction(db, data)
 
+
 @router.get("/{run_id}/step/{action_id}/ping", response_model=Any)
 def get_action(
-    *,
-    db: Session = Depends(get_db),
-    run_id: str,
-    action_id: str,
-    request: Request
+    *, db: Session = Depends(get_db), run_id: str, action_id: str, request: Request
 ):
     """
     Get action
     """
-    return getActionInputForQueryBuilder(db, action_id, run_id, request.headers.get("x-jwt-token"))
+    return getActionInputForQueryBuilder(
+        db, action_id, run_id, request.headers.get("x-jwt-token")
+    )
+
 
 @router.patch("/{run_id}/step/{step_id}/task/script/complete", response_model=Any)
 def value_from_qb(
@@ -157,4 +156,4 @@ def value_from_qb(
     """
     Get value from query builder
     """
-    return 
+    return

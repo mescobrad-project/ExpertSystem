@@ -20,5 +20,5 @@ from ._association import (
     NewWorkflowActionModel,
     NewWorkflowActionConditionalModel,
     NewRunModel,
-    NewRunActionModel
+    NewRunActionModel,
 )
