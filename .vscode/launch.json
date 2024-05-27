@@ -9,7 +9,6 @@
             "type": "debugpy",
             "request": "launch",
             "module": "uvicorn",
-            "justMyCode": false,
             "args": [
                 "src.main:main",
                 "--reload",

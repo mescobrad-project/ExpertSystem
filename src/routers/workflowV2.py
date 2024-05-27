@@ -29,9 +29,9 @@ router = APIRouter(
 
 
 @router.get("/", response_model=dict[str, Any | list[WorkflowBase]])
-def read_workflows(
+def get_workflows(
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
@@ -52,7 +52,7 @@ def read_workflows(
 async def create_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_in: WorkflowBase,
 ) -> Any:
     """
@@ -64,7 +64,7 @@ async def create_workflow(
 @router.get("/deleted", response_model=dict[str, Any | list[WorkflowBase]])
 def read_deleted_workflows(
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
@@ -94,7 +94,7 @@ def read_deleted_workflows(
 def read_deleted_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
 ) -> Any:
     """
@@ -110,7 +110,7 @@ def read_deleted_workflow(
 @router.get("/search", response_model=WorkflowBase)
 def search_workflows(
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     name: str = None,
 ) -> Any:
     """
@@ -127,7 +127,7 @@ def search_workflows(
 def read_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
 ) -> Any:
     """
@@ -182,7 +182,7 @@ def read_task_details(
 def read_workflow_runs(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
     skip: int = 0,
     limit: int = 100,

@@ -1,10 +1,19 @@
 from typing import Any
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2AuthorizationCodeBearer
+from keycloak import KeycloakOpenID
 from sqlalchemy.orm import Session
+from src.clients.keycloak import BaseOAuthClient
 from src.controllers.OAuthController import OAuthController
-from src.config import OAUTH_HOST, OAUTH_TOKEN_URL, ES_UI_BASE_URL
+from src.config import (
+    OAUTH_CLIENT_ID,
+    OAUTH_CLIENT_SECRET,
+    OAUTH_HOST,
+    OAUTH_REALM,
+    OAUTH_TOKEN_URL,
+    ES_UI_BASE_URL,
+)
 from src.database import get_db
 from src.dependencies.authentication import clean_before_login, validate_user
 
@@ -12,6 +21,14 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
     responses={404: {"message": "Not found"}},
+)
+
+keycloack = KeycloakOpenID(
+    server_url=OAUTH_HOST,
+    client_id=OAUTH_CLIENT_ID,
+    realm_name=OAUTH_REALM,
+    client_secret_key=OAUTH_CLIENT_SECRET,
+    verify=True,
 )
 
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
@@ -37,8 +54,10 @@ def oauth_callback(
     """
     Route used to retrieve auth token.
     """
-    token, user = OAuthController.oauth_callback(db, code)
-    return RedirectResponse(url=f"{ES_UI_BASE_URL}/auth/callback/{user}/{token}")
+    token, user, actual_token, refresh_token = OAuthController.oauth_callback(db, code)
+    return RedirectResponse(
+        url=f"{ES_UI_BASE_URL}/auth/callback/{user}/{token}/{actual_token}/{refresh_token}"
+    )
 
 
 @router.get("/logout")
@@ -54,3 +73,12 @@ def oauth_logout(
     OAuthController.logout(db, user, token, token_id)
 
     return {"status": 200, "success": True}
+
+
+@router.get("/refresh")
+def refresh_token(*, db: Session = Depends(get_db), request: Request) -> Any:
+    """
+    Refresh token
+    """
+    new_token = keycloack.refresh_token(request.headers.get("x-refresh-token"))
+    return {"status": 200, "success": True, "token": new_token}
