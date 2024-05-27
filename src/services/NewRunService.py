@@ -373,6 +373,10 @@ def getActionInputForQueryBuilder(
                 "workflow_id": run["workflow_id"],
                 "run_id": action["run_id"],
                 "data_use": {"trino": trino_files, "datalake": []},
+                "base_save_path": {
+                    "bucket_name": "common",
+                    "object_name": f"workflows/{workflow_id}",
+                },
             },
             "completed": False,
         },
