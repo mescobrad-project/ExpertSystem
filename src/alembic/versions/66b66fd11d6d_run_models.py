@@ -1,18 +1,17 @@
 """run models
 
-Revision ID: fce4385f872c
+Revision ID: 66b66fd11d6d
 Revises: aaefb8fd201e
-Create Date: 2024-05-26 21:27:09.471908
+Create Date: 2024-05-27 09:40:27.405253
 
 """
 from alembic import op
 import sqlalchemy as sa
-
-import src
+import src.models
 
 
 # revision identifiers, used by Alembic.
-revision = 'fce4385f872c'
+revision = '66b66fd11d6d'
 down_revision = 'aaefb8fd201e'
 branch_labels = None
 depends_on = None
@@ -26,7 +25,8 @@ def upgrade():
     sa.Column('input', sa.String(), nullable=True),
     sa.Column('value', sa.String(), nullable=True),
     sa.Column('status', sa.String(), nullable=True),
-    sa.Column('ws_id', sa.Boolean(), nullable=True),
+    sa.Column('ws_id', sa.Integer(), nullable=True),
+    sa.Column('run_id', sa.String(), nullable=True),
     sa.Column('id', src.models._base.GUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -43,12 +43,12 @@ def upgrade():
     sa.Column('title', sa.String(), nullable=True),
     sa.Column('notes', sa.String(), nullable=True),
     sa.Column('workflow_id', sa.String(), nullable=True),
-    sa.Column('ws_id', sa.Boolean(), nullable=True),
     sa.Column('is_part_of_other', sa.Boolean(), nullable=True),
     sa.Column('json_representation', sa.JSON(), nullable=True),
     sa.Column('step', sa.String(), nullable=True),
     sa.Column('action', sa.String(), nullable=True),
     sa.Column('status', sa.String(), nullable=True),
+    sa.Column('ws_id', sa.Boolean(), nullable=True),
     sa.Column('id', src.models._base.GUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -71,16 +71,16 @@ def upgrade():
     op.create_foreign_key(None, 'new_workflows', 'mcb_workspaces', ['ws_id'], ['ws_id'], source_schema='public', referent_schema='public')
     op.drop_constraint('runs_workflow_id_fkey', 'runs', type_='foreignkey')
     op.drop_constraint('runs_ws_id_fkey', 'runs', type_='foreignkey')
-    op.create_foreign_key(None, 'runs', 'mcb_workspaces', ['ws_id'], ['ws_id'], source_schema='public', referent_schema='public')
     op.create_foreign_key(None, 'runs', 'workflows', ['workflow_id'], ['id'], source_schema='public', referent_schema='public')
+    op.create_foreign_key(None, 'runs', 'mcb_workspaces', ['ws_id'], ['ws_id'], source_schema='public', referent_schema='public')
     op.drop_constraint('variables_features_feature_id_fkey', 'variables_features', type_='foreignkey')
     op.drop_constraint('variables_features_variable_id_fkey', 'variables_features', type_='foreignkey')
     op.create_foreign_key(None, 'variables_features', 'variables', ['variable_id'], ['id'], source_schema='public', referent_schema='public')
     op.create_foreign_key(None, 'variables_features', 'features', ['feature_id'], ['id'], source_schema='public', referent_schema='public')
     op.drop_constraint('workflows_category_id_fkey', 'workflows', type_='foreignkey')
     op.drop_constraint('workflows_ws_id_fkey', 'workflows', type_='foreignkey')
-    op.create_foreign_key(None, 'workflows', 'mcb_workspaces', ['ws_id'], ['ws_id'], source_schema='public', referent_schema='public')
     op.create_foreign_key(None, 'workflows', 'workflow_categories', ['category_id'], ['id'], source_schema='public', referent_schema='public')
+    op.create_foreign_key(None, 'workflows', 'mcb_workspaces', ['ws_id'], ['ws_id'], source_schema='public', referent_schema='public')
     # ### end Alembic commands ###
 
 

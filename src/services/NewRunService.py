@@ -206,13 +206,13 @@ def createRun(db: Session, data: Run) -> Any:
         "action": data.action,
         "status": data.status
     }
-    db.execute(NewRunModel.__table__.insert().values(data.dict()))
+    db.execute(NewRunModel.__table__.insert().values(run))
     db.commit()
     return run
 
-def saveAction(db: Session, data: RunAction) -> Any:
+def saveAction(db: Session, data: RunAction, id: str = None) -> Any:
     action = {
-        "id": uuid.uuid4() if data.id is None else data.id,
+        "id": uuid.uuid4() if id is None else id,
         "action_id": data.action_id,
         "action_type": data.action_type,
         "input": data.input,
@@ -220,7 +220,7 @@ def saveAction(db: Session, data: RunAction) -> Any:
         "status": data.status,
         "ws_id": data.ws_id
     }
-    db.execute(NewRunActionModel.__table__.insert().values(data.dict()))
+    db.execute(NewRunActionModel.__table__.insert().values(action))
     db.commit()
     return action
 
@@ -245,10 +245,23 @@ def get_data_from_querybuilder(db: Session, run_id: str, action_id: str, data: d
     return action
 
 
-def getActionInputForQueryBuilder(db: Session, action_id: str, workflow_id: str) -> Any:
-    run = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.id) == workflow_id)).fetchone()
-    action = db.execute(NewRunActionModel.__table__.select().where(str(NewRunActionModel.id) == action_id)).fetchone()
-    waction = db.execute(NewWorkflowActionModel.__table__.select().where(str(NewWorkflowActionModel.id) == action['action_id'])).fetchone()
+def getActionInputForQueryBuilder(db: Session, action_id: str, workflow_id: str, token: str) -> Any:
+    run = db.execute(NewRunModel.__table__.select().where(NewRunModel.id == workflow_id)).fetchone()._mapping
+    action = db.execute(NewRunActionModel.__table__.select().where(NewRunActionModel.id == action_id)).fetchone()._mapping
+    waction = db.execute(NewWorkflowActionModel.__table__.select().where(NewWorkflowActionModel.id == action['action_id'])).fetchone()._mapping
+    auth = JWTAuthentication(token)
+    client = connect(
+            host=TRINO_HOST,
+            port=TRINO_PORT,
+            http_scheme=TRINO_SCHEME,
+            auth=auth,
+            timezone=str(pytz.timezone("UTC")),
+            #verify=False,
+        )
+    cursor = client.cursor()
+    cursor.execute("SHOW SCHEMAS IN iceberg")
+    buckets = cursor.fetchall()
+    schema = buckets[0][0]
     input = json.loads(action['input'])
     trino_files = []
     datalake_files = []
@@ -256,7 +269,7 @@ def getActionInputForQueryBuilder(db: Session, action_id: str, workflow_id: str)
         if key["file"].endswith(".csv"):
             trino_files.append({
                 "catalog": "iceberg",
-                "schema_": key["schema"],
+                "schema_": schema,
                 "table": key["table"],
                 "name": key["name"],
                 "selected": True,
@@ -272,7 +285,7 @@ def getActionInputForQueryBuilder(db: Session, action_id: str, workflow_id: str)
             "sid": action["action_id"],
             "name": waction["name"],
             "metadata": {
-                "url": f"{QB_API_BASE_URL}/{action["run_id"]}/{action["id"]}",
+                "url": f"{QB_API_BASE_URL}/{workflow_id}/{action_id}",
                 "workflow_id": run["workflow_id"],
                 "run_id": action["run_id"],
                 "data_use": {

@@ -6,7 +6,7 @@ from src.database import get_db
 from src.controllers.RunController import RunController
 from src.dependencies.authentication import validate_user
 from src.dependencies.workspace import validate_workspace
-from src.services.NewRunService import createRun, get_trino_tables, query_trino_table, get_variables, get_trino_schema, getActionInputForQueryBuilder
+from src.services.NewRunService import createRun, get_trino_tables, query_trino_table, get_variables, get_trino_schema, getActionInputForQueryBuilder, saveAction
 from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
     CallActivityParams,
@@ -106,30 +106,44 @@ def getSchema(
     return get_trino_schema(request.headers.get("x-jwt-token"))
 
 
-@router.post("{run_id}/action", response_model=Any)
+
+@router.post("", response_model=Any)
 def create_run(
     *,
     db: Session = Depends(get_db),
     ws_id: int = Depends(validate_workspace),
-    run_id: UUID,
     data: Run,
 ):
     """
     Run a task
     """
-    return createRun(db, ws_id, data)
+    return createRun(db, data)
 
-@router.get("{run_id}/step/{action_id}/ping", response_model=Any)
+@router.post("/{run_id}/action", response_model=Any)
+def create_action(
+    *,
+    db: Session = Depends(get_db),
+    ws_id: int = 1,  # Depends(validate_workspace),
+    run_id: UUID,
+    data: RunAction,
+):
+    """
+    Save action
+    """
+    return saveAction(db, data)
+
+@router.get("/{run_id}/step/{action_id}/ping", response_model=Any)
 def get_action(
     *,
     db: Session = Depends(get_db),
-    run_id: UUID,
-    action_id: UUID,
+    run_id: str,
+    action_id: str,
+    request: Request
 ):
     """
     Get action
     """
-    return getActionInputForQueryBuilder(db, action_id, run_id)
+    return getActionInputForQueryBuilder(db, action_id, run_id, request.headers.get("x-jwt-token"))
 
 @router.patch("/{run_id}/step/{step_id}/task/script/complete", response_model=Any)
 def value_from_qb(
