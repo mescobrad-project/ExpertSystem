@@ -294,7 +294,7 @@ def get_data_from_querybuilder(db: Session, run_id: str, action_id: str, data: d
     action = (
         db.execute(
             NewRunActionModel.__table__.select().where(
-                str(NewRunActionModel.id) == action_id
+                NewRunActionModel.id == action_id
             )
         )
         .fetchone()
@@ -302,7 +302,7 @@ def get_data_from_querybuilder(db: Session, run_id: str, action_id: str, data: d
     )
     db.execute(
         NewRunActionModel.__table__.update()
-        .where(str(NewRunActionModel.id) == action_id)
+        .where(NewRunActionModel.id == action_id)
         .values({"value": json.dumps(data)})
     )
     db.commit()
