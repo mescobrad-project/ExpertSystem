@@ -372,7 +372,7 @@ def getActionInputForQueryBuilder(
                 "url": f"{QB_API_BASE_URL}/{workflow_id}/{action_id}",
                 "workflow_id": run["workflow_id"],
                 "run_id": action["run_id"],
-                "data_use": {"trino": trino_files},
+                "data_use": {"trino": trino_files, "datalake": []},
             },
             "completed": False,
         },

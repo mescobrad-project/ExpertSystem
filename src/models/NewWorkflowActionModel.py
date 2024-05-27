@@ -17,3 +17,5 @@ class BaseNewWorkflowActionModel(Base):
     ws_id: Mapped[int] = mapped_column(Integer, nullable=True, index=True)
     gotostep: Mapped[str] = mapped_column(String, nullable=True, index=False)
     gotoaction: Mapped[str] = mapped_column(String, nullable=True, index=False)
+    method: Mapped[str] = mapped_column(String, nullable=True, index=False)
+    input: Mapped[str] = mapped_column(String, nullable=True, index=False)
