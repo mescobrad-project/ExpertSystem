@@ -19,7 +19,7 @@ from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
     CallActivityParams,
 )
-from src.schemas.NewRunSchema import Run, RunAction
+from src.schemas.NewRunSchema import Run, RunAction, RunActionUpdateFromQB
 
 router = APIRouter(
     prefix="/run",
@@ -151,7 +151,7 @@ def value_from_qb(
     ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
-    data: dict,
+    data: RunActionUpdateFromQB,
 ) -> Any:
     """
     Get value from query builder

@@ -27,3 +27,17 @@ class RunAction(FormBase):
     value: str | None = None
     status: str | None = None
     ws_id: int | None = None
+
+
+class DataLakeFile(FormBase):
+    bucket_name: str | None = None
+    object_name: str | None = None
+    query: str | None = None
+
+
+class DataLakeFileList(FormBase):
+    datalake: list[DataLakeFile] | None = None
+
+
+class RunActionUpdateFromQB(FormBase):
+    data: DataLakeFileList | None = None
