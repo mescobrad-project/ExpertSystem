@@ -295,7 +295,7 @@ def get_data_from_querybuilder(db: Session, run_id: str, action_id: str, data: d
         NewRunActionModel.__table__.select().where(
             str(NewRunActionModel.id) == action_id
         )
-    ).fetchone()
+    ).fetchone()._mapping
     db.execute(
         NewRunActionModel.__table__.update()
         .where(str(NewRunActionModel.id) == action_id)

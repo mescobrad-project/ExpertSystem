@@ -8,6 +8,7 @@ from src.dependencies.authentication import validate_user
 from src.dependencies.workspace import validate_workspace
 from src.services.NewRunService import (
     createRun,
+    get_data_from_querybuilder,
     get_trino_tables,
     query_trino_table,
     get_variables,
@@ -156,4 +157,4 @@ def value_from_qb(
     """
     Get value from query builder
     """
-    return
+    return get_data_from_querybuilder(db, run_id, step_id, data)
