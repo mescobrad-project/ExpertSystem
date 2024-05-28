@@ -30,8 +30,8 @@ router = APIRouter(
 
 @router.get("/", response_model=dict[str, Any | list[WorkflowBase]])
 def get_workflows(
+    request: Request,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
@@ -45,26 +45,35 @@ def get_workflows(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    return getWorkflows(db, ws_id, skip, limit, category, is_template, order, direction)
+    return getWorkflows(
+        db,
+        request.headers.get("x-es-wsid"),
+        skip,
+        limit,
+        category,
+        is_template,
+        order,
+        direction,
+    )
 
 
 @router.post("/")
 async def create_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
     workflow_in: WorkflowBase,
+    request: Request,
 ) -> Any:
     """
     Create new workflow.
     """
-    return createWorkflow(db, workflow_in, ws_id)
+    return createWorkflow(db, workflow_in, request.headers.get("x-es-wsid"))
 
 
 @router.get("/deleted", response_model=dict[str, Any | list[WorkflowBase]])
 def read_deleted_workflows(
+    request: Request,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
@@ -86,16 +95,13 @@ def read_deleted_workflows(
         direction,
         is_template,
         category,
-        criteria={"deleted_at__not": None, "ws_id": ws_id},
+        criteria={"deleted_at__not": None, "ws_id": request.headers.get("x-es-wsid")},
     )
 
 
 @router.get("/deleted/{workflow_id}", response_model=WorkflowBase)
 def read_deleted_workflow(
-    *,
-    db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
-    workflow_id: UUID,
+    *, db: Session = Depends(get_db), workflow_id: UUID, request: Request
 ) -> Any:
     """
     Get deleted workflow by ID.
@@ -103,14 +109,14 @@ def read_deleted_workflow(
     return WorkflowController.read(
         db=db,
         resource_id=workflow_id,
-        criteria={"deleted_at__not": None, "ws_id": ws_id},
+        criteria={"deleted_at__not": None, "ws_id": request.headers.get("x-es-wsid")},
     )
 
 
 @router.get("/search", response_model=WorkflowBase)
 def search_workflows(
+    request: Request,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
     name: str = None,
 ) -> Any:
     """
@@ -119,22 +125,28 @@ def search_workflows(
     return WorkflowController.search(
         db,
         params={"name": name},
-        criteria={"deleted_at": None, "is_template": False, "ws_id": ws_id},
+        criteria={
+            "deleted_at": None,
+            "is_template": False,
+            "ws_id": request.headers.get("x-es-wsid"),
+        },
     )
 
 
 @router.get("/{workflow_id}", response_model=WorkflowBase)
 def read_workflow(
     *,
+    request: Request,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
 ) -> Any:
     """
     Get workflow by ID.
     """
     return WorkflowController.read(
-        db=db, resource_id=workflow_id, criteria={"deleted_at": None, "ws_id": ws_id}
+        db=db,
+        resource_id=workflow_id,
+        criteria={"deleted_at": None, "ws_id": request.headers.get("x-es-wsid")},
     )
 
 
@@ -181,8 +193,8 @@ def read_task_details(
 @router.get("/{workflow_id}/run", response_model=dict[str, Any | list[Run]])
 def read_workflow_runs(
     *,
+    request: Request,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
     workflow_id: UUID,
     skip: int = 0,
     limit: int = 100,
@@ -202,8 +214,11 @@ def read_workflow_runs(
             "workflow_id": workflow_id,
             "workflow": {
                 "model": WorkflowModel,
-                "criteria": {"deleted_at": None, "ws_id": ws_id},
+                "criteria": {
+                    "deleted_at": None,
+                    "ws_id": request.headers.get("x-es-wsid"),
+                },
             },
-            "ws_id": ws_id,
+            "ws_id": request.headers.get("x-es-wsid"),
         },
     )
