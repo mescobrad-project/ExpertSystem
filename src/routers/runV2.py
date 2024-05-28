@@ -34,7 +34,7 @@ router = APIRouter(
 def run_workflow(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
+    request: Request,
     workflow_id: UUID,
     data: dict = {},
 ):
@@ -43,7 +43,7 @@ def run_workflow(
     """
     return RunController.initialize(
         db=db,
-        ws_id=ws_id,
+        ws_id=request.headers.get("x-es-wsid"),
         workflow_id=workflow_id,
         name=data.get("name", ""),
         settings=data.get("settings", {}),
@@ -51,7 +51,7 @@ def run_workflow(
 
 
 @router.get("/tables", response_model=Any)
-def getTables(*, ws_id: int = Depends(validate_workspace), request: Request) -> Any:
+def getTables(*, request: Request) -> Any:
     """
     Get all tables
     """
@@ -62,7 +62,6 @@ def getTables(*, ws_id: int = Depends(validate_workspace), request: Request) -> 
 @router.get("/query", response_model=Any)
 def runQuery(
     *,
-    ws_id: int = Depends(validate_workspace),
     table: str = None,
     vname: str | None,
     vvalue: str | None,
@@ -77,7 +76,7 @@ def runQuery(
 
 @router.get("/files", response_model=Any)
 def getFiles(
-    *, ws_id: int = Depends(validate_workspace), table: str, request: Request
+    *, table: str, request: Request
 ) -> Any:
     """
     Get all files
@@ -88,7 +87,7 @@ def getFiles(
 
 @router.get("/variable_names", response_model=Any)
 def getVariableNames(
-    *, ws_id: int = Depends(validate_workspace), table: str, request: Request
+    *, table: str, request: Request
 ) -> Any:
     """
     Get variable names
@@ -98,7 +97,7 @@ def getVariableNames(
 
 
 @router.get("/schema", response_model=Any)
-def getSchema(*, ws_id: int = Depends(validate_workspace), request: Request) -> Any:
+def getSchema(*, request: Request) -> Any:
     """
     Get schema
     """
@@ -110,7 +109,6 @@ def getSchema(*, ws_id: int = Depends(validate_workspace), request: Request) -> 
 def create_run(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = Depends(validate_workspace),
     data: Run,
 ):
     """
@@ -123,7 +121,6 @@ def create_run(
 def create_action(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     data: RunAction,
 ):
@@ -149,7 +146,6 @@ def get_action(
 def value_from_qb(
     *,
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
     run_id: UUID,
     step_id: UUID,
     data: RunActionUpdateFromQB,

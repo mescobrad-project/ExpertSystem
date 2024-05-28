@@ -278,12 +278,12 @@ def getAction(db: Session, action_id: str) -> Any:
 def completeAction(db: Session, action_id: str) -> Any:
     action = db.execute(
         NewRunActionModel.__table__.select().where(
-            str(NewRunActionModel.id) == action_id
+            NewRunActionModel.id == action_id
         )
-    ).fetchone()
+    ).fetchone()._mapping
     db.execute(
         NewRunActionModel.__table__.update()
-        .where(str(NewRunActionModel.id) == action_id)
+        .where(NewRunActionModel.id == action_id)
         .values({"status": "completed"})
     )
     db.commit()
