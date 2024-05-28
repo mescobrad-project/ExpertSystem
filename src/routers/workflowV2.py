@@ -45,7 +45,16 @@ def get_workflows(
     order: The model's prop as str, e.g. id
     direction: asc | desc
     """
-    return getWorkflows(db, request.headers.get("x-es-wsid"), skip, limit, category, is_template, order, direction)
+    return getWorkflows(
+        db,
+        request.headers.get("x-es-wsid"),
+        skip,
+        limit,
+        category,
+        is_template,
+        order,
+        direction,
+    )
 
 
 @router.post("/")
@@ -92,10 +101,7 @@ def read_deleted_workflows(
 
 @router.get("/deleted/{workflow_id}", response_model=WorkflowBase)
 def read_deleted_workflow(
-    *,
-    db: Session = Depends(get_db),
-    workflow_id: UUID,
-    request: Request
+    *, db: Session = Depends(get_db), workflow_id: UUID, request: Request
 ) -> Any:
     """
     Get deleted workflow by ID.
@@ -119,7 +125,11 @@ def search_workflows(
     return WorkflowController.search(
         db,
         params={"name": name},
-        criteria={"deleted_at": None, "is_template": False, "ws_id": request.headers.get("x-es-wsid")},
+        criteria={
+            "deleted_at": None,
+            "is_template": False,
+            "ws_id": request.headers.get("x-es-wsid"),
+        },
     )
 
 
@@ -134,7 +144,9 @@ def read_workflow(
     Get workflow by ID.
     """
     return WorkflowController.read(
-        db=db, resource_id=workflow_id, criteria={"deleted_at": None, "ws_id": request.headers.get("x-es-wsid")}
+        db=db,
+        resource_id=workflow_id,
+        criteria={"deleted_at": None, "ws_id": request.headers.get("x-es-wsid")},
     )
 
 
@@ -202,7 +214,10 @@ def read_workflow_runs(
             "workflow_id": workflow_id,
             "workflow": {
                 "model": WorkflowModel,
-                "criteria": {"deleted_at": None, "ws_id": request.headers.get("x-es-wsid")},
+                "criteria": {
+                    "deleted_at": None,
+                    "ws_id": request.headers.get("x-es-wsid"),
+                },
             },
             "ws_id": request.headers.get("x-es-wsid"),
         },

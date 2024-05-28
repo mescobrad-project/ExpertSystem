@@ -75,9 +75,7 @@ def runQuery(
 
 
 @router.get("/files", response_model=Any)
-def getFiles(
-    *, table: str, request: Request
-) -> Any:
+def getFiles(*, table: str, request: Request) -> Any:
     """
     Get all files
     """
@@ -86,9 +84,7 @@ def getFiles(
 
 
 @router.get("/variable_names", response_model=Any)
-def getVariableNames(
-    *, table: str, request: Request
-) -> Any:
+def getVariableNames(*, table: str, request: Request) -> Any:
     """
     Get variable names
     """
