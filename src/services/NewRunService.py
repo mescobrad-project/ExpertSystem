@@ -352,11 +352,19 @@ def getActionInputForQueryBuilder(
     trino_files = []
     datalake_files = []
     for key in input:
+        if key["bucket"]:
+            datalake_files.append(
+                {
+                    "bucket": key["bucket"],
+                    "file": key["file"]
+                }
+            )
+    for key in input:
         if key["file"].endswith(".csv"):
             trino_files.append(
                 {
                     "catalog": "iceberg",
-                    "schema_": schema,
+                    "schema_": key["schema"],
                     "table": key["table"],
                     "name": key["name"],
                     "selected": True,
@@ -376,7 +384,7 @@ def getActionInputForQueryBuilder(
                 "url": f"{QB_API_BASE_URL}/{workflow_id}/{action_id}",
                 "workflow_id": run["workflow_id"],
                 "run_id": action["run_id"],
-                "data_use": {"trino": trino_files, "datalake": []},
+                "data_use": {"trino": trino_files, "datalake": datalake_files},
                 "base_save_path": {
                     "bucket_name": "common",
                     "object_name": f"workflows/{workflow_id}",
