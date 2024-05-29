@@ -23,7 +23,7 @@ class WorkflowActionBase(FormBase):
     action_type: str | None = None
     action: str | None = None
     method: str | None = None
-    input: dict | None = None
+    input: str | None = None
     is_conditional: bool | None = None
     weight_to_true: float | None = None
     conditions: list[WorkflowActionConditionalBase] | None = None
