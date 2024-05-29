@@ -373,7 +373,7 @@ def getActionInputForQueryBuilder(
                     "object_name": f"workflows/{workflow_id}",
                 },
             },
-            "completed": action["input"] is not None and action["input"] != "",
+            "completed": action["value"] is not None and action["value"] != "",
         },
         "completed": False,
     }
