@@ -343,7 +343,7 @@ def getActionInputForQueryBuilder(
         if "bucket" in key:
             datalake_files.append({"bucket": key["bucket"], "file": key["file"]})
     for key in input:
-        if "table" in key and ["file"].endswith(".csv"):
+        if "table" in key and key["file"].endswith(".csv"):
             trino_files.append(
                 {
                     "catalog": "iceberg",
