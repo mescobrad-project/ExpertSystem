@@ -335,19 +335,7 @@ def getActionInputForQueryBuilder(
         .fetchone()
         ._mapping
     )
-    auth = JWTAuthentication(token)
-    client = connect(
-        host=TRINO_HOST,
-        port=TRINO_PORT,
-        http_scheme=TRINO_SCHEME,
-        auth=auth,
-        timezone=str(pytz.timezone("UTC")),
-        # verify=False,
-    )
-    cursor = client.cursor()
-    cursor.execute("SHOW SCHEMAS IN iceberg")
-    buckets = cursor.fetchall()
-    schema = buckets[0][0]
+    
     input = json.loads(action["input"])
     trino_files = []
     datalake_files = []
