@@ -259,18 +259,14 @@ def saveAction(db: Session, data: RunAction, id: str = None) -> Any:
 
 def getActions(db: Session, run_id: str) -> Any:
     actions = db.execute(
-        NewRunActionModel.__table__.select().where(
-            NewRunActionModel.run_id == run_id
-        )
+        NewRunActionModel.__table__.select().where(NewRunActionModel.run_id == run_id)
     ).fetchall()
     return actions
 
 
 def getAction(db: Session, action_id: str) -> Any:
     action = db.execute(
-        NewRunActionModel.__table__.select().where(
-            NewRunActionModel.id == action_id
-        )
+        NewRunActionModel.__table__.select().where(NewRunActionModel.id == action_id)
     ).fetchone()
     return action
 
