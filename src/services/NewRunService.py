@@ -335,18 +335,13 @@ def getActionInputForQueryBuilder(
         .fetchone()
         ._mapping
     )
-    
+
     input = json.loads(action["input"])
     trino_files = []
     datalake_files = []
     for key in input:
         if key["bucket"]:
-            datalake_files.append(
-                {
-                    "bucket": key["bucket"],
-                    "file": key["file"]
-                }
-            )
+            datalake_files.append({"bucket": key["bucket"], "file": key["file"]})
     for key in input:
         if key["file"].endswith(".csv"):
             trino_files.append(
