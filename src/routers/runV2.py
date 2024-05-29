@@ -144,7 +144,7 @@ def value_from_qb(
     db: Session = Depends(get_db),
     run_id: UUID,
     step_id: UUID,
-    data: RunActionUpdateFromQB,
+    data: dict,
 ) -> Any:
     """
     Get value from query builder
