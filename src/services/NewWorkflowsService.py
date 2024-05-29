@@ -55,6 +55,8 @@ def createWorkflow(db: Session, workflow_in: WorkflowBase, ws_id: int) -> Workfl
                 "action": action_in.action,
                 "is_conditional": action_in.is_conditional,
                 "weight_to_true": action_in.weight_to_true,
+                "method": action_in.method,
+                "input": action_in.input,
             }
             db.execute(NewWorkflowActionModel.__table__.insert().values(action))
             if action_in.is_conditional:

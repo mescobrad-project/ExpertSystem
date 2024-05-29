@@ -22,6 +22,8 @@ class WorkflowActionBase(FormBase):
     order: int | None = None
     action_type: str | None = None
     action: str | None = None
+    method: str | None = None
+    input: dict | None = None
     is_conditional: bool | None = None
     weight_to_true: float | None = None
     conditions: list[WorkflowActionConditionalBase] | None = None
