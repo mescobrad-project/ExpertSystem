@@ -27,6 +27,7 @@ class RunAction(FormBase):
     value: str | None = None
     status: str | None = None
     ws_id: int | None = None
+    run_id: UUID
 
 
 class DataLakeFile(FormBase):

@@ -126,7 +126,7 @@ def getWorkflows(
                     )
                     .all()
                 )
-                a.conditional = conditionals
+                a.conditionals = conditionals
             s.actions = actions
         w.steps = steps
     return {

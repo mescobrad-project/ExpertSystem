@@ -15,6 +15,7 @@ from src.routers import (
     variable,
     workflow_category,
     oauth,
+    auth,
     workspace,
     workflowV2,
     runV2,
@@ -46,7 +47,7 @@ def include_router(app):
     app.include_router(home.router)
     app.include_router(oauth.router)
     app.include_router(run.router)
-    app.include_router(variable.router)
+    app.include_router(variable.router) 
     app.include_router(workflow_category.router)
     app.include_router(workflow.router)
     app.include_router(workspace.router)
@@ -56,6 +57,7 @@ def include_router(app):
     app.include_router(datastorage.router)
     app.include_router(workflowV2.router)
     app.include_router(runV2.router)
+    app.include_router(auth.router)
 
 
 def start_app():

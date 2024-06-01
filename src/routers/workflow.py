@@ -27,7 +27,7 @@ router = APIRouter(
 @router.get("/", response_model=dict[str, Any | list[Workflow]])
 def read_workflows(
     db: Session = Depends(get_db),
-    ws_id: int = 1,  # Depends(validate_workspace),
+    ws_id: int = Depends(validate_workspace),
     skip: int = 0,
     limit: int = 100,
     category: str = None,
