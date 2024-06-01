@@ -253,7 +253,7 @@ def saveAction(db: Session, data: RunAction, id: str = None) -> Any:
         "value": data.value,
         "status": data.status,
         "ws_id": data.ws_id,
-        "run_id": data.run_id
+        "run_id": data.run_id,
     }
     db.execute(NewRunActionModel.__table__.insert().values(action))
     db.commit()
@@ -295,9 +295,7 @@ def completeAction(db: Session, action_id: str) -> Any:
 
 def get_data_from_querybuilder(db: Session, run_id: str, action_id: str, data: dict):
     action = (
-        db.query(NewRunActionModel)
-        .filter(NewRunActionModel.id == action_id)
-        .first()
+        db.query(NewRunActionModel).filter(NewRunActionModel.id == action_id).first()
     )
     db.execute(
         NewRunActionModel.__table__.update()
@@ -377,19 +375,31 @@ def getActionInputForQueryBuilder(
         "completed": False,
     }
 
-def get_all_runs(db: Session, ws_id: int, workflow_id: UUID | None = None, skip: int = 0, limit: int = 20) -> Any:
+
+def get_all_runs(
+    db: Session,
+    ws_id: int,
+    workflow_id: UUID | None = None,
+    skip: int = 0,
+    limit: int = 20,
+) -> Any:
     runs = (
         db.query(NewRunModel)
-        .filter(NewRunModel.ws_id == ws_id 
-                and (workflow_id == None or NewRunModel.workflow_id == workflow_id))
+        .filter(
+            NewRunModel.ws_id == ws_id
+            and (workflow_id == None or NewRunModel.workflow_id == workflow_id)
+        )
         .slice(skip, skip + limit)
         .order_by(desc(NewRunModel.created_at))
         .all()
     )
     for run in runs:
-        run.actions = db.query(NewRunActionModel).filter(NewRunActionModel.run_id == run.id).all()
+        run.actions = (
+            db.query(NewRunActionModel).filter(NewRunActionModel.run_id == run.id).all()
+        )
 
     return runs
+
 
 def get_run(db: Session, ws_id: int, run_id: UUID) -> Any:
     run = (
@@ -397,8 +407,11 @@ def get_run(db: Session, ws_id: int, run_id: UUID) -> Any:
         .filter(NewRunModel.ws_id == ws_id and NewRunModel.id == run_id)
         .first()
     )
-    run.actions = db.query(NewRunActionModel).filter(NewRunActionModel.run_id == run.id).all()
+    run.actions = (
+        db.query(NewRunActionModel).filter(NewRunActionModel.run_id == run.id).all()
+    )
     return run
+
 
 def get_run_actions(db: Session, ws_id: int, run_id: UUID) -> Any:
     run = (
@@ -406,42 +419,41 @@ def get_run_actions(db: Session, ws_id: int, run_id: UUID) -> Any:
         .filter(NewRunModel.ws_id == ws_id and NewRunModel.id == run_id)
         .first()
     )
-    run.actions = db.query(NewRunActionModel).filter(NewRunActionModel.run_id == run.id).all()
+    run.actions = (
+        db.query(NewRunActionModel).filter(NewRunActionModel.run_id == run.id).all()
+    )
     return run.actions
+
 
 def get_action(db: Session, ws_id: int, run_id: UUID, action_id: UUID) -> Any:
     action = (
         db.query(NewRunActionModel)
-        .filter(NewRunActionModel.ws_id == ws_id and NewRunActionModel.run_id == run_id and NewRunActionModel.id == action_id)
+        .filter(
+            NewRunActionModel.ws_id == ws_id
+            and NewRunActionModel.run_id == run_id
+            and NewRunActionModel.id == action_id
+        )
         .first()
     )
     return action
+
 
 def get_action_by_id(db: Session, action_id: UUID) -> Any:
     action = (
-        db.query(NewRunActionModel)
-        .filter(NewRunActionModel.id == action_id)
-        .first()
+        db.query(NewRunActionModel).filter(NewRunActionModel.id == action_id).first()
     )
     return action
 
+
 def next_step(db: Session, run_id: UUID, data: dict) -> Any:
-    run = (
-        db.query(NewRunModel)
-        .filter(NewRunModel.id == run_id)
-        .first()
-    )
+    run = db.query(NewRunModel).filter(NewRunModel.id == run_id).first()
     run.step += 1
     db.commit()
     return run
 
+
 def complete_run(db: Session, run_id: UUID) -> Any:
-    run = (
-        db.query(NewRunModel)
-        .filter(NewRunModel.id == run_id)
-        .first()
-    )
+    run = db.query(NewRunModel).filter(NewRunModel.id == run_id).first()
     run.status = "completed"
     db.commit()
     return run
-

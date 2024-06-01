@@ -151,6 +151,7 @@ def value_from_qb(
     """
     return get_data_from_querybuilder(db, run_id, step_id, data)
 
+
 @router.get("", response_model=Any)
 def get_runs(
     *,
@@ -160,7 +161,8 @@ def get_runs(
     """
     Get runs
     """
-    return 
+    return
+
 
 @router.get("/{run_id}", response_model=Any)
 def get_run(
@@ -172,6 +174,7 @@ def get_run(
     Get run
     """
     return RunController.get_run(db, run_id)
+
 
 @router.get("/{run_id}/{action_id}", response_model=Any)
 def get_action(
@@ -185,6 +188,7 @@ def get_action(
     """
     return RunController.get_action(db, run_id, action_id)
 
+
 @router.put("/{run_id}/next", response_model=Any)
 def next_step(
     *,
@@ -196,6 +200,7 @@ def next_step(
     Get next step
     """
     return RunController.next_step(db, run_id, data)
+
 
 @router.put("/{run_id}/complete", response_model=Any)
 def complete_run(
