@@ -1,0 +1,11 @@
+{
+    "data": {
+        "datalake": [
+            {
+                "bucket_name": "common",
+                "object_name": "workflows/8ea49c1e-1695-43da-b716-42baa41f638d/agrewrgerw.csv",
+                "query": "SELECT Activity,PID,Date_Time FROM iceberg.staging_area.test_table_qb___test_actigraphy_small_1703153596301.csv"
+            }
+        ]
+    }
+}
