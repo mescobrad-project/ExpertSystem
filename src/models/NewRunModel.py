@@ -18,4 +18,4 @@ class BaseNewRunModel(Base):
     step: Mapped[str] = mapped_column(String, nullable=True, index=True)
     action: Mapped[str] = mapped_column(String, nullable=True, index=True)
     status: Mapped[str] = mapped_column(String, nullable=True, index=True)
-    ws_id: Mapped[int] = mapped_column(Boolean, nullable=True, default=False)
+    ws_id: Mapped[int] = mapped_column(Integer, nullable=True)

@@ -226,13 +226,13 @@ def get_file_from_minio(
     return file
 
 
-def createRun(db: Session, data: Run) -> Any:
+def createRun(db: Session, data: Run, ws_id: int) -> Any:
     run = {
         "id": uuid.uuid4(),
         "workflow_id": data.workflow_id,
         "title": data.title,
         "notes": data.notes,
-        "ws_id": data.ws_id,
+        "ws_id": ws_id,
         "is_part_of_other": data.is_part_of_other,
         "json_representation": data.json_representation,
         "step": data.step,
@@ -255,7 +255,10 @@ def saveAction(db: Session, data: RunAction, id: str = None) -> Any:
         "ws_id": data.ws_id,
         "run_id": data.run_id,
     }
-    db.execute(NewRunActionModel.__table__.insert().values(action))
+    if(id is not None and id != ""):
+        db.execute(NewRunActionModel.__table__.update().where(NewRunActionModel.id == id).values(action))
+    else:
+        db.execute(NewRunActionModel.__table__.insert().values(action))
     db.commit()
     return action
 
@@ -386,29 +389,25 @@ def get_all_runs(
     runs = (
         db.query(NewRunModel)
         .filter(
-            NewRunModel.ws_id == ws_id
+            NewRunModel.ws_id == int(ws_id)
             and (workflow_id == None or NewRunModel.workflow_id == workflow_id)
         )
-        .slice(skip, skip + limit)
         .order_by(desc(NewRunModel.created_at))
+        .slice(skip, skip + limit)
         .all()
     )
-    for run in runs:
-        run.actions = (
-            db.query(NewRunActionModel).filter(NewRunActionModel.run_id == run.id).all()
-        )
-
+    
     return runs
 
 
 def get_run(db: Session, ws_id: int, run_id: UUID) -> Any:
     run = (
         db.query(NewRunModel)
-        .filter(NewRunModel.ws_id == ws_id and NewRunModel.id == run_id)
+        .filter(NewRunModel.id == str(run_id))
         .first()
     )
     run.actions = (
-        db.query(NewRunActionModel).filter(NewRunActionModel.run_id == run.id).all()
+        db.query(NewRunActionModel).filter(NewRunActionModel.run_id == str(run.id)).all()
     )
     return run
 
@@ -445,9 +444,9 @@ def get_action_by_id(db: Session, action_id: UUID) -> Any:
     return action
 
 
-def next_step(db: Session, run_id: UUID, data: dict) -> Any:
+def next_step(db: Session, run_id: UUID) -> Any:
     run = db.query(NewRunModel).filter(NewRunModel.id == run_id).first()
-    run.step += 1
+    run.step = int(run.step) + 1
     db.commit()
     return run
 
