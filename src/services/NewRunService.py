@@ -124,12 +124,13 @@ def get_trino_tables(token: str) -> Any:
     return tables
 
 
-def get_buckets_from_minio(bucket_name: str, x_es_token: str = Header()) -> Any:
-    minio_url = S3_ENDPOINT
+def get_buckets_from_minio(token: str) -> Any:
+    auth = JWTAuthentication(token)
+    minio_url = f"https://{S3_ENDPOINT}"
     minio_data = {
         "Action": "AssumeRoleWithWebIdentity",
         "Version": "2011-06-15",
-        "WebIdentityToken": x_es_token,
+        "WebIdentityToken": auth.token,
     }
 
     response = requests.post(minio_url, data=minio_data)
@@ -137,13 +138,13 @@ def get_buckets_from_minio(bucket_name: str, x_es_token: str = Header()) -> Any:
 
     # Step 2: Parse the output to extract the credentials
     access_key = xml_data.find(
-        ".//{https://sts.amazonaws.com/doc/2011-06-15/}AccessKeyId"
+        "https//https://sts.amazonaws.com/doc/2011-06-15/AccessKeyId"
     ).text
     secret_access_key = xml_data.find(
-        ".//{https://sts.amazonaws.com/doc/2011-06-15/}SecretAccessKey"
+        "https//https://sts.amazonaws.com/doc/2011-06-15/SecretAccessKey"
     ).text
     session_token = xml_data.find(
-        ".//{https://sts.amazonaws.com/doc/2011-06-15/}SessionToken"
+        "https//https://sts.amazonaws.com/doc/2011-06-15/SessionToken"
     ).text
 
     client = Minio(

@@ -15,6 +15,7 @@ from src.services.NewRunService import (
     get_variables,
     get_trino_schema,
     getActionInputForQueryBuilder,
+    get_buckets_from_minio,
     saveAction,
     get_run,
     getAction,
@@ -52,6 +53,14 @@ def run_workflow(
         name=data.get("name", ""),
         settings=data.get("settings", {}),
     )
+
+@router.get("/buckets", response_model=Any)
+def get_buckets(*, request: Request) -> Any:
+    """
+    Get all buckets
+    """
+
+    return get_buckets_from_minio(request.headers.get("x-jwt-token"))
 
 
 @router.get("/tables", response_model=Any)
@@ -220,3 +229,4 @@ def complete_run(
     Complete run
     """
     return RunController.complete_run(db, run_id)
+
