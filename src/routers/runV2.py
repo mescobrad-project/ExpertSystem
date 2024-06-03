@@ -230,5 +230,3 @@ def get_action(
     Get action
     """
     return getAction(db, action_id)
-
-
