@@ -256,8 +256,12 @@ def saveAction(db: Session, data: RunAction, id: str = None) -> Any:
         "ws_id": data.ws_id,
         "run_id": data.run_id,
     }
-    if(id is not None and id != ""):
-        db.execute(NewRunActionModel.__table__.update().where(NewRunActionModel.id == id).values(action))
+    if id is not None and id != "":
+        db.execute(
+            NewRunActionModel.__table__.update()
+            .where(NewRunActionModel.id == id)
+            .values(action)
+        )
     else:
         db.execute(NewRunActionModel.__table__.insert().values(action))
     db.commit()
@@ -397,18 +401,16 @@ def get_all_runs(
         .slice(skip, skip + limit)
         .all()
     )
-    
+
     return runs
 
 
 def get_run(db: Session, ws_id: int, run_id: UUID) -> Any:
-    run = (
-        db.query(NewRunModel)
-        .filter(NewRunModel.id == str(run_id))
-        .first()
-    )
+    run = db.query(NewRunModel).filter(NewRunModel.id == str(run_id)).first()
     run.actions = (
-        db.query(NewRunActionModel).filter(NewRunActionModel.run_id == str(run.id)).all()
+        db.query(NewRunActionModel)
+        .filter(NewRunActionModel.run_id == str(run.id))
+        .all()
     )
     return run
 

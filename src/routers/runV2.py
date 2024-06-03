@@ -19,7 +19,7 @@ from src.services.NewRunService import (
     saveAction,
     get_run,
     getAction,
-    next_step
+    next_step,
 )
 from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
@@ -53,6 +53,7 @@ def run_workflow(
         name=data.get("name", ""),
         settings=data.get("settings", {}),
     )
+
 
 @router.get("/buckets", response_model=Any)
 def get_buckets(*, request: Request) -> Any:
@@ -178,7 +179,7 @@ def get_runs(
     """
     Get runs
     """
-    return get_all_runs(db, request.headers.get("x-es-wsid"), workflow_id, skip, limit) 
+    return get_all_runs(db, request.headers.get("x-es-wsid"), workflow_id, skip, limit)
 
 
 @router.get("/{run_id}", response_model=Any)
@@ -229,4 +230,3 @@ def complete_run(
     Complete run
     """
     return RunController.complete_run(db, run_id)
-
