@@ -167,6 +167,30 @@ def value_from_qb(
     return get_data_from_querybuilder(db, run_id, step_id, data)
 
 
+@router.put("/{run_id}/next", response_model=Any)
+def nextStep(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+):
+    """
+    Get next step
+    """
+    return next_step(db, run_id)
+
+
+@router.put("/{run_id}/complete", response_model=Any)
+def complete_run(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+):
+    """
+    Complete run
+    """
+    return RunController.complete_run(db, run_id)
+
+
 @router.get("", response_model=Any)
 def get_runs(
     *,
@@ -206,27 +230,3 @@ def get_action(
     Get action
     """
     return getAction(db, action_id)
-
-
-@router.put("/{run_id}/next", response_model=Any)
-def nextStep(
-    *,
-    db: Session = Depends(get_db),
-    run_id: UUID,
-):
-    """
-    Get next step
-    """
-    return next_step(db, run_id)
-
-
-@router.put("/{run_id}/complete", response_model=Any)
-def complete_run(
-    *,
-    db: Session = Depends(get_db),
-    run_id: UUID,
-):
-    """
-    Complete run
-    """
-    return RunController.complete_run(db, run_id)
