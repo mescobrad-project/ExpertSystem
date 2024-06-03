@@ -8,13 +8,18 @@ from src.dependencies.authentication import validate_user
 from src.dependencies.workspace import validate_workspace
 from src.services.NewRunService import (
     createRun,
+    get_all_runs,
     get_data_from_querybuilder,
     get_trino_tables,
     query_trino_table,
     get_variables,
     get_trino_schema,
     getActionInputForQueryBuilder,
+    get_buckets_from_minio,
     saveAction,
+    get_run,
+    getAction,
+    next_step,
 )
 from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
@@ -48,6 +53,15 @@ def run_workflow(
         name=data.get("name", ""),
         settings=data.get("settings", {}),
     )
+
+
+@router.get("/buckets", response_model=Any)
+def get_buckets(*, request: Request) -> Any:
+    """
+    Get all buckets
+    """
+
+    return get_buckets_from_minio(request.headers.get("x-jwt-token"))
 
 
 @router.get("/tables", response_model=Any)
@@ -106,11 +120,12 @@ def create_run(
     *,
     db: Session = Depends(get_db),
     data: Run,
+    request: Request,
 ):
     """
     Run a task
     """
-    return createRun(db, data)
+    return createRun(db, data, request.headers.get("x-es-wsid"))
 
 
 @router.post("/{run_id}/action", response_model=Any)
@@ -156,24 +171,28 @@ def value_from_qb(
 def get_runs(
     *,
     db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    workflow_id: UUID | None = None,
     request: Request,
 ):
     """
     Get runs
     """
-    return
+    return get_all_runs(db, request.headers.get("x-es-wsid"), workflow_id, skip, limit)
 
 
 @router.get("/{run_id}", response_model=Any)
-def get_run(
+def get_single_run(
     *,
     db: Session = Depends(get_db),
     run_id: UUID,
+    request: Request,
 ):
     """
     Get run
     """
-    return RunController.get_run(db, run_id)
+    return get_run(db, request.headers.get("x-es-wsid"), run_id)
 
 
 @router.get("/{run_id}/{action_id}", response_model=Any)
@@ -186,20 +205,19 @@ def get_action(
     """
     Get action
     """
-    return RunController.get_action(db, run_id, action_id)
+    return getAction(db, action_id)
 
 
 @router.put("/{run_id}/next", response_model=Any)
-def next_step(
+def nextStep(
     *,
     db: Session = Depends(get_db),
     run_id: UUID,
-    data: dict,
 ):
     """
     Get next step
     """
-    return RunController.next_step(db, run_id, data)
+    return next_step(db, run_id)
 
 
 @router.put("/{run_id}/complete", response_model=Any)
