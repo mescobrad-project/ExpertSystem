@@ -276,9 +276,10 @@ def getActions(db: Session, run_id: str) -> Any:
 
 
 def getAction(db: Session, action_id: str) -> Any:
-    action = db.query(
-        NewRunActionModel).filter(NewRunActionModel.id == action_id).first()
-    
+    action = (
+        db.query(NewRunActionModel).filter(NewRunActionModel.id == action_id).first()
+    )
+
     return action
 
 
