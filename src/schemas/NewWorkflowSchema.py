@@ -7,6 +7,7 @@ from src.schemas._base import Base, FormBase
 
 
 class WorkflowActionConditionalBase(FormBase):
+    id: UUID | None = None
     action_id: UUID | None = None
     variable: str | None = None
     value: str | None = None
@@ -17,6 +18,7 @@ class WorkflowActionConditionalBase(FormBase):
 
 
 class WorkflowActionBase(FormBase):
+    id: UUID | None = None
     name: str | None = None
     description: str | None = None
     step_id: UUID | None = None
@@ -31,6 +33,7 @@ class WorkflowActionBase(FormBase):
 
 
 class WorkflowStepBase(FormBase):
+    id: UUID | None = None
     name: str | None = None
     description: str | None = None
     workflow_id: UUID | None = None
@@ -40,6 +43,7 @@ class WorkflowStepBase(FormBase):
 
 
 class WorkflowBase(FormBase):
+    id: UUID | None = None
     name: str | None = None
     description: str | None = None
     steps: list[WorkflowStepBase] | None = None
@@ -53,6 +57,7 @@ class WorkflowBase(FormBase):
 
 # Properties to receive on obj creation
 class WorkflowCreate(WorkflowBase):
+    id: UUID | None = None
     name: str
     category_id: UUID
 
