@@ -1,11 +1,35 @@
 {
-    "data": {
-        "datalake": [
+    "selected_datasets": [
+        {
+            "bucket": "common",
+            "file": "workflows/b2a5ccf2-4a6d-4fca-8a3f-c65e374a9f05/correl_test.csv"
+        }
+    ],
+    "results": {
+        "date_created": "06/13/2024, 16:40:04",
+        "workflow_id": "ee2d2d34-bf29-489f-865c-21b66d9a8c8e",
+        "run_id": "b2a5ccf2-4a6d-4fca-8a3f-c65e374a9f05",
+        "step_id": "c24a24c9-6f5d-4100-a617-98f4c9002cfa",
+        "test_name": "Correlation test",
+        "test_params": {
+            "selected_method": "spearman",
+            "selected_variable": [
+                "CORTISOL/HAIR_pg/mg",
+                "Age_telemetry_Admission"
+            ],
+            "alternative": "two-sided"
+        },
+        "test_results": [
             {
-                "bucket_name": "common",
-                "object_name": "workflows/8ea49c1e-1695-43da-b716-42baa41f638d/agrewrgerw.csv",
-                "query": "SELECT Activity,PID,Date_Time FROM iceberg.staging_area.test_table_qb___test_actigraphy_small_1703153596301.csv"
+                "id": 1,
+                "Cor": "CORTISOL/HAIR_pg/mg-Age_telemetry_Admission",
+                "n": 17,
+                "r": -0.54389,
+                "CI95%": "[-0.81,-0.09]",
+                "p-val": 0.02401,
+                "power": 0.6471
             }
         ]
-    }
+    },
+    "Output_datasets": []
 }

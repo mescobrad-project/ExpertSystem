@@ -15,3 +15,4 @@ class BaseNewWorkflowActionConditionalModel(Base):
     value: Mapped[str] = mapped_column(String, nullable=True, index=False)
     metadata_value: Mapped[str] = mapped_column(String, nullable=True, index=False)
     ws_id: Mapped[int] = mapped_column(Integer, nullable=True, index=True)
+    condition: Mapped[str] = mapped_column(String, nullable=True, index=False)

@@ -460,3 +460,15 @@ def complete_run(db: Session, run_id: UUID) -> Any:
     run.status = "completed"
     db.commit()
     return run
+
+
+def get_workflow_variable_names(db: Session, workflow_id: UUID) -> Any:
+    res = (
+        db.execute(
+            "SELECT DISTINCT(variable) as variable FROM new_workflow_action_conditionals WHERE workflow_action_id IN (SELECT id FROM new_workflow_actions WHERE workflow_id = :workflow_id)",
+            {"workflow_id": str(workflow_id)},
+        )
+        .fetchall()
+        ._mapping
+    )
+    return res

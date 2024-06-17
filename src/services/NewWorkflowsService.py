@@ -69,6 +69,7 @@ def createWorkflow(db: Session, workflow_in: WorkflowBase, ws_id: int) -> Workfl
                         "value": conditional_in.value,
                         "weight": conditional_in.weight,
                         "metadata_value": conditional_in.metadata_value,
+                        "condition": conditional_in.condition,
                         "order": conditional_in.order,
                     }
                     db.execute(
