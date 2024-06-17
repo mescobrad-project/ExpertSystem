@@ -13,6 +13,7 @@ class WorkflowActionConditionalBase(FormBase):
     weight: float | None = None
     metadata_value: str | None = None
     order: int | None = None
+    condition: str | None = None
 
 
 class WorkflowActionBase(FormBase):
