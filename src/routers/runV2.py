@@ -20,6 +20,7 @@ from src.services.NewRunService import (
     get_run,
     getAction,
     next_step,
+    get_table_data
 )
 from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
@@ -86,6 +87,10 @@ def runQuery(
     """
 
     return query_trino_table(table, vname, vvalue, request.headers.get("x-jwt-token"))
+
+@router.get("/table_data", response_model=Any)
+def get_data_from_trino_table(*, table: str, source: str, request: Request, vname: str = '', vvalue: str ='') -> Any:
+    return get_table_data(table, source, request.headers.get("x-jwt-token"), vname, vvalue)
 
 
 @router.get("/files", response_model=Any)
