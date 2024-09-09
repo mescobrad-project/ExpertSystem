@@ -130,31 +130,26 @@ def get_buckets_from_minio(token: str) -> Any:
     minio_data = {
         "Action": "AssumeRoleWithWebIdentity",
         "Version": "2011-06-15",
-        "WebIdentityToken": auth.token,
+        "WebIdentityToken": auth.token
     }
 
     response = requests.post(minio_url, data=minio_data)
     xml_data = ElementTree.fromstring(response.text)
 
     # Step 2: Parse the output to extract the credentials
-    access_key = xml_data.find(
-        "https//https://sts.amazonaws.com/doc/2011-06-15/AccessKeyId"
-    ).text
-    secret_access_key = xml_data.find(
-        "https//https://sts.amazonaws.com/doc/2011-06-15/SecretAccessKey"
-    ).text
-    session_token = xml_data.find(
-        "https//https://sts.amazonaws.com/doc/2011-06-15/SessionToken"
-    ).text
+    access_key = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}AccessKeyId').text
+    secret_access_key = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}SecretAccessKey').text
+    session_token = xml_data.find('.//{https://sts.amazonaws.com/doc/2011-06-15/}SessionToken').text
 
     client = Minio(
         endpoint=S3_ENDPOINT,
         access_key=access_key,
         secret_key=secret_access_key,
         session_token=session_token,
+        # For local testing
         secure=False,
     )
-    buckets = client.list_buckets(bucket_name)
+    buckets = client.list_buckets()
     return buckets
 
 
