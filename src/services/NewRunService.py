@@ -125,12 +125,11 @@ def get_trino_tables(token: str) -> Any:
 
 
 def get_buckets_from_minio(token: str) -> Any:
-    auth = JWTAuthentication(token)
     minio_url = f"https://{S3_ENDPOINT}"
     minio_data = {
         "Action": "AssumeRoleWithWebIdentity",
         "Version": "2011-06-15",
-        "WebIdentityToken": auth.token,
+        "WebIdentityToken": token,
     }
 
     response = requests.post(minio_url, data=minio_data)
@@ -153,7 +152,7 @@ def get_buckets_from_minio(token: str) -> Any:
         secret_key=secret_access_key,
         session_token=session_token,
         # For local testing
-        secure=False,
+        #secure=False,
     )
     buckets = client.list_buckets()
     return buckets
