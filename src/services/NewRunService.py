@@ -152,7 +152,7 @@ def get_buckets_from_minio(token: str) -> Any:
         secret_key=secret_access_key,
         session_token=session_token,
         # For local testing
-        #secure=False,
+        # secure=False,
     )
     buckets = client.list_buckets()
     return buckets
