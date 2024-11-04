@@ -20,7 +20,8 @@ from src.services.NewRunService import (
     get_run,
     getAction,
     next_step,
-    get_table_data
+    get_table_data,
+    delete_run
 )
 from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
@@ -235,3 +236,14 @@ def get_action(
     Get action
     """
     return getAction(db, action_id)
+
+@router.delete("/{run_id}", response_model=Any)
+def delete_run_route(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+):
+    """
+    Delete run
+    """
+    return delete_run(db, run_id)

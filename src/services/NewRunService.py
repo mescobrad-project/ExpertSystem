@@ -503,3 +503,12 @@ def get_workflow_variable_names(db: Session, workflow_id: UUID) -> Any:
         ._mapping
     )
     return res
+
+def delete_run(db: Session, run_id: UUID) -> Any:
+    actions = db.query(NewRunActionModel).filter(NewRunActionModel.run_id == str(run_id)).all()
+    for action in actions:
+        db.delete(action)
+    run = db.query(NewRunModel).filter(NewRunModel.id == str(run_id)).first()
+    db.delete(run)
+    db.commit()
+    return run

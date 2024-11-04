@@ -7,7 +7,9 @@ from src.models._all import (
     NewWorkflowStepModel,
     NewWorkflowActionModel,
     NewWorkflowActionConditionalModel,
+    NewRunModel
 )
+from src.services.NewRunService import delete_run
 
 
 def createWorkflow(db: Session, workflow_in: WorkflowBase, ws_id: int) -> WorkflowBase:
@@ -227,3 +229,43 @@ def addAction(
                 NewWorkflowActionConditionalModel.__table__.insert().values(conditional)
             )
     return action
+
+def deleteWorkflow(db: Session, workflow_id: uuid.UUID) -> Any:
+    """
+    Delete a workflow with its metadata.
+    """
+    try:
+        runs = db.query(NewRunModel).filter(NewRunModel.workflow_id == str(workflow_id)).all()
+        for r in runs:
+            delete_run(db, r.id)
+        steps = db.query(NewWorkflowStepModel).filter(NewWorkflowStepModel.workflow_id == str(workflow_id)).all()
+        for step in steps:
+            actions = db.query(NewWorkflowActionModel).filter(NewWorkflowActionModel.workflow_step_id == str(step.id)).all()
+            for action in actions:
+                conditionals = db.query(NewWorkflowActionConditionalModel).filter(NewWorkflowActionConditionalModel.workflow_action_id == str(action.id)).all()
+                for conditional in conditionals:
+                    db.execute(
+                        NewWorkflowActionConditionalModel.__table__.delete().where(
+                            NewWorkflowActionConditionalModel.id == str(conditional.id)
+                        )
+                    )
+                db.execute(
+                    NewWorkflowActionModel.__table__.delete().where(
+                        NewWorkflowActionModel.id == str(action.id)
+                    )
+                )
+            db.execute(
+                NewWorkflowStepModel.__table__.delete().where(
+                    NewWorkflowStepModel.id == str(step.id)
+                )
+            )
+        db.execute(
+            NewWorkflowModel.__table__.delete().where(
+                NewWorkflowModel.id == str(workflow_id)
+            )
+        )
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
+    return {"message": "Workflow deleted."}
