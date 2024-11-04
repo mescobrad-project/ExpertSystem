@@ -20,6 +20,8 @@ from src.services.NewRunService import (
     get_run,
     getAction,
     next_step,
+    get_table_data,
+    delete_run,
 )
 from src.schemas.RequestBodySchema import (
     TaskMetadataBodyParameter,
@@ -86,6 +88,15 @@ def runQuery(
     """
 
     return query_trino_table(table, vname, vvalue, request.headers.get("x-jwt-token"))
+
+
+@router.get("/table_data", response_model=Any)
+def get_data_from_trino_table(
+    *, table: str, source: str, request: Request, vname: str = "", vvalue: str = ""
+) -> Any:
+    return get_table_data(
+        table, source, request.headers.get("x-jwt-token"), vname, vvalue
+    )
 
 
 @router.get("/files", response_model=Any)
@@ -230,3 +241,15 @@ def get_action(
     Get action
     """
     return getAction(db, action_id)
+
+
+@router.delete("/{run_id}", response_model=Any)
+def delete_run_route(
+    *,
+    db: Session = Depends(get_db),
+    run_id: UUID,
+):
+    """
+    Delete run
+    """
+    return delete_run(db, run_id)

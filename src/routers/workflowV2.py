@@ -11,7 +11,11 @@ from src.dependencies.authentication import validate_user, get_user_only
 from src.dependencies.workspace import validate_workspace
 from src.schemas.RunSchema import Run
 import uuid
-from src.services.NewWorkflowsService import createWorkflow, getWorkflows
+from src.services.NewWorkflowsService import (
+    createWorkflow,
+    getWorkflows,
+    deleteWorkflow,
+)
 
 from src.models._all import (
     NewWorkflowModel,
@@ -150,20 +154,6 @@ def read_workflow(
     )
 
 
-@router.delete("/{workflow_id}", response_model=WorkflowBase)
-def destroy_workflow(
-    *,
-    db: Session = Depends(get_db),
-    workflow_id: UUID,
-) -> Any:
-    """
-    Delete a workflow.
-    """
-    return WorkflowController.destroy(
-        db=db, resource_id=workflow_id, resource_in=WorkflowBase()
-    )
-
-
 @router.delete("/{workflow_id}/revert", response_model=WorkflowBase)
 def revert_workflow(
     *,
@@ -222,3 +212,15 @@ def read_workflow_runs(
             "ws_id": request.headers.get("x-es-wsid"),
         },
     )
+
+
+@router.delete("/{workflow_id}")
+def delete_a_workflow(
+    *,
+    db: Session = Depends(get_db),
+    workflow_id: UUID,
+) -> Any:
+    """
+    Delete a workflow.
+    """
+    return deleteWorkflow(db, workflow_id)

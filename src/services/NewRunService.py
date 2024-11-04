@@ -124,6 +124,47 @@ def get_trino_tables(token: str) -> Any:
     return tables
 
 
+def get_table_data(
+    table: str,
+    source: str,
+    token: str,
+    variable_name: str = "",
+    variable_value: str = "",
+) -> Any:
+    auth = JWTAuthentication(token)
+    client = connect(
+        host=TRINO_HOST,
+        port=TRINO_PORT,
+        http_scheme=TRINO_SCHEME,
+        auth=auth,
+        timezone=str(pytz.timezone("UTC")),
+        # verify=False,
+    )
+    cursor = client.cursor()
+    cursor.execute("SHOW SCHEMAS IN iceberg")
+    buckets = cursor.fetchall()
+    schema = buckets[0][0]
+    query = f"SELECT * FROM iceberg.{schema}.{table} WHERE source = '{source}'"
+    if variable_name != "":
+        query += f" AND variable_name = '{variable_name}' "
+    if variable_name != "" and variable_value != "":
+        query += f" AND variable_value = '{variable_value}' "
+    cursor.execute(query)
+    result = cursor.fetchall()
+    response = []
+    for idx, row in enumerate(result):
+        response.insert(
+            idx,
+            {
+                "source": row[0],
+                "row": row[1],
+                "variable_name": row[2],
+                "variable_value": row[3],
+            },
+        )
+    return response
+
+
 def get_buckets_from_minio(token: str) -> Any:
     minio_url = f"https://{S3_ENDPOINT}"
     minio_data = {
@@ -472,3 +513,17 @@ def get_workflow_variable_names(db: Session, workflow_id: UUID) -> Any:
         ._mapping
     )
     return res
+
+
+def delete_run(db: Session, run_id: UUID) -> Any:
+    actions = (
+        db.query(NewRunActionModel)
+        .filter(NewRunActionModel.run_id == str(run_id))
+        .all()
+    )
+    for action in actions:
+        db.delete(action)
+    run = db.query(NewRunModel).filter(NewRunModel.id == str(run_id)).first()
+    db.delete(run)
+    db.commit()
+    return run
